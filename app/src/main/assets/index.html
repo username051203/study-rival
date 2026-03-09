@@ -676,7 +676,7 @@ td { padding: 12px 10px; font-size: 0.85rem; border-bottom: 1px solid var(--bord
         <label>Rival Baseline Pace (Hrs/Ch)</label>
         <input id="stPace" type="number" step="0.1" value="5.0">
         <label>Simulation Speed</label>
-        <input id="stSpeed" type="number" value="60">
+        <input id="stSpeed" type="number" value="1" min="1">
         <button onclick="startRivalry()">Engage Rivalry Engine</button>
     </div>
 
@@ -1021,12 +1021,12 @@ const DEFAULT_PROFILES = () => ({
 
 const DEFAULT_STATE = () => ({
     u: { Physics:{ch:0,h:0}, Chemistry:{ch:0,h:0}, Mathematics:{ch:0,h:0} },
-    subjects: ['Physics','Chemistry','Mathematics'],
+    subjects: [],
     logs: [],
     aLogs: [],
     history: {},
-    rival: { s:'Physics', g:10, cur:0, rate:0.2, multiSub:false, multiSubjects:[] },
-    engine: { start:Date.now(), spd:60, uBase:0, lastResetDay:"" },
+    rival: { s:'', g:10, cur:0, rate:0.2, multiSub:false, multiSubjects:[] },
+    engine: { start:Date.now(), spd:1, uBase:0, lastResetDay:"" },
     rt: { slp:[{s:23,e:6.5}], ml:[8.5,13,20], bf:[{s:17,e:18.5}] },
     tick: Date.now(),
     lastDayReport: "",
@@ -1047,7 +1047,7 @@ async function loadState() {
     // Ensure sub-keys exist
     if (!s.profiles.user)    s.profiles.user    = DEFAULT_PROFILES().user;
     if (!s.profiles.alicia)  s.profiles.alicia  = DEFAULT_PROFILES().alicia;
-    if (!s.subjects) s.subjects = ['Physics','Chemistry','Mathematics'];
+    if (!s.subjects) s.subjects = [];
     // pull in any subjects that appear in logs but aren't in registry
     (s.logs||[]).forEach(l=>{ if(l.s&&!s.subjects.includes(l.s)) s.subjects.push(l.s); });
     // make sure state.u has entries for every registered subject
@@ -1492,7 +1492,7 @@ function update() {
 // ===========================================================================
 function commitData() {
     const s=document.getElementById('inSub').value.trim();
-    if(!s){alert('Enter a subject name.');return;}
+    if(!s){logSys('Enter a subject name.');return;}
     if(!state.subjects.includes(s)){state.subjects.push(s);if(!state.u[s])state.u[s]={ch:0,h:0};refreshDatalist();logSys(`SUBJECT ADDED: "${s}"`);}
     const h=parseFloat(document.getElementById('inHr').value)||0;
     const c=parseFloat(document.getElementById('inCh').value)||0;
@@ -1611,7 +1611,7 @@ function recomputeSubjectTotals() {
 function deleteDay() {
     if(!currentDrillDay) return;
     const sessionCount=state.logs.filter(l=>getStudyDay(l.d)===currentDrillDay).length;
-    if(!confirm(`DELETE ALL DATA FOR ${currentDrillDay}?\n\nThis will remove ${sessionCount} session(s). Cannot be undone.`)) return;
+    
     state.logs=state.logs.filter(l=>getStudyDay(l.d)!==currentDrillDay);
     state.aLogs=state.aLogs.filter(l=>getStudyDay(l.d)!==currentDrillDay);
     delete state.history[currentDrillDay];
@@ -1638,12 +1638,12 @@ function impB64() {
         state=parsed;
         state.tick=Date.now();
         saveImmediate().then(()=>setTimeout(()=>location.reload(),500));
-    }catch(e){alert("HASH INTEGRITY ERROR: Could not parse payload.");}
+    }catch(e){logSys("HASH INTEGRITY ERROR: Could not parse payload.");}
 }
 
 function startRivalry() {
     const sub = document.getElementById('stSub').value.trim();
-    if (!sub) { alert('Enter a subject name first.'); return; }
+    if (!sub) { logSys('Enter a subject name first.'); return; }
     // auto-register
     if (!state.subjects.includes(sub)) { state.subjects.push(sub); if(!state.u[sub]) state.u[sub]={ch:0,h:0}; }
     const g   = parseFloat(document.getElementById('stGoal').value)||10;
@@ -1652,7 +1652,7 @@ function startRivalry() {
     state.rival.g   = g;
     state.rival.cur = 0;
     state.rival.rate= rate;
-    state.engine.spd= parseFloat(document.getElementById('stSpeed').value)||60;
+    state.engine.spd= parseFloat(document.getElementById('stSpeed').value)||1;
     state.engine.start= Date.now();
     state.engine.uBase= state.u[sub]?.ch||0;
     state.engine.lastResetDay=getStudyDay(Date.now());
@@ -1672,7 +1672,7 @@ function saveRoutine() {
 }
 
 async function resetAll() {
-    if(confirm("PURGE DATA?")){ await dbClear(); location.reload(); }
+    await dbClear(); location.reload();
 }
 
 // ===========================================================================
@@ -1687,7 +1687,7 @@ function openSessionModal(mode, logIndex) {
     document.getElementById('modalTitle').textContent=mode==='add'?'Add Session':'Edit Session';
     document.getElementById('modalDeleteBtn').style.display=mode==='edit'?'block':'none';
     if(mode==='edit'&&logIndex!==undefined){const log=unpackUserLog(state.logs[logIndex]);const logDate=new Date(log.date);document.getElementById('modalSub').value=log.s;document.getElementById('modalStart').value=log.tS||'';document.getElementById('modalEnd').value=log.tE||'';document.getElementById('modalHr').value=log.h;document.getElementById('modalCh').value=log.c;document.getElementById('modalLogDate').value=logDate.toISOString().split('T')[0];document.getElementById('modalLogTime').value=logDate.toTimeString().slice(0,5);}
-    else{document.getElementById('modalSub').value=state.rival?.s||'Physics';document.getElementById('modalStart').value='';document.getElementById('modalEnd').value='';document.getElementById('modalHr').value='';document.getElementById('modalCh').value='';const d=currentDrillDay?new Date(Date.parse(currentDrillDay)+(ANCHOR_HOUR*3600000)+43200000):new Date();document.getElementById('modalLogDate').value=d.toISOString().split('T')[0];document.getElementById('modalLogTime').value=new Date().toTimeString().slice(0,5);}
+    else{document.getElementById('modalSub').value=state.rival?.s||'';document.getElementById('modalStart').value='';document.getElementById('modalEnd').value='';document.getElementById('modalHr').value='';document.getElementById('modalCh').value='';const d=currentDrillDay?new Date(Date.parse(currentDrillDay)+(ANCHOR_HOUR*3600000)+43200000):new Date();document.getElementById('modalLogDate').value=d.toISOString().split('T')[0];document.getElementById('modalLogTime').value=new Date().toTimeString().slice(0,5);}
 }
 
 function closeSessionModal() { document.getElementById('sessionModalOverlay').style.display='none'; }
@@ -1710,7 +1710,7 @@ function saveSessionModal() {
 function deleteSessionModal() {
     const idx=parseInt(document.getElementById('modalLogIndex').value);
     if(isNaN(idx)) return;
-    if(!confirm('Delete this session?')) return;
+    
     const old=unpackUserLog(state.logs[idx]); state.logs.splice(idx,1);
     logSys(`DELETE: Removed session — ${old.s} ${old.c} CH.`);
     recomputeSubjectTotals(); recalcHistoryForDay(currentDrillDay);
@@ -1722,7 +1722,11 @@ function deleteSessionModal() {
 // ===========================================================================
 function recalcAlicia() {
     if(!state.rival||!state.engine.start) return;
-    if(state.engine.spd!==1) return;
+    if(state.engine.spd!==1) {
+    const todayStr=getStudyDay(Date.now());
+    state.rival.cur=state.aLogs.filter(l=>l.d===todayStr).reduce((sum,l)=>sum+(l.c||0),0);
+    return;
+}
     const now=Date.now();
     const currentDayStr=getStudyDay(now);
     if(state.engine.lastResetDay!==currentDayStr) return;
@@ -1932,7 +1936,7 @@ function pickPhoto(targetIds) {
         Android.openImagePicker(JSON.stringify(targetIds));
     } else {
         // fallback: prompt for URL
-        const url = prompt('Enter image URL:');
+        const url = document.getElementById('inputUserPhoto')?.value?.trim() || null;
         if (url) targetIds.forEach(id => setImgSrc(id, url));
     }
 }
@@ -1983,7 +1987,7 @@ function onFileImported(content) {
         const parsed = lzTry ? JSON.parse(lzTry) : JSON.parse(content.trim());
         state = parsed; state.tick = Date.now();
         saveImmediate().then(() => setTimeout(() => location.reload(), 500));
-    } catch(e) { alert('Import failed — invalid file.'); }
+    } catch(e) { logSys('Import failed — invalid file.'); }
 }
 
 // ── Back-button handler (Android calls this) ──
