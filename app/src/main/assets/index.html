@@ -676,14 +676,7 @@ td { padding: 12px 10px; font-size: 0.85rem; border-bottom: 1px solid var(--bord
         <label>Rival Baseline Pace (Hrs/Ch)</label>
         <input id="stPace" type="number" step="0.1" value="5.0">
         <label>Simulation Speed</label>
-        <input id="stSpeed" type="number" value="1" min="1">
-
-        <label style="margin-top:16px;">Study Day Anchor Hour</label>
-        <div style="font-size:0.65rem; color:var(--muted); margin-bottom:8px;">Hour when a new study day begins (0–23.5). Default 3.5 = 03:30 AM. Sessions after midnight but before this count for the previous day.</div>
-        <div style="display:flex; gap:10px; align-items:center;">
-            <input id="stAnchor" type="number" step="0.5" min="0" max="23.5" value="3.5" style="flex:1;" oninput="document.getElementById('anchorPreview').textContent=formatAnchor(this.value);">
-            <div id="anchorPreview" style="font-size:0.7rem; color:var(--accent); font-weight:700; min-width:60px; text-align:right;">03:30</div>
-        </div>
+        <input id="stSpeed" type="number" value="60">
         <button onclick="startRivalry()">Engage Rivalry Engine</button>
     </div>
 
@@ -743,33 +736,31 @@ td { padding: 12px 10px; font-size: 0.85rem; border-bottom: 1px solid var(--bord
             Photo States
             <span style="font-size:0.6rem; color:var(--muted); font-weight:600; text-transform:none; letter-spacing:0; display:block; margin-top:2px;">Different photos display based on win/loss state</span>
         </div>
-
         <div class="photo-grid">
             <div class="photo-slot">
                 <div class="photo-slot-label">😐 Default</div>
                 <img id="previewUserDefault" src="https://i.postimg.cc/T1Cg0SXT/20260203-002328.jpg">
                 <input id="inputUserPhoto" type="url" placeholder="Default photo URL" oninput="livePreviewUser()">
-                <button onclick="pickPhoto(['previewUserDefault','userPhotoPreview','profileUserPreview'],'inputUserPhoto')" style="width:100%;padding:6px;margin-top:6px;background:var(--border);font-size:0.65rem;border-radius:6px;cursor:pointer;border:1px solid var(--border2);">📷 Pick</button>
+                <button onclick="pickPhoto(['previewUserDefault','userPhotoPreview','profileUserPreview'],'inputUserPhoto')" style="width:100%;padding:6px;margin-top:6px;background:var(--border);font-size:0.65rem;border-radius:6px;cursor:pointer;border:1px solid var(--border);">📷 Pick</button>
             </div>
             <div class="photo-slot">
                 <div class="photo-slot-label">😎 Winning</div>
                 <img id="previewUserWin" src="https://i.postimg.cc/T1Cg0SXT/20260203-002328.jpg">
                 <input id="inputUserWin" type="url" placeholder="When you lead URL" oninput="livePreviewUser()">
-                <button onclick="pickPhoto(['previewUserWin'],'inputUserWin')" style="width:100%;padding:6px;margin-top:6px;background:var(--border);font-size:0.65rem;border-radius:6px;cursor:pointer;border:1px solid var(--border2);">📷 Pick</button>
+                <button onclick="pickPhoto(['previewUserWin'],'inputUserWin')" style="width:100%;padding:6px;margin-top:6px;background:var(--border);font-size:0.65rem;border-radius:6px;cursor:pointer;border:1px solid var(--border);">📷 Pick</button>
             </div>
             <div class="photo-slot">
                 <div class="photo-slot-label">😤 Losing</div>
                 <img id="previewUserLoss" src="https://i.postimg.cc/T1Cg0SXT/20260203-002328.jpg">
                 <input id="inputUserLoss" type="url" placeholder="When you trail URL" oninput="livePreviewUser()">
-                <button onclick="pickPhoto(['previewUserLoss'],'inputUserLoss')" style="width:100%;padding:6px;margin-top:6px;background:var(--border);font-size:0.65rem;border-radius:6px;cursor:pointer;border:1px solid var(--border2);">📷 Pick</button>
+                <button onclick="pickPhoto(['previewUserLoss'],'inputUserLoss')" style="width:100%;padding:6px;margin-top:6px;background:var(--border);font-size:0.65rem;border-radius:6px;cursor:pointer;border:1px solid var(--border);">📷 Pick</button>
             </div>
-            <div class="photo-slot" style="display:flex; flex-direction:column; justify-content:center; align-items:center; background:rgba(0,255,136,0.05);">
+            <div class="photo-slot" style="display:flex;flex-direction:column;justify-content:center;align-items:center;background:rgba(0,255,136,0.05);">
                 <div class="photo-slot-label" style="color:var(--good);">STATE PREVIEW</div>
-                <img id="userStatePeview" src="https://i.postimg.cc/T1Cg0SXT/20260203-002328.jpg" style="width:64px; height:64px; border-radius:50%; border:2px solid var(--good); object-fit:cover; margin:8px auto;">
-                <div style="font-size:0.6rem; color:var(--muted); text-align:center; margin-top:4px;">Live state from dashboard</div>
+                <img id="userStatePeview" src="https://i.postimg.cc/T1Cg0SXT/20260203-002328.jpg" style="width:64px;height:64px;border-radius:50%;border:2px solid var(--good);object-fit:cover;margin:8px auto;">
+                <div style="font-size:0.6rem;color:var(--muted);text-align:center;margin-top:4px;">Live state from dashboard</div>
             </div>
         </div>
-
         <div style="display:flex; gap:10px; margin-top:6px;">
             <button onclick="resetUserPhoto()" class="reset-photo-btn" style="margin-top:0; width:auto; flex:1;">↺ Default Photos</button>
         </div>
@@ -895,6 +886,8 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') closeMobileM
 // ===========================================================================
 // DEFAULT ASSETS
 // ===========================================================================
+const ANCHOR_HOUR = 3.5;
+
 const DEFAULT_ASSETS = {
     p:     "https://i.postimg.cc/T1Cg0SXT/20260203-002328.jpg",
     pWin:  "https://i.postimg.cc/T1Cg0SXT/20260203-002328.jpg",
@@ -906,7 +899,6 @@ const DEFAULT_ASSETS = {
 
 // Live ASSETS object — overwritten by applyProfiles()
 let ASSETS = { ...DEFAULT_ASSETS };
-let ANCHOR_HOUR = 3.5; // overwritten by state
 
 // ===========================================================================
 // QUOTE BANKS
@@ -1057,7 +1049,6 @@ const DEFAULT_STATE = () => ({
     rt: { slp:[{s:23,e:6.5}], ml:[8.5,13,20], bf:[{s:17,e:18.5}] },
     tick: Date.now(),
     lastDayReport: "",
-    anchorHour: 3.5,
     aliciaStats: { dailyTotal:0, activeHours:0, efficiency:0 },
     _lastAliciaActive: { active:false, startRealMs:null, startTime:null },
     profiles: DEFAULT_PROFILES()
@@ -1067,15 +1058,17 @@ async function loadState() {
     let s = await dbGet(1);
     if (!s) s = DEFAULT_STATE();
     if (!s.lastDayReport)     s.lastDayReport = "";
-    if (s.anchorHour === undefined) s.anchorHour = 3.5;
     if (!s.aliciaStats)       s.aliciaStats = { dailyTotal:0, activeHours:0, efficiency:0 };
     if (!s.aLogs)             s.aLogs = [];
     if (!s._lastAliciaActive) s._lastAliciaActive = { active:false, startRealMs:null, startTime:null };
     if (!s.history)           s.history = {};
     if (!s.profiles)          s.profiles = DEFAULT_PROFILES();
     // Ensure sub-keys exist
-    if (!s.profiles.user)    s.profiles.user    = DEFAULT_PROFILES().user;
-    if (!s.profiles.alicia)  s.profiles.alicia  = DEFAULT_PROFILES().alicia;
+    if (!s.profiles.user)         s.profiles.user    = DEFAULT_PROFILES().user;
+    if (!s.profiles.alicia)       s.profiles.alicia  = DEFAULT_PROFILES().alicia;
+    if (!s.profiles.user.photoWin)  s.profiles.user.photoWin  = s.profiles.user.photo || DEFAULT_ASSETS.pWin;
+    if (!s.profiles.user.photoLoss) s.profiles.user.photoLoss = s.profiles.user.photo || DEFAULT_ASSETS.pLoss;
+    if (!s.rival._mCur)             s.rival._mCur = {};
     if (!s.subjects) s.subjects = ['Physics','Chemistry','Mathematics'];
     // pull in any subjects that appear in logs but aren't in registry
     (s.logs||[]).forEach(l=>{ if(l.s&&!s.subjects.includes(l.s)) s.subjects.push(l.s); });
@@ -1101,17 +1094,12 @@ function applyProfiles() {
     const p = state.profiles;
 
     // Update live ASSETS
-    ASSETS.p     = p.user.photo    || DEFAULT_ASSETS.p;
-    ASSETS.p     = p.user.photo       || DEFAULT_ASSETS.p;
-    ASSETS.pWin  = p.user.photoWin    || DEFAULT_ASSETS.pWin;
-    ASSETS.pLoss = p.user.photoLoss   || DEFAULT_ASSETS.pLoss;
-    ASSETS.p     = p.user.photo       || DEFAULT_ASSETS.p;
-    ASSETS.pWin  = p.user.photoWin    || DEFAULT_ASSETS.pWin;
-    ASSETS.pLoss = p.user.photoLoss   || DEFAULT_ASSETS.pLoss;
+    ASSETS.p     = p.user.photo     || DEFAULT_ASSETS.p;
+    ASSETS.pWin  = p.user.photoWin  || p.user.photo || DEFAULT_ASSETS.pWin;
+    ASSETS.pLoss = p.user.photoLoss || p.user.photo || DEFAULT_ASSETS.pLoss;
     ASSETS.a     = p.alicia.photoDefault || DEFAULT_ASSETS.a;
     ASSETS.aWin  = p.alicia.photoWin     || DEFAULT_ASSETS.aWin;
     ASSETS.aLoss = p.alicia.photoLoss    || DEFAULT_ASSETS.aLoss;
-    if (state.anchorHour !== undefined) ANCHOR_HOUR = state.anchorHour;
 
     const userName   = p.user.name    || 'YOU';
     const aliciaName = p.alicia.name  || 'ALICIA';
@@ -1169,10 +1157,11 @@ function populateProfilePage() {
     const p = state.profiles;
     document.getElementById('inputUserName').value       = p.user.name    || '';
     document.getElementById('inputUserTagline').value    = p.user.tagline  || '';
-    document.getElementById('inputUserPhoto').value      = p.user.photo !== DEFAULT_ASSETS.p ? (p.user.photo || '') : '';
-    document.getElementById('inputUserWin').value         = p.user.photoWin  && p.user.photoWin  !== DEFAULT_ASSETS.pWin  ? p.user.photoWin  : '';
-    document.getElementById('inputUserLoss').value        = p.user.photoLoss && p.user.photoLoss !== DEFAULT_ASSETS.pLoss ? p.user.photoLoss : '';
-    if (document.getElementById('stAnchor')) document.getElementById('stAnchor').value = state.anchorHour !== undefined ? state.anchorHour : 3.5;
+    document.getElementById('inputUserPhoto').value  = p.user.photo && p.user.photo !== DEFAULT_ASSETS.p ? p.user.photo : '';
+    const uw = document.getElementById('inputUserWin');
+    const ul = document.getElementById('inputUserLoss');
+    if (uw) uw.value = p.user.photoWin  && p.user.photoWin  !== DEFAULT_ASSETS.pWin  ? p.user.photoWin  : '';
+    if (ul) ul.value = p.user.photoLoss && p.user.photoLoss !== DEFAULT_ASSETS.pLoss ? p.user.photoLoss : '';
     document.getElementById('inputAliciaName').value     = p.alicia.name   || '';
     document.getElementById('inputAliciaTagline').value  = p.alicia.tagline || '';
 
@@ -1188,23 +1177,23 @@ function populateProfilePage() {
 }
 
 function livePreviewUser() {
-    const name   = document.getElementById('inputUserName').value.trim() || 'YOU';
-    const tag    = document.getElementById('inputUserTagline').value.trim() || 'The Operator';
-    const url    = document.getElementById('inputUserPhoto').value.trim() || DEFAULT_ASSETS.p;
-    const wUrl   = document.getElementById('inputUserWin')?.value.trim()  || url;
-    const lUrl   = document.getElementById('inputUserLoss')?.value.trim() || url;
+    const name = document.getElementById('inputUserName').value.trim() || 'YOU';
+    const tag  = document.getElementById('inputUserTagline').value.trim() || 'The Operator';
+    const url  = document.getElementById('inputUserPhoto').value.trim() || DEFAULT_ASSETS.p;
+    const wUrl = (document.getElementById('inputUserWin')?.value.trim())  || url;
+    const lUrl = (document.getElementById('inputUserLoss')?.value.trim()) || url;
 
     setText('profileUserNameDisplay', name);
     setText('profileUserTaglineDisplay', tag);
-    setImgSrc('userPhotoPreview', url);
+    setImgSrc('userPhotoPreview',   url);
     setImgSrc('profileUserPreview', url);
     setImgSrc('previewUserDefault', url);
-    setImgSrc('previewUserWin', wUrl);
-    setImgSrc('previewUserLoss', lUrl);
-    setImgSrc('userStatePeview', url);
+    setImgSrc('previewUserWin',     wUrl);
+    setImgSrc('previewUserLoss',    lUrl);
+    setImgSrc('userStatePeview',    url);
     setText('prevDashUserName', name);
-    setText('prevDashUserTag', tag);
-    setImgSrc('prevDashUser', url);
+    setText('prevDashUserTag',  tag);
+    setImgSrc('prevDashUser',   url);
 }
 
 function livePreviewAlicia() {
@@ -1221,19 +1210,17 @@ function livePreviewAlicia() {
     setImgSrc('previewAliciaWin',     wUrl);
     setImgSrc('previewAliciaLoss',    lUrl);
     setImgSrc('rivalStatePeview',     dUrl);
-        // sync user state preview
-        setImgSrc('userStatePeview', document.getElementById('inputUserPhoto')?.value.trim() || DEFAULT_ASSETS.p);
     setText('prevDashAliciaName', name);
     setText('prevDashAliciaTag',  tag);
     setImgSrc('prevDashAlicia',   dUrl);
 }
 
 function saveUserProfile() {
-    const name   = document.getElementById('inputUserName').value.trim() || 'YOU';
-    const tag    = document.getElementById('inputUserTagline').value.trim() || 'The Operator';
-    const url    = document.getElementById('inputUserPhoto').value.trim() || DEFAULT_ASSETS.p;
-    const wUrl   = document.getElementById('inputUserWin')?.value.trim()  || url;
-    const lUrl   = document.getElementById('inputUserLoss')?.value.trim() || url;
+    const name = document.getElementById('inputUserName').value.trim() || 'YOU';
+    const tag  = document.getElementById('inputUserTagline').value.trim() || 'The Operator';
+    const url  = document.getElementById('inputUserPhoto').value.trim() || DEFAULT_ASSETS.p;
+    const wUrl = (document.getElementById('inputUserWin')?.value.trim())  || url;
+    const lUrl = (document.getElementById('inputUserLoss')?.value.trim()) || url;
 
     state.profiles.user = { name, tagline: tag, photo: url, photoWin: wUrl, photoLoss: lUrl };
     save();
@@ -1258,24 +1245,14 @@ function saveAliciaProfile() {
 
 function resetUserPhoto() {
     document.getElementById('inputUserPhoto').value = '';
-    document.getElementById('inputUserWin').value   = '';
-    document.getElementById('inputUserLoss').value  = '';
-    setImgSrc('userPhotoPreview',    DEFAULT_ASSETS.p);
-    setImgSrc('profileUserPreview',  DEFAULT_ASSETS.p);
-    setImgSrc('previewUserDefault',  DEFAULT_ASSETS.p);
-    setImgSrc('previewUserWin',      DEFAULT_ASSETS.pWin);
-    setImgSrc('previewUserLoss',     DEFAULT_ASSETS.pLoss);
-    setImgSrc('userStatePeview',     DEFAULT_ASSETS.p);
+    livePreviewUser();
 }
 
 function resetAliciaPhotos() {
     document.getElementById('inputAliciaDefault').value = '';
     document.getElementById('inputAliciaWin').value     = '';
     document.getElementById('inputAliciaLoss').value    = '';
-    setImgSrc('previewAliciaDefault', DEFAULT_ASSETS.a);
-    setImgSrc('previewAliciaWin',     DEFAULT_ASSETS.aWin);
-    setImgSrc('previewAliciaLoss',    DEFAULT_ASSETS.aLoss);
-    setImgSrc('rivalStatePeview',     DEFAULT_ASSETS.a);
+    livePreviewAlicia();
 }
 
 // ===========================================================================
@@ -1510,19 +1487,6 @@ function update() {
     if(uProgress>aProgress) faceEl.src=ASSETS.aLoss;
     else if(aProgress>uProgress+0.5) faceEl.src=ASSETS.aWin;
     else faceEl.src=ASSETS.a;
-    // User photo state switching
-    const uFaceEl=document.getElementById('dashUserAvatar');
-    if(uFaceEl){
-        if(uProgress>aProgress) uFaceEl.src=ASSETS.pWin||ASSETS.p;
-        else if(aProgress>uProgress+0.5) uFaceEl.src=ASSETS.pLoss||ASSETS.p;
-        else uFaceEl.src=ASSETS.p;
-    }
-    const uSP=document.getElementById('userStatePeview');
-    if(uSP){
-        if(uProgress>aProgress) uSP.src=ASSETS.pWin||ASSETS.p;
-        else if(aProgress>uProgress+0.5) uSP.src=ASSETS.pLoss||ASSETS.p;
-        else uSP.src=ASSETS.p;
-    }
 
     // Also update rival state preview in profile page
     setImgSrc('rivalStatePeview', faceEl.src);
@@ -1709,12 +1673,6 @@ function impB64() {
     }catch(e){alert("HASH INTEGRITY ERROR: Could not parse payload.");}
 }
 
-function formatAnchor(val) {
-    const h = Math.floor(val);
-    const m = Math.round((val % 1) * 60);
-    return String(h).padStart(2,'0') + ':' + String(m).padStart(2,'0');
-}
-
 function startRivalry() {
     const sub = document.getElementById('stSub').value.trim();
     if (!sub) { alert('Enter a subject name first.'); return; }
@@ -1730,11 +1688,6 @@ function startRivalry() {
     state.engine.start= Date.now();
     state.engine.uBase= state.u[sub]?.ch||0;
     state.engine.lastResetDay=getStudyDay(Date.now());
-    const anchorVal = parseFloat(document.getElementById('stAnchor')?.value);
-    if (!isNaN(anchorVal) && anchorVal >= 0 && anchorVal <= 23.5) {
-        state.anchorHour = anchorVal;
-        ANCHOR_HOUR = anchorVal;
-    }
     state.tick=Date.now();
     state.aliciaStats.dailyTotal=0; state.aliciaStats.activeHours=0;
     save(); show('dash');
@@ -1964,12 +1917,6 @@ function renderStratPage() {
     if(el('stGoal')&&state.rival.g)  el('stGoal').value=state.rival.g;
     if(el('stPace')&&state.rival.rate) el('stPace').value=(1/state.rival.rate).toFixed(1);
     if(el('stSpeed')&&state.engine.spd) el('stSpeed').value=state.engine.spd;
-    if(el('stAnchor')) {
-        const av = state.anchorHour !== undefined ? state.anchorHour : 3.5;
-        el('stAnchor').value = av;
-        const ap = document.getElementById('anchorPreview');
-        if(ap) ap.textContent = formatAnchor(av);
-    }
     if(el('rtSleep')) el('rtSleep').value=state.rt.slp.map(r=>`${d2t(r.s)}-${d2t(r.e)}`).join(',');
     if(el('rtMeal'))  el('rtMeal').value=state.rt.ml.map(d2t).join(', ');
     if(el('rtPers'))  el('rtPers').value=state.rt.bf.map(r=>`${d2t(r.s)}-${d2t(r.e)}`).join(',');
@@ -2011,13 +1958,14 @@ boot();
 const isAndroid = typeof Android !== 'undefined';
 
 // ── File picker for profile photos ──
-function pickPhoto(targetIds) {
-    // targetIds = comma-separated DOM image IDs to update after pick
+function pickPhoto(targetIds, inputId) {
+    // targetIds = image element IDs to update; inputId = URL input to also set
     if (isAndroid) {
-        Android.openImagePicker(JSON.stringify(targetIds));
+        Android.openImagePicker(JSON.stringify({ids: targetIds, inputId: inputId || null}));
     } else {
-        // fallback: prompt for URL
-        const url = prompt('Enter image URL:');
+        // web fallback: read from the associated input
+        const inp = inputId ? document.getElementById(inputId) : null;
+        const url = inp ? inp.value.trim() : null;
         if (url) targetIds.forEach(id => setImgSrc(id, url));
     }
 }
@@ -2026,8 +1974,8 @@ function pickPhoto(targetIds) {
 function onPhotoPicked(uriOrDataUrl, targetIdsJson) {
     try {
         const parsed = JSON.parse(targetIdsJson);
-        const ids = Array.isArray(parsed) ? parsed : parsed.ids;
-        const inputId = Array.isArray(parsed) ? null : parsed.inputId;
+        const ids = Array.isArray(parsed) ? parsed : (parsed.ids || []);
+        const inputId = Array.isArray(parsed) ? null : (parsed.inputId || null);
         ids.forEach(id => setImgSrc(id, uriOrDataUrl));
         if (inputId) {
             const inp = document.getElementById(inputId);
