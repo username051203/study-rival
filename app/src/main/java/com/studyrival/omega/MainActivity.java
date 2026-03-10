@@ -2,6 +2,7 @@ package com.studyrival.omega;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.webkit.*;
 import android.view.KeyEvent;
 import android.view.View;
@@ -45,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
             pendingFileImport = false;
             try {
                 InputStream is = getContentResolver().openInputStream(uri);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(is));
+                BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = reader.readLine()) != null) sb.append(line);
@@ -106,6 +107,26 @@ public class MainActivity extends AppCompatActivity {
         public void openFilePicker(String mimeType) {
             pendingFileImport = true;
             runOnUiThread(() -> filePickerLauncher.launch(mimeType));
+        }
+
+        @JavascriptInterface
+        public void writeFile(String filename, String content) {
+            try {
+                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File file = new File(dir, filename);
+                FileWriter fw = new FileWriter(file, false);
+                fw.write(content);
+                fw.close();
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Saved to Downloads/" + filename, Toast.LENGTH_LONG).show();
+                    webView.evaluateJavascript("onFileWritten('" + filename.replace("'", "\\'") + "');", null);
+                });
+            } catch (Exception e) {
+                runOnUiThread(() -> {
+                    Toast.makeText(MainActivity.this, "Save failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                    webView.evaluateJavascript("onFileWriteFailed('" + e.getMessage().replace("'", "\\'") + "');", null);
+                });
+            }
         }
 
         @JavascriptInterface
