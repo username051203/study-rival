@@ -983,18 +983,33 @@ function generateSchedule(skipSplitCheck, startDay){
 
   const schedule = {...preserved};
 
-  // Place pinned items first
+  // Place pinned items one by one, tracking cumulative hours per day.
+  // If adding an item would exceed the daily budget, don't place it yet —
+  // instead record it as a split opportunity so the modal fires.
+  const pinnedDayUsed = {};
+  const pinnedOverflow = []; // items that don't fit on their pinned day
   for(const item of pinned){
-    if(!schedule[item.pinDate]) schedule[item.pinDate] = [];
-    if(!schedule[item.pinDate].includes(item.id))
-      schedule[item.pinDate].push(item.id);
+    const d = item.pinDate;
+    const used = pinnedDayUsed[d] || 0;
+    const hrs  = itemTotalHrs(item);
+    if(!schedule[d]) schedule[d] = [];
+    if(used + hrs <= dailyHrs + 0.001){
+      // fits
+      if(!schedule[d].includes(item.id)) schedule[d].push(item.id);
+      pinnedDayUsed[d] = used + hrs;
+    } else {
+      // overflows — collect for split prompt
+      pinnedOverflow.push({ item, slotHrs: Math.max(0, dailyHrs - used), day: d });
+    }
   }
+  S._pinnedOverload = {}; // clear old badge data
 
   // Greedy bin-pack unpinned items day by day
   // For each day, compute hours already used by pinned items, then fill remaining
   let day = fromDay;
   let remaining = [...unpinned];
-  const splitOpportunities = [];
+  // Seed splitOpportunities with any pinned overflows so both get the same modal
+  const splitOpportunities = [...pinnedOverflow];
   const MAX_DAYS = 400;
   let safetyCounter = 0;
 
@@ -1265,10 +1280,12 @@ function archiveDay(dateStr){
   const boost = snap.boost ?? S.rival._boost ?? 1.0;
   const hrsUsed = snap.hrsUsed ?? S.rival._hrsWorked ?? 0;
   const budget = rtAvailableHrs();
+  const noData = uCh === 0 && parseFloat(aCh) === 0;
   S.history[dateStr]={
     userCh:uCh,
     aliciaCh:parseFloat(aCh.toFixed?aCh.toFixed(2):aCh),
-    win:uCh>=aCh, totalPasses, boost,
+    win: noData ? null : uCh >= aCh,
+    totalPasses, boost,
     hrsUsed:parseFloat((hrsUsed.toFixed?hrsUsed.toFixed(2):hrsUsed)), budget:parseFloat(budget.toFixed(2))
   };
   save();
@@ -1305,7 +1322,12 @@ function showDayReport(){
   document.getElementById('repBudget').textContent=hrsUsed.toFixed(1)+' / '+budget.toFixed(1)+'h';
 
   const res=document.getElementById('repResult');
-  if(uc>ac){
+  const noData = uc === 0 && ac === 0;
+  if(noData){
+    res.style.background='linear-gradient(135deg,#1a1a2e,#242a4a)';
+    res.style.color='var(--muted)'; res.style.border='2px solid var(--border)';
+    res.textContent='— NO ACTIVITY RECORDED —';
+  } else if(uc>ac){
     res.style.background='linear-gradient(135deg,#14532d,#166534)';
     res.style.color='#86efac'; res.style.border='2px solid #4ade80';
     res.textContent='🎯 DAY CLEARED — VICTORY ACHIEVED';
@@ -1600,18 +1622,32 @@ function renderDash(){
       const pct = totalCount?Math.round(doneCount/totalCount*100):0;
       const tname = topicName(item.subjectId,item.topicId);
       const cname = chapterName(item.subjectId,item.chapterId);
+      const totalItemHrs = itemTotalHrs(item).toFixed(1);
+      // Build sub-pass list
+      const spRows = item.passes.flatMap((p,pi)=>
+        p.subPasses.map((sp,si)=>{
+          const [bg,fg]=(PASS_COLOR[p.type]||'#333:#fff').split(':');
+          return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,0.04);">
+            <span style="width:14px;height:14px;border-radius:3px;border:2px solid ${sp.done?'var(--good)':'var(--border)'};background:${sp.done?'var(--good)':'transparent'};flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;font-size:0.5rem;">${sp.done?'✓':''}</span>
+            <span style="background:${bg};color:${fg};padding:1px 5px;border-radius:3px;font-size:0.55rem;font-weight:900;flex-shrink:0;">${PASS_ICON[p.type]}</span>
+            <span style="font-size:0.75rem;flex:1;color:${sp.done?'var(--good)':'var(--muted)'};">${sp.label}</span>
+            <span style="font-size:0.65rem;font-weight:900;color:var(--warn);background:#2a1a00;border:1px solid #7a4a00;padding:1px 6px;border-radius:3px;flex-shrink:0;">${sp.hrs||1}h</span>
+          </div>`;
+        })
+      ).join('');
       return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <div>
             <div style="font-size:0.82rem;font-weight:900;color:${done?'var(--good)':'var(--ink)'};">${done?'✓ ':''}${tname}</div>
-            <div style="font-size:0.65rem;color:var(--muted);">${cname} • ${item.passes.map(p=>PASS_ICON[p.type]).join(' ')}</div>
+            <div style="font-size:0.6rem;color:var(--muted);">${cname} • ${totalItemHrs}h total</div>
           </div>
           <div style="text-align:right;flex-shrink:0;">
             <div style="font-size:0.75rem;font-weight:900;color:${done?'var(--good)':'var(--warn)'};">${doneCount}/${totalCount}</div>
             <div style="font-size:0.6rem;color:var(--muted);">${pct}%</div>
           </div>
         </div>
-        <div class="rail" style="height:8px;margin-top:6px;"><div class="fill" style="width:${pct}%;background:${done?'var(--good)':'var(--accent)'};"></div></div>
+        <div class="rail" style="height:6px;margin-top:0;margin-bottom:8px;"><div class="fill" style="width:${pct}%;background:${done?'var(--good)':'var(--accent)'};"></div></div>
+        ${spRows}
       </div>`;
     }).join('');
   }
@@ -1833,7 +1869,11 @@ function renderArchiveDays(y,m){
   box.innerHTML=`<div class="drill-btn" onclick="renderArchiveMonths('${y}')" style="margin-bottom:16px;border-color:var(--border);background:var(--log-bg);font-size:0.65rem;padding:10px 14px;">← ${MONTHS[m]} ${y}</div>`+
     days.map(d=>{
       const h=S.history[d];
-      const tag=h.win?`<span class="tag tag-win">WIN</span>`:`<span class="tag tag-loss">LOSS</span>`;
+      const tag = h.win===null || h.win===undefined
+        ? `<span class="tag" style="background:#1a1a2e;color:var(--muted);border:1px solid var(--border);">—</span>`
+        : h.win
+          ? `<span class="tag tag-win">WIN</span>`
+          : `<span class="tag tag-loss">LOSS</span>`;
       return `<div class="drill-btn" onclick="drillSession('${d}')">${d} ${tag} <span style="color:var(--accent);font-size:0.7rem;">INSPECT →</span></div>`;
     }).join('');
 }
@@ -1887,11 +1927,16 @@ function drillSession(dayStr){
       return s+(sp?.hrs||0);
     },0);
     const gapVal=h.userCh-h.aliciaCh;
-    aB.innerHTML=`<div style="padding:14px;background:var(--log-bg);border-radius:10px;border:1px solid ${h.win?'var(--good)':'var(--bad)'};margin-bottom:14px;">
+    const noData = (h.userCh||0) === 0 && (h.aliciaCh||0) === 0;
+    const winColor = noData ? 'var(--border)' : h.win ? 'var(--good)' : 'var(--bad)';
+    aB.innerHTML=`<div style="padding:14px;background:var(--log-bg);border-radius:10px;border:1px solid ${winColor};margin-bottom:14px;">
       <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;">Day Result</div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
         <span style="font-size:0.75rem;color:var(--muted);">Outcome</span>
-        <span class="tag ${h.win?'tag-win':'tag-loss'}" style="font-size:0.75rem;">${h.win?'VICTORY':'DEFEAT'}</span>
+        ${noData
+          ? `<span class="tag" style="background:#1a1a2e;color:var(--muted);border:1px solid var(--border);">NO DATA</span>`
+          : `<span class="tag ${h.win?'tag-win':'tag-loss'}" style="font-size:0.75rem;">${h.win?'VICTORY':'DEFEAT'}</span>`
+        }
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:0.75rem;color:var(--muted);">Your passes</span>
