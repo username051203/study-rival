@@ -370,6 +370,7 @@ body{padding:0;}
     <input id="overwriteFromDate" type="date" style="width:100%;">
     <button onclick="overwriteSchedule()" class="bad-btn" style="width:100%;margin-top:12px;">🔄 Rebuild Future Schedule</button>
   </div>
+</div>
 
 <!-- ══════════════════════════════════════════════════════ LOG -->
 <div id="log" class="page">
@@ -1751,7 +1752,7 @@ function renderLog(){
               <input type="checkbox" ${sp.done?'checked':''} onchange="tickSubPass('${item.id}',${pi},${si},this.checked)" style="width:18px;height:18px;margin:0;padding:0;cursor:pointer;accent-color:var(--good);">
               <span style="background:${bg};color:${fg};padding:2px 6px;border-radius:4px;font-size:0.6rem;font-weight:900;flex-shrink:0;">${PASS_ICON[p.type]}</span>
               <span style="font-size:0.8rem;flex:1;color:${sp.done?'var(--good)':'var(--ink)'};">${sp.label}</span>
-              <span style="font-size:0.6rem;color:var(--muted);flex-shrink:0;" title="Alicia hrs">${sp.hrs||1}h</span>
+              <span style="font-size:0.68rem;font-weight:900;color:var(--warn);background:#2a1a00;border:1px solid #7a4a00;padding:2px 7px;border-radius:4px;flex-shrink:0;">${sp.hrs||1}h</span>
               <button onclick="renameSubPass('${item.id}',${pi},${si})" style="width:auto;padding:3px 8px;margin:0;font-size:0.6rem;" class="sec">✏️</button>
             </div>`;
           }).join('')
@@ -1850,17 +1851,30 @@ function drillSession(dayStr){
   if(!dayLogs.length){
     uB.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">No sub-pass logs for this day.</div>';
   } else {
-    uB.innerHTML=dayLogs.map(l=>{
+    const totalHrsDone = dayLogs.filter(l=>l.done).reduce((s,l)=>{
+      const it=getItem(l.itemId); const sp=it?.passes?.[l.passIdx]?.subPasses?.[l.spIdx];
+      return s+(sp?.hrs||0);
+    },0);
+    const doneCount=dayLogs.filter(l=>l.done).length;
+    const header=`<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:var(--log-bg);border-radius:8px;border:1px solid var(--border);margin-bottom:10px;">
+      <span style="font-size:0.65rem;color:var(--muted);font-weight:900;text-transform:uppercase;">Total logged</span>
+      <span style="font-size:0.82rem;font-weight:900;color:var(--good);">${doneCount} passes · ${totalHrsDone.toFixed(1)}h</span>
+    </div>`;
+    uB.innerHTML=header+dayLogs.map(l=>{
       const item=getItem(l.itemId);
       const sp=item?.passes?.[l.passIdx]?.subPasses?.[l.spIdx];
       const label=sp?.label||l.itemId;
+      const hrs=sp?.hrs;
       const t=new Date(l.iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
-      return `<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-        <div>
-          <div style="font-weight:900;color:var(--accent);font-size:0.85rem;">${label}</div>
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div style="flex:1;min-width:0;">
+          <div style="font-weight:900;color:var(--accent);font-size:0.82rem;">${label}</div>
           <div style="color:var(--muted);font-size:0.6rem;margin-top:2px;">${t}</div>
         </div>
-        <span class="tag ${l.done?'tag-win':'tag-loss'}">${l.done?'DONE':'UNDONE'}</span>
+        <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+          ${hrs!=null?`<span style="font-size:0.68rem;font-weight:900;color:var(--warn);background:#2a1a00;border:1px solid #7a4a00;padding:2px 7px;border-radius:4px;">${hrs}h</span>`:''}
+          <span class="tag ${l.done?'tag-win':'tag-loss'}">${l.done?'DONE':'UNDONE'}</span>
+        </div>
       </div>`;
     }).join('');
   }
@@ -1868,6 +1882,10 @@ function drillSession(dayStr){
   // History summary + Alicia schedule
   const h=S.history[dayStr];
   if(h){
+    const userStudyHrs = dayLogs.filter(l=>l.done).reduce((s,l)=>{
+      const it=getItem(l.itemId); const sp=it?.passes?.[l.passIdx]?.subPasses?.[l.spIdx];
+      return s+(sp?.hrs||0);
+    },0);
     const gapVal=h.userCh-h.aliciaCh;
     aB.innerHTML=`<div style="padding:14px;background:var(--log-bg);border-radius:10px;border:1px solid ${h.win?'var(--good)':'var(--bad)'};margin-bottom:14px;">
       <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;">Day Result</div>
@@ -1891,10 +1909,14 @@ function drillSession(dayStr){
         <span style="font-size:0.75rem;color:var(--muted);">Boost active</span>
         <span style="font-weight:900;color:#fb923c;">${h.boost.toFixed(2)}×</span>
       </div>`:''}
-      ${h.hrsUsed!=null?`<div style="display:flex;justify-content:space-between;align-items:center;">
+      ${h.hrsUsed!=null?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
         <span style="font-size:0.75rem;color:var(--muted);">Budget used</span>
         <span style="font-weight:900;color:var(--warn);">${h.hrsUsed}h / ${h.budget}h</span>
       </div>`:''}
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Your study time</span>
+        <span style="font-weight:900;color:var(--good);">${userStudyHrs.toFixed(1)}h</span>
+      </div>
     </div>`;
   } else {
     aB.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">No end-of-day data recorded.</div>';
