@@ -753,6 +753,23 @@ function loadState(){
   // Inject subjects: use saved customSyllabus if present, otherwise seed from MICRO
   if(!S.customSyllabus) S.customSyllabus = deepCloneSyllabus(MICRO);
   S.subjects = {'MICROBIOLOGY': S.customSyllabus};
+
+  // Recovery: completed items that were evicted from today's slot get re-added
+  // so your done passes are always visible in today's count
+  const today = todayStr();
+  const todaySlot = S.generatedSchedule[today] || [];
+  const todaySet = new Set(todaySlot);
+  let recovered = false;
+  for(const item of S.scheduleItems){
+    if(isItemComplete(item) && !todaySet.has(item.id)){
+      // Only recover if item was likely done today (has a log entry today)
+      const doneToday = (S.logs||[]).some(l=>{
+        try{ return l.itemId===item.id && new Date(l.iso).toISOString().slice(0,10)===today; }catch(e){ return false; }
+      });
+      if(doneToday){ todaySlot.push(item.id); todaySet.add(item.id); recovered=true; }
+    }
+  }
+  if(recovered){ S.generatedSchedule[today] = todaySlot; save(); }
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -937,22 +954,25 @@ function aliciaPassesFromHrs(items, hrsWorked){
 function generateSchedule(skipSplitCheck){
   const dailyHrs = S.engine.dailyHrs || 8;
   const today = todayStr();
+  const tomorrow = addDays(today, 1);
 
-  // Preserve past days exactly as they were
+  // Preserve past days AND today exactly as they were
+  // Today's items stay locked — completed ones remain visible until end of day
   const preserved = {};
   for(const [day, ids] of Object.entries(S.generatedSchedule)){
-    if(day < today) preserved[day] = ids;
+    if(day <= today) preserved[day] = ids;
   }
 
-  // Sort incomplete items by priority asc
+  // Only pack incomplete items that aren't already in today's slot
+  const todayIds = new Set(preserved[today] || []);
   const items = [...S.scheduleItems]
-    .filter(it => !isItemComplete(it))
+    .filter(it => !isItemComplete(it) && !todayIds.has(it.id))
     .sort((a,b) => (a.priority||50) - (b.priority||50));
 
   const schedule = {...preserved};
-  let day = today;
+  let day = tomorrow;
   let dayHrsUsed = 0;
-  const splitOpportunities = []; // {item, remaining, day}
+  const splitOpportunities = [];
 
   for(const item of items){
     const hrs = itemTotalHrs(item);
@@ -967,7 +987,6 @@ function generateSchedule(skipSplitCheck){
         if(dayHrsUsed >= dailyHrs){ day = addDays(day,1); dayHrsUsed = 0; }
         break;
       } else {
-        // gap detected — record split opportunity
         if(!skipSplitCheck && remaining >= 0.25){
           splitOpportunities.push({item, slotHrs: remaining, day});
         }
