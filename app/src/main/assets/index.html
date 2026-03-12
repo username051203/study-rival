@@ -358,9 +358,18 @@ body{padding:0;}
     <div id="subPassBuilder" style="margin-top:14px;"></div>
     <label>Priority (lower = sooner)</label>
     <input id="addPriority" type="number" min="1" value="50" style="width:100px;">
+    <label>Pin to specific date? <span style="font-weight:400;color:var(--muted);text-transform:none;letter-spacing:0;">(leave blank = auto-schedule)</span></label>
+    <input id="addPinDate" type="date" style="width:100%;">
     <button onclick="addTopicToSchedule()" class="good-btn" style="width:100%;margin-top:16px;">+ Add to Schedule</button>
   </div>
-</div>
+
+  <div class="card" style="border-color:var(--bad);">
+    <h3 style="margin:0 0 10px;font-size:0.85rem;text-transform:uppercase;color:var(--bad);">⚠️ Overwrite Schedule</h3>
+    <p style="font-size:0.7rem;color:var(--muted);margin:0 0 12px;">Clears all future day assignments and repacks everything from scratch. Today is preserved. Pinned dates are respected.</p>
+    <label>Rebuild starting from</label>
+    <input id="overwriteFromDate" type="date" style="width:100%;">
+    <button onclick="overwriteSchedule()" class="bad-btn" style="width:100%;margin-top:12px;">🔄 Rebuild Future Schedule</button>
+  </div>
 
 <!-- ══════════════════════════════════════════════════════ LOG -->
 <div id="log" class="page">
@@ -697,6 +706,7 @@ function mkDefault(){
     generatedSchedule: {},    // date → [itemId, ...]  (auto-generated)
     history: {},              // date → {userCh, aliciaCh, win}
     logs: [],                 // {itemId, subPassId, iso}
+    _snapshots: {},           // date → {aliciaCh, totalPasses, boost, hrsUsed}
     rival: { cur: 0, _hrsWorked: 0 },
     rt: { slp:[{s:23,e:6.5}], ml:[8.5,13,20], bf:[{s:17,e:18.5}] },
     engine: {
@@ -741,6 +751,7 @@ function loadState(){
       S.generatedSchedule= p.generatedSchedule|| {};
       S.history          = p.history          || {};
       S.logs             = p.logs             || [];
+      S._snapshots       = p._snapshots       || {};
       S.rt = p.rt ? {
         slp: p.rt.slp||[{s:23,e:6.5}],
         ml:  p.rt.ml ||[8.5,13,20],
@@ -942,67 +953,114 @@ function aliciaPassesFromHrs(items, hrsWorked){
 
 // ══════════════════════════════════════════════════════════════════════
 // SCHEDULE GENERATOR
-// How it works:
-//   1. Takes all incomplete schedule items, sorted by priority (lower = sooner).
-//   2. Fills days starting from today, fitting items into the daily hour budget.
-//   3. An item that is bigger than the daily budget gets its own day alone.
-//   4. Completed items are removed from future days (they stay in history).
-//   5. Past days that already exist are preserved as-is.
-// Alicia's chapter count is derived from how many hours she's worked today
-// vs the total hours of the items scheduled for today.
+//   - Pinned items go to their exact date
+//   - Unpinned items are packed greedily from startDay, filling each day
+//     as close to dailyHrs as possible (largest-fit-first within a day)
+//   - Today's slot is never touched (locked)
+//   - Past days are preserved as-is
 // ══════════════════════════════════════════════════════════════════════
-function generateSchedule(skipSplitCheck){
+function generateSchedule(skipSplitCheck, startDay){
   const dailyHrs = S.engine.dailyHrs || 8;
-  const today = todayStr();
-  const tomorrow = addDays(today, 1);
+  const today    = todayStr();
+  const fromDay  = startDay || addDays(today, 1);
 
-  // Preserve past days AND today exactly as they were
-  // Today's items stay locked — completed ones remain visible until end of day
+  // Preserve past + today
   const preserved = {};
   for(const [day, ids] of Object.entries(S.generatedSchedule)){
     if(day <= today) preserved[day] = ids;
   }
 
-  // Only pack incomplete items that aren't already in today's slot
+  // Split items into pinned vs unpinned (only incomplete, not already in today)
   const todayIds = new Set(preserved[today] || []);
-  const items = [...S.scheduleItems]
-    .filter(it => !isItemComplete(it) && !todayIds.has(it.id))
+  const incomplete = [...S.scheduleItems]
+    .filter(it => !isItemComplete(it) && !todayIds.has(it.id));
+
+  const pinned   = incomplete.filter(it => it.pinDate && it.pinDate >= fromDay);
+  const unpinned = incomplete
+    .filter(it => !it.pinDate)
     .sort((a,b) => (a.priority||50) - (b.priority||50));
 
   const schedule = {...preserved};
-  let day = tomorrow;
-  let dayHrsUsed = 0;
+
+  // Place pinned items first
+  for(const item of pinned){
+    if(!schedule[item.pinDate]) schedule[item.pinDate] = [];
+    if(!schedule[item.pinDate].includes(item.id))
+      schedule[item.pinDate].push(item.id);
+  }
+
+  // Greedy bin-pack unpinned items day by day
+  // For each day, compute hours already used by pinned items, then fill remaining
+  let day = fromDay;
+  let remaining = [...unpinned];
   const splitOpportunities = [];
+  const MAX_DAYS = 400;
+  let safetyCounter = 0;
 
-  for(const item of items){
-    const hrs = itemTotalHrs(item);
-    if(hrs === 0) continue;
+  while(remaining.length > 0 && safetyCounter++ < MAX_DAYS){
+    // How many hours are already pinned on this day?
+    const pinnedHrs = (schedule[day]||[])
+      .map(id=>getItem(id))
+      .filter(Boolean)
+      .reduce((s,it)=>s+(it.pinDate?itemTotalHrs(it):0), 0);
+    let slotLeft = dailyHrs - pinnedHrs;
+    if(slotLeft <= 0){ day = addDays(day,1); continue; }
 
-    while(true){
-      const remaining = dailyHrs - dayHrsUsed;
-      if(remaining >= hrs || dayHrsUsed === 0){
-        if(!schedule[day]) schedule[day] = [];
-        schedule[day].push(item.id);
-        dayHrsUsed += hrs;
-        if(dayHrsUsed >= dailyHrs){ day = addDays(day,1); dayHrsUsed = 0; }
-        break;
-      } else {
-        if(!skipSplitCheck && remaining >= 0.25){
-          splitOpportunities.push({item, slotHrs: remaining, day});
+    if(!schedule[day]) schedule[day] = [];
+
+    // Greedy: try to fill slotLeft — pick items that fit, smallest gap first
+    let filled = true;
+    while(filled && slotLeft > 0.01 && remaining.length > 0){
+      filled = false;
+      // Find the largest item that fits in slotLeft (greedy largest-fit)
+      let best = -1;
+      for(let i=0;i<remaining.length;i++){
+        const h = itemTotalHrs(remaining[i]);
+        if(h <= slotLeft + 0.001){
+          if(best === -1 || h > itemTotalHrs(remaining[best])) best = i;
         }
-        day = addDays(day,1); dayHrsUsed = 0;
+      }
+      if(best >= 0){
+        const item = remaining.splice(best,1)[0];
+        schedule[day].push(item.id);
+        slotLeft -= itemTotalHrs(item);
+        filled = true;
       }
     }
+
+    // If still have items but nothing fits, record split opportunity
+    if(!skipSplitCheck && remaining.length > 0 && slotLeft >= 0.25){
+      const nextItem = remaining[0];
+      splitOpportunities.push({item:nextItem, slotHrs:slotLeft, day});
+    }
+
+    day = addDays(day, 1);
   }
 
   S.generatedSchedule = schedule;
   save();
-  logSys('Schedule regenerated — '+items.length+' items across days');
+  logSys('Schedule regenerated — '+incomplete.length+' items packed');
 
-  // If gaps found, prompt user
   if(!skipSplitCheck && splitOpportunities.length > 0){
     showSplitModal(splitOpportunities);
   }
+}
+
+function overwriteSchedule(){
+  const fromDate = document.getElementById('overwriteFromDate').value || addDays(todayStr(),1);
+  if(fromDate <= todayStr()){
+    notify('Cannot overwrite today or past days.','warn'); return;
+  }
+  // Clear all future days
+  const today = todayStr();
+  for(const day of Object.keys(S.generatedSchedule)){
+    if(day > today) delete S.generatedSchedule[day];
+  }
+  // Also clear pinDates on items so they get re-packed (optional: keep them)
+  // We keep pinDates — user set them intentionally
+  generateSchedule(false, fromDate);
+  renderActive();
+  notify('Schedule rebuilt from '+fromDate,'good');
 }
 
 function showSplitModal(opportunities){
@@ -1114,9 +1172,22 @@ function userChaptersTodayCount(){
 function tickRival(){
   const today = todayStr();
   if(S.engine.lastResetDay !== today){
-    if(S.engine.lastResetDay && S.engine.lastResetDay < today) archiveDay(S.engine.lastResetDay);
+    const prevDay = S.engine.lastResetDay;
+    if(prevDay && prevDay < today){
+      // Snapshot end-of-day data for prevDay BEFORE resetting
+      if(!S._snapshots) S._snapshots={};
+      S._snapshots[prevDay]={
+        aliciaCh: S.rival.cur,
+        totalPasses: todayItems().reduce((s,it)=>s+itemTotalCount(it),0),
+        boost: S.rival._boost||1.0,
+        hrsUsed: S.rival._hrsWorked||0
+      };
+      archiveDay(prevDay);
+    }
     S.engine.lastResetDay = today;
     S.rival.cur = 0;
+    S.rival._hrsWorked = 0;
+    S.rival._boost = 1.0;
     logSys('NEW DAY → '+today);
     save();
   }
@@ -1180,17 +1251,26 @@ function aliciaChapterCount(hrsWorked){
 }
 
 function archiveDay(dateStr){
-  const uc = userChaptersTodayCount();
-  const ac = S.rival.cur;
-  const totalPasses = todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
-  const boost = S.rival._boost||1.0;
+  // Snapshot sub-pass counts for the given dateStr from the tick logs
+  // userCh = all done ticks on that date; aliciaCh = last known rival.cur snapshot
+  const uCh = (S.logs||[]).filter(l=>{
+    try{ return l.done && new Date(l.iso).toISOString().slice(0,10)===dateStr; }catch(e){ return false; }
+  }).length;
+  // Alicia snapshot stored per-day in _snapshots
+  if(!S._snapshots) S._snapshots={};
+  const snap = S._snapshots[dateStr]||{};
+  const aCh = snap.aliciaCh ?? S.rival.cur ?? 0;
+  const totalPasses = snap.totalPasses ?? 0;
+  const boost = snap.boost ?? S.rival._boost ?? 1.0;
+  const hrsUsed = snap.hrsUsed ?? S.rival._hrsWorked ?? 0;
   const budget = rtAvailableHrs();
-  const hrsUsed = S.rival._hrsWorked||0;
   S.history[dateStr]={
-    userCh:uc, aliciaCh:parseFloat(ac.toFixed(2)),
-    win:uc>=ac, totalPasses, boost,
-    hrsUsed:parseFloat(hrsUsed.toFixed(2)), budget:parseFloat(budget.toFixed(2))
+    userCh:uCh,
+    aliciaCh:parseFloat(aCh.toFixed?aCh.toFixed(2):aCh),
+    win:uCh>=aCh, totalPasses, boost,
+    hrsUsed:parseFloat((hrsUsed.toFixed?hrsUsed.toFixed(2):hrsUsed)), budget:parseFloat(budget.toFixed(2))
   };
+  save();
 }
 
 let _lastEod='';
@@ -1200,12 +1280,17 @@ function checkEndOfDay(){
   if(Math.abs(h-anchorHr())<(1/60) && _lastEod!==today){ _lastEod=today; showDayReport(); }
 }
 function showDayReport(){
-  const uc=userChaptersTodayCount(), ac=S.rival.cur;
-  const totalPasses=todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
-  const gap=uc-ac;
-  const boost=S.rival._boost||1.0;
-  const hrsUsed=S.rival._hrsWorked||0;
-  const budget=rtAvailableHrs();
+  const dateStr = todayStr();
+  // userCh = done ticks logged today
+  const uc = (S.logs||[]).filter(l=>{
+    try{ return l.done && new Date(l.iso).toISOString().slice(0,10)===dateStr; }catch(e){ return false; }
+  }).length;
+  const ac = S.rival.cur;
+  const totalPasses = todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
+  const gap = uc - ac;
+  const boost = S.rival._boost||1.0;
+  const hrsUsed = S.rival._hrsWorked||0;
+  const budget = rtAvailableHrs();
 
   document.getElementById('reportDate').textContent=fmtDate(todayStr());
   document.getElementById('repUserCh').textContent=uc;
@@ -1370,10 +1455,11 @@ function addTopicToSchedule(){
   // Count existing rounds for this topic (for part label)
   const roundNum = S.scheduleItems.filter(x=>x.topicId===topicId).length + 1;
   const priority = parseInt(document.getElementById('addPriority').value)||50;
+  const pinDate  = document.getElementById('addPinDate').value || null;
 
   S.scheduleItems.push({
     id: `item_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
-    subjectId, chapterId, topicId, priority, passes,
+    subjectId, chapterId, topicId, priority, passes, pinDate,
     part: roundNum
   });
   generateSchedule();
@@ -1552,6 +1638,13 @@ function renderSchedule(){
   // build the dynamic sub-pass UI if not yet built
   rebuildSubPassBuilder();
 
+  // Pre-fill date pickers
+  const tomorrow = addDays(todayStr(),1);
+  const pinEl = document.getElementById('addPinDate');
+  if(pinEl && !pinEl.value) pinEl.value = '';
+  const owEl = document.getElementById('overwriteFromDate');
+  if(owEl && !owEl.value) owEl.value = tomorrow;
+
   // Summary bar
   const summBar = document.getElementById('schedSummaryBar');
   if(summBar){
@@ -1595,10 +1688,11 @@ function renderSchedule(){
         const dc=itemDoneCount(item), tc=itemTotalCount(item);
         const pct=tc?Math.round(dc/tc*100):0;
         const partLabel = item.part>1 ? ` <span style="font-size:0.6rem;color:var(--warn);background:#2a1a00;padding:1px 5px;border-radius:3px;border:1px solid var(--warn);">P${item.part}</span>` : '';
+        const pinLabel  = item.pinDate ? ` <span style="font-size:0.6rem;color:#a78bfa;background:#1e1a2e;padding:1px 5px;border-radius:3px;border:1px solid #7c3aed;">📌</span>` : '';
         return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
           <div style="display:flex;justify-content:space-between;align-items:center;">
             <div style="flex:1;min-width:0;">
-              <span style="font-size:0.82rem;color:${done?'var(--good)':'var(--ink)'};">${done?'✓ ':''}${topicName(item.subjectId,item.topicId)}</span>${partLabel}
+              <span style="font-size:0.82rem;color:${done?'var(--good)':'var(--ink)'};">${done?'✓ ':''}${topicName(item.subjectId,item.topicId)}</span>${partLabel}${pinLabel}
               <span style="font-size:0.65rem;color:var(--muted);margin-left:6px;">${chapterName(item.subjectId,item.chapterId)}</span>
             </div>
             <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -1809,20 +1903,23 @@ function drillSession(dayStr){
   // Alicia's schedule for the day
   const rt=S.rt||{slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
   let events=[];
-  rt.slp.forEach(s=>events.push({s:s.s<3.5?s.s+24:s.s,e:s.e<3.5?s.e+24:s.e,l:'SLEEP'}));
-  rt.ml.forEach(m=>events.push({s:m<3.5?m+24:m,e:(m+0.75)<3.5?m+0.75+24:m+0.75,l:'MEAL'}));
-  rt.bf.forEach(b=>events.push({s:b.s<3.5?b.s+24:b.s,e:b.e<3.5?b.e+24:b.e,l:'BUFFER'}));
+  rt.slp.forEach(r=>events.push({s:r.s, e:r.e, l:'SLEEP'}));
+  rt.ml.forEach(m=>events.push({s:m, e:m+0.75, l:'MEAL'}));
+  rt.bf.forEach(r=>events.push({s:r.s, e:r.e, l:'BUFFER'}));
+  // Sort by start hour, handle overnight by normalising to 0-24 window starting at 0
   events.sort((a,b)=>a.s-b.s);
-  let cur=3.5, schedHTML=`<div style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border);">
+  let schedHTML=`<div style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border);">
     <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;letter-spacing:1px;">ALICIA'S DAILY SCHEDULE</div>`;
+  let cur=0;
   events.forEach(ev=>{
-    if(ev.s>cur) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur)} – ${d2t(ev.s)}</span><span class="tag tag-study">STUDY</span></div>`;
-    schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(ev.s)} – ${d2t(ev.e)}</span><span class="tag tag-rest">${ev.l}</span></div>`;
-    cur=ev.e;
+    const s=ev.s, e=ev.e<ev.s?ev.e+24:ev.e; // handle overnight
+    if(s>cur) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur%24)} – ${d2t(s%24)}</span><span class="tag tag-study">STUDY</span></div>`;
+    schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(s%24)} – ${d2t(e%24)}</span><span class="tag tag-rest">${ev.l}</span></div>`;
+    cur=e;
   });
-  if(cur<27.5) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur)} – ${d2t(3.5)}</span><span class="tag tag-study">STUDY</span></div>`;
+  if(cur<24) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur%24)} – 24:00</span><span class="tag tag-study">STUDY</span></div>`;
   schedHTML+='</div>';
-  aB.innerHTML+=(h?'':'')+schedHTML;
+  aB.innerHTML+= schedHTML;
 
   show('drill');
 }
@@ -1994,7 +2091,7 @@ function exportBackup(){
     const data=LZString.compressToBase64(JSON.stringify({
       scheduleItems:S.scheduleItems, generatedSchedule:S.generatedSchedule,
       history:S.history, logs:S.logs, rival:S.rival,
-      engine:S.engine, profiles:S.profiles, rt:S.rt
+      engine:S.engine, profiles:S.profiles, rt:S.rt, _snapshots:S._snapshots||{}
     }));
     const fname=`studyrival_backup_${todayStr()}.txt`;
     if(typeof Android!=='undefined'&&Android.writeFile){ Android.writeFile(fname,data); }
@@ -2007,7 +2104,7 @@ function onFileWritten(f){ document.getElementById('exportStatus').textContent='
 function onFileWriteFailed(m){ document.getElementById('exportStatus').textContent='✗ Failed: '+m; notify('Write failed.','bad'); }
 function importFromFile(evt){ const f=evt.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>impStr(e.target.result); r.readAsText(f); evt.target.value=''; }
 function onFileImported(c){ impStr(c); }
-function exportToField(){ document.getElementById('syncField').value=LZString.compressToBase64(JSON.stringify({scheduleItems:S.scheduleItems,generatedSchedule:S.generatedSchedule,history:S.history,logs:S.logs,rival:S.rival,engine:S.engine,profiles:S.profiles,rt:S.rt})); }
+function exportToField(){ document.getElementById('syncField').value=LZString.compressToBase64(JSON.stringify({scheduleItems:S.scheduleItems,generatedSchedule:S.generatedSchedule,history:S.history,logs:S.logs,rival:S.rival,engine:S.engine,profiles:S.profiles,rt:S.rt,_snapshots:S._snapshots||{}})); }
 function importFromField(){ impStr(document.getElementById('syncField').value); }
 function impStr(raw){
   try{
@@ -2018,6 +2115,7 @@ function impStr(raw){
     if(p.logs)      S.logs      = p.logs;
     if(p.rival)     S.rival     = {...mkDefault().rival,...p.rival};
     if(p.engine)    S.engine    = {...mkDefault().engine,...p.engine,...{passDurations:{...mkDefault().engine.passDurations,...(p.engine.passDurations||{})}}};
+    if(p._snapshots) S._snapshots = p._snapshots;
     if(p.profiles)  S.profiles  = {user:{...mkDefault().profiles.user,...p.profiles.user},alicia:{...mkDefault().profiles.alicia,...p.profiles.alicia}};
     if(p.rt) S.rt = { slp:p.rt.slp||[{s:23,e:6.5}], ml:p.rt.ml||[8.5,13,20], bf:p.rt.bf||[{s:17,e:18.5}] };
     S.engine.dailyHrs = rtAvailableHrs();
