@@ -103,6 +103,20 @@ td{padding:10px;font-size:0.82rem;border-bottom:1px solid var(--border);}
 /* Sync */
 .sync-btn{background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;padding:14px;}
 
+/* Chronicle drill buttons */
+.drill-btn{background:#1a1f3d;padding:18px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.2);transition:all 0.2s ease;}
+.drill-btn:hover{border-color:var(--accent);background:#1f264d;transform:translateY(-2px);}
+.drill-btn:active{transform:scale(0.98);}
+.tag-study{background:#166534;color:#4ade80;}
+.tag-rest{background:#7f1d1d;color:#f87171;}
+
+/* Day report details */
+.report-details{border-top:1px solid var(--border);padding-top:15px;margin-top:5px;}
+.detail-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.detail-row:last-child{border-bottom:none;}
+.detail-label{font-size:0.72rem;color:var(--muted);font-weight:700;}
+.detail-value{font-size:0.82rem;font-weight:900;}
+
 /* ── Adaptive layout: card floats with breathing room on larger screens ── */
 body{padding:0;}
 .page{padding:16px;max-width:600px;margin:0 auto;}
@@ -168,14 +182,43 @@ body{padding:0;}
 <!-- ══════════════════════════════════════════════════════ DASHBOARD -->
 <div id="dash" class="page active">
   <div id="dayReportCard" class="card day-report-card" style="display:none;">
-    <button class="close-report" onclick="document.getElementById('dayReportCard').style.display='none'">×</button>
+    <button class="close-report" onclick="closeDayReport()">×</button>
     <h2 style="margin-top:0;color:var(--accent);text-align:center;text-transform:uppercase;letter-spacing:2px">📊 End of Day Report</h2>
-    <div id="reportDate" style="text-align:center;color:var(--muted);font-size:0.8rem;margin-bottom:18px;font-weight:700"></div>
+    <div id="reportDate" style="text-align:center;color:var(--muted);font-size:0.8rem;margin-bottom:20px;font-weight:700"></div>
     <div class="report-grid">
-      <div class="report-stat"><div class="report-label">Your Chapters</div><div id="repUserCh" class="report-value" style="color:var(--good)">0</div></div>
-      <div class="report-stat"><div class="report-label">Alicia Chapters</div><div id="repAliciaCh" class="report-value" style="color:var(--accent)">0</div></div>
+      <div class="report-stat">
+        <div class="report-label">Your Passes</div>
+        <div id="repUserCh" class="report-value" style="color:var(--good)">0</div>
+        <div class="report-label">completed</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-label">Alicia Passes</div>
+        <div id="repAliciaCh" class="report-value" style="color:var(--accent)">0.0</div>
+        <div class="report-label">simulated</div>
+      </div>
     </div>
     <div id="repResult" class="report-result"></div>
+    <div class="report-details">
+      <div class="detail-row">
+        <span class="detail-label">Passes Scheduled Today</span>
+        <span id="repGoal" class="detail-value" style="color:var(--warn)">--</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Pass Gap</span>
+        <span id="repGap" class="detail-value">--</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Alicia Boost Active</span>
+        <span id="repBoost" class="detail-value">--</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Study Budget Used</span>
+        <span id="repBudget" class="detail-value">--</span>
+      </div>
+    </div>
+    <div style="margin-top:20px;font-size:0.65rem;color:var(--muted);text-align:center;font-style:italic;border-top:1px solid var(--border);padding-top:14px;">
+      Protocol Omega — New cycle begins at anchor hour
+    </div>
   </div>
 
   <!-- Main status card -->
@@ -381,8 +424,24 @@ Virology, DNA Virus Pt 1;"></textarea>
 
 <div id="archive" class="page">
   <div class="card">
-    <h2 style="margin:0 0 16px;font-size:1rem;text-transform:uppercase;">📂 Chronicle Archive</h2>
-    <div id="archiveBox"></div>
+    <h2 style="margin:0 0 4px;font-size:1rem;text-transform:uppercase;">📂 Chronicle Archive</h2>
+    <div style="font-size:0.6rem;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Temporal Records</div>
+    <div id="chronicleBox"></div>
+  </div>
+</div>
+
+<div id="drill" class="page">
+  <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;">
+    <button onclick="nav('archive')" style="width:auto;padding:10px 20px;margin:0;background:var(--border);color:white;font-size:0.75rem;flex:1;">← Return</button>
+  </div>
+  <div id="drillDate" style="font-weight:900;font-size:1.2rem;margin-bottom:16px;color:var(--accent);letter-spacing:1px;"></div>
+  <div class="card">
+    <label>Your Sub-Pass Log</label>
+    <div id="drillUser" style="margin-top:10px;"></div>
+  </div>
+  <div class="card">
+    <label>Alicia Logic Path</label>
+    <div id="drillAlicia" style="font-size:0.75rem;margin-top:10px;"></div>
   </div>
 </div>
 
@@ -559,7 +618,7 @@ Virology, DNA Virus Pt 1;"></textarea>
     <h2 style="margin:0 0 16px;font-size:1rem;text-transform:uppercase;">💾 Kernel Sync</h2>
     <div id="exportStatus" style="font-size:0.75rem;color:var(--muted);margin-bottom:14px;min-height:20px;"></div>
     <button onclick="exportBackup()" style="background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;width:100%;margin-top:0;">💾 Save Backup to Downloads</button>
-    <button onclick="document.getElementById('importFilePick').click()" style="background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;width:100%;margin-top:10px;">📂 Pick Backup File</button>
+    <label for="importFilePick" style="display:block;width:100%;margin-top:10px;padding:14px;border-radius:8px;border:1px solid #3a5a9a;background:linear-gradient(135deg,#1a2a4d,#0f1a35);color:#90b8ff;font-size:0.8rem;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📂 Pick Backup File</label>
     <input id="importFilePick" type="file" accept=".txt" style="display:none;" onchange="importFromFile(event)">
     <details style="margin-top:16px;">
       <summary style="font-size:0.7rem;color:var(--muted);cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Manual String</summary>
@@ -1103,8 +1162,16 @@ function aliciaChapterCount(hrsWorked){
 
 function archiveDay(dateStr){
   const uc = userChaptersTodayCount();
-  const ac = Math.round(S.rival.cur);
-  if(!S.history[dateStr]) S.history[dateStr]={userCh:uc, aliciaCh:ac, win:uc>=ac};
+  const ac = S.rival.cur;
+  const totalPasses = todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
+  const boost = S.rival._boost||1.0;
+  const budget = rtAvailableHrs();
+  const hrsUsed = S.rival._hrsWorked||0;
+  S.history[dateStr]={
+    userCh:uc, aliciaCh:parseFloat(ac.toFixed(2)),
+    win:uc>=ac, totalPasses, boost,
+    hrsUsed:parseFloat(hrsUsed.toFixed(2)), budget:parseFloat(budget.toFixed(2))
+  };
 }
 
 let _lastEod='';
@@ -1114,16 +1181,45 @@ function checkEndOfDay(){
   if(Math.abs(h-anchorHr())<(1/60) && _lastEod!==today){ _lastEod=today; showDayReport(); }
 }
 function showDayReport(){
-  const uc=userChaptersTodayCount(), ac=Math.round(S.rival.cur);
+  const uc=userChaptersTodayCount(), ac=S.rival.cur;
+  const totalPasses=todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
+  const gap=uc-ac;
+  const boost=S.rival._boost||1.0;
+  const hrsUsed=S.rival._hrsWorked||0;
+  const budget=rtAvailableHrs();
+
   document.getElementById('reportDate').textContent=fmtDate(todayStr());
   document.getElementById('repUserCh').textContent=uc;
-  document.getElementById('repAliciaCh').textContent=ac;
+  document.getElementById('repAliciaCh').textContent=ac.toFixed(1);
+  document.getElementById('repGoal').textContent=totalPasses+' passes';
+  const gapEl=document.getElementById('repGap');
+  gapEl.textContent=(gap>=0?'+':'')+gap.toFixed(1)+' passes';
+  gapEl.style.color=gap>=0?'var(--good)':'var(--bad)';
+  document.getElementById('repBoost').textContent=boost>=1.15?boost.toFixed(2)+'× (ACTIVE)':'None';
+  document.getElementById('repBoost').style.color=boost>=1.15?'#fb923c':'var(--muted)';
+  document.getElementById('repBudget').textContent=hrsUsed.toFixed(1)+' / '+budget.toFixed(1)+'h';
+
   const res=document.getElementById('repResult');
-  if(uc>ac){res.style.background='#14532d';res.style.color='#86efac';res.textContent='🏆 YOU WIN';}
-  else if(uc<ac){res.style.background='#7f1d1d';res.style.color='#fca5a5';res.textContent='💀 DEFEAT';}
-  else{res.style.background='#1a1a2e';res.style.color='#fbbf24';res.textContent='⚖️ TIED';}
+  if(uc>ac){
+    res.style.background='linear-gradient(135deg,#14532d,#166534)';
+    res.style.color='#86efac'; res.style.border='2px solid #4ade80';
+    res.textContent='🎯 DAY CLEARED — VICTORY ACHIEVED';
+  } else if(uc<ac){
+    res.style.background='linear-gradient(135deg,#7f1d1d,#991b1b)';
+    res.style.color='#fca5a5'; res.style.border='2px solid #f87171';
+    res.textContent='⚠️ KERNEL DEFICIT — DEFEAT ACCEPTED';
+  } else {
+    res.style.background='linear-gradient(135deg,#1e3a8a,#1e40af)';
+    res.style.color='#93c5fd'; res.style.border='2px solid #5c6cff';
+    res.textContent='⚖️ PERFECT TIE — STANDOFF';
+  }
   document.getElementById('dayReportCard').style.display='block';
   archiveDay(todayStr()); save();
+  setTimeout(()=>{ const c=document.getElementById('dayReportCard'); if(c.style.display!=='none') c.style.opacity='0.5'; },25000);
+}
+function closeDayReport(){
+  const c=document.getElementById('dayReportCard');
+  c.style.opacity='1'; c.style.display='none';
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1137,8 +1233,7 @@ function tickSubPass(itemId, passIdx, spIdx, val){
   save();
   const sp = item.passes[passIdx].subPasses[spIdx];
   logSys(`${val?'✓':'✗'} ${sp.label}`);
-  // if this completes the item, regenerate schedule (removes it from future days)
-  if(isItemComplete(item)){ generateSchedule(); }
+  // NOTE: no auto-regenerate on tick — today's schedule stays stable until manual ⟳ Regen
   renderActive();
 }
 
@@ -1605,17 +1700,112 @@ function renderSyllabus(){
 }
 
 function renderArchive(){
-  const box=document.getElementById('archiveBox');
-  const days=Object.keys(S.history).sort().reverse();
-  if(!days.length){box.innerHTML='<div style="color:var(--muted);font-size:0.85rem;">No history yet.</div>';return;}
-  box.innerHTML=`<table><thead><tr><th>Date</th><th>You</th><th>Alicia</th><th>Result</th></tr></thead><tbody>
-    ${days.map(d=>{const h=S.history[d];return `<tr>
-      <td style="color:var(--muted);">${fmtDate(d)}</td>
-      <td style="color:var(--good);font-weight:900;">${h.userCh}</td>
-      <td style="color:var(--accent);font-weight:900;">${h.aliciaCh}</td>
-      <td><span class="tag ${h.win?'tag-win':'tag-loss'}">${h.win?'WIN':'LOSS'}</span></td>
-    </tr>`}).join('')}
-  </tbody></table>`;
+  const box=document.getElementById('chronicleBox');
+  const ys=[...new Set(Object.keys(S.history).map(d=>d.slice(0,4)))].sort().reverse();
+  if(!ys.length){box.innerHTML='<div style="color:var(--muted);text-align:center;padding:30px;font-size:0.85rem;">NO CHRONICLES DETECTED</div>';return;}
+  box.innerHTML=ys.map(y=>`<div class="drill-btn" onclick="renderArchiveMonths('${y}')">YEAR: ${y} <span style="color:var(--accent);">VIEW →</span></div>`).join('');
+}
+function renderArchiveMonths(y){
+  const MONTHS=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const box=document.getElementById('chronicleBox');
+  const ms=[...new Set(Object.keys(S.history).filter(d=>d.startsWith(y)).map(d=>parseInt(d.slice(5,7))-1))].sort((a,b)=>b-a);
+  box.innerHTML=`<div class="drill-btn" onclick="renderArchive()" style="margin-bottom:16px;border-color:var(--border);background:var(--log-bg);font-size:0.65rem;padding:10px 14px;">← ALL YEARS</div>`+
+    ms.map(m=>`<div class="drill-btn" onclick="renderArchiveDays('${y}',${m})">${MONTHS[m]} ${y} <span style="color:var(--accent);">OPEN →</span></div>`).join('');
+}
+function renderArchiveDays(y,m){
+  const MONTHS=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const box=document.getElementById('chronicleBox');
+  const days=Object.keys(S.history).filter(d=>{const dt=new Date(d);return dt.getFullYear()===parseInt(y)&&dt.getMonth()===m;}).sort().reverse();
+  box.innerHTML=`<div class="drill-btn" onclick="renderArchiveMonths('${y}')" style="margin-bottom:16px;border-color:var(--border);background:var(--log-bg);font-size:0.65rem;padding:10px 14px;">← ${MONTHS[m]} ${y}</div>`+
+    days.map(d=>{
+      const h=S.history[d];
+      const tag=h.win?`<span class="tag tag-win">WIN</span>`:`<span class="tag tag-loss">LOSS</span>`;
+      return `<div class="drill-btn" onclick="drillSession('${d}')">${d} ${tag} <span style="color:var(--accent);font-size:0.7rem;">INSPECT →</span></div>`;
+    }).join('');
+}
+
+let _currentDrillDay='';
+function drillSession(dayStr){
+  _currentDrillDay=dayStr;
+  document.getElementById('drillDate').textContent=dayStr.toUpperCase();
+  const uB=document.getElementById('drillUser'), aB=document.getElementById('drillAlicia');
+
+  // User sub-pass log for this day
+  const dayLogs=S.logs.filter(l=>{
+    try{ return new Date(l.iso).toISOString().slice(0,10)===dayStr; }catch(e){ return false; }
+  });
+  if(!dayLogs.length){
+    uB.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">No sub-pass logs for this day.</div>';
+  } else {
+    uB.innerHTML=dayLogs.map(l=>{
+      const item=getItem(l.itemId);
+      const sp=item?.passes?.[l.passIdx]?.subPasses?.[l.spIdx];
+      const label=sp?.label||l.itemId;
+      const t=new Date(l.iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+      return `<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:900;color:var(--accent);font-size:0.85rem;">${label}</div>
+          <div style="color:var(--muted);font-size:0.6rem;margin-top:2px;">${t}</div>
+        </div>
+        <span class="tag ${l.done?'tag-win':'tag-loss'}">${l.done?'DONE':'UNDONE'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // History summary + Alicia schedule
+  const h=S.history[dayStr];
+  if(h){
+    const gapVal=h.userCh-h.aliciaCh;
+    aB.innerHTML=`<div style="padding:14px;background:var(--log-bg);border-radius:10px;border:1px solid ${h.win?'var(--good)':'var(--bad)'};margin-bottom:14px;">
+      <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;">Day Result</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Outcome</span>
+        <span class="tag ${h.win?'tag-win':'tag-loss'}" style="font-size:0.75rem;">${h.win?'VICTORY':'DEFEAT'}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Your passes</span>
+        <span style="font-weight:900;color:var(--good);">${h.userCh}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Alicia passes</span>
+        <span style="font-weight:900;color:var(--accent);">${(h.aliciaCh||0).toFixed?h.aliciaCh.toFixed(1):h.aliciaCh}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Pass gap</span>
+        <span style="font-weight:900;color:${gapVal>=0?'var(--good)':'var(--bad)'};">${gapVal>=0?'+':''}${gapVal.toFixed?gapVal.toFixed(1):gapVal}</span>
+      </div>
+      ${h.boost&&h.boost>1?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Boost active</span>
+        <span style="font-weight:900;color:#fb923c;">${h.boost.toFixed(2)}×</span>
+      </div>`:''}
+      ${h.hrsUsed!=null?`<div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.75rem;color:var(--muted);">Budget used</span>
+        <span style="font-weight:900;color:var(--warn);">${h.hrsUsed}h / ${h.budget}h</span>
+      </div>`:''}
+    </div>`;
+  } else {
+    aB.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">No end-of-day data recorded.</div>';
+  }
+
+  // Alicia's schedule for the day
+  const rt=S.rt||{slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  let events=[];
+  rt.slp.forEach(s=>events.push({s:s.s<3.5?s.s+24:s.s,e:s.e<3.5?s.e+24:s.e,l:'SLEEP'}));
+  rt.ml.forEach(m=>events.push({s:m<3.5?m+24:m,e:(m+0.75)<3.5?m+0.75+24:m+0.75,l:'MEAL'}));
+  rt.bf.forEach(b=>events.push({s:b.s<3.5?b.s+24:b.s,e:b.e<3.5?b.e+24:b.e,l:'BUFFER'}));
+  events.sort((a,b)=>a.s-b.s);
+  let cur=3.5, schedHTML=`<div style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border);">
+    <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;letter-spacing:1px;">ALICIA'S DAILY SCHEDULE</div>`;
+  events.forEach(ev=>{
+    if(ev.s>cur) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur)} – ${d2t(ev.s)}</span><span class="tag tag-study">STUDY</span></div>`;
+    schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(ev.s)} – ${d2t(ev.e)}</span><span class="tag tag-rest">${ev.l}</span></div>`;
+    cur=ev.e;
+  });
+  if(cur<27.5) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur)} – ${d2t(3.5)}</span><span class="tag tag-study">STUDY</span></div>`;
+  schedHTML+='</div>';
+  aB.innerHTML+=(h?'':'')+schedHTML;
+
+  show('drill');
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1810,6 +2000,8 @@ function impStr(raw){
     if(p.rival)     S.rival     = {...mkDefault().rival,...p.rival};
     if(p.engine)    S.engine    = {...mkDefault().engine,...p.engine,...{passDurations:{...mkDefault().engine.passDurations,...(p.engine.passDurations||{})}}};
     if(p.profiles)  S.profiles  = {user:{...mkDefault().profiles.user,...p.profiles.user},alicia:{...mkDefault().profiles.alicia,...p.profiles.alicia}};
+    if(p.rt) S.rt = { slp:p.rt.slp||[{s:23,e:6.5}], ml:p.rt.ml||[8.5,13,20], bf:p.rt.bf||[{s:17,e:18.5}] };
+    S.engine.dailyHrs = rtAvailableHrs();
     save(); renderActive(); notify('Import successful.','good');
   }catch(e){ notify('Import failed: '+e.message,'bad'); }
 }
