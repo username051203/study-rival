@@ -1,0 +1,2162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Study Rival — Protocol Omega v2</title>
+<style>
+:root{--bg:#0b0d17;--card:#15192d;--ink:#d1d5ff;--muted:#7e84ad;--accent:#5c6cff;--good:#4ade80;--warn:#fbbf24;--bad:#f87171;--border:#242a4a;--log-bg:#080a1a;--glow:rgba(92,108,255,0.4);}
+*{box-sizing:border-box;font-family:'Inter','Segoe UI',Tahoma,sans-serif;}
+body{margin:0;background:var(--bg);color:var(--ink);overflow-x:hidden;line-height:1.5;}
+header{padding:15px 25px;background:#0f1225;font-weight:800;border-bottom:2px solid var(--border);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:1000;letter-spacing:2px;text-transform:uppercase;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
+.hamburger{touch-action:manipulation;-webkit-tap-highlight-color:transparent;font-size:1.8rem;cursor:pointer;color:var(--accent);user-select:none;z-index:1001;position:relative;}
+.hamburger:hover{transform:scale(1.1);}
+.menu-overlay{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(11,13,23,0.95);z-index:998;display:none;opacity:0;pointer-events:none;transition:opacity 0.3s ease;}
+.menu-overlay.show{display:block;opacity:1;pointer-events:auto;}
+.mobile-menu{position:fixed;top:0;left:0;width:100%;max-width:300px;height:100%;background:#0d1021;z-index:1000;transform:translateX(-100%);transition:transform 0.4s cubic-bezier(0.4,0,0.2,1);overflow-y:auto;box-shadow:15px 0 40px rgba(0,0,0,0.9);}
+.mobile-menu.show{transform:translateX(0);}
+.menu-header{padding:25px 20px;background:#151935;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;}
+.close-menu{background:var(--border);color:var(--ink);border:none;border-radius:50%;width:36px;height:36px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;font-size:1.2rem;}
+.close-menu:hover{background:var(--bad);color:white;transform:rotate(90deg);}
+.menu-profile{padding:30px 20px;background:#151935;display:flex;justify-content:space-around;align-items:center;border-bottom:1px solid var(--border);}
+.pfp-wrap{text-align:center;}
+.pfp{width:90px;height:90px;border-radius:50%;border:2px solid var(--border);object-fit:cover;box-shadow:0 0 15px var(--glow);}
+.vs-divider{font-size:0.9rem;font-weight:900;color:var(--bad);text-shadow:0 0 10px rgba(248,113,113,0.5);}
+.nav-list{padding:20px;}
+.nav-item{padding:14px;border-radius:8px;margin-bottom:10px;background:#1a1f3d;cursor:pointer;font-size:0.75rem;font-weight:700;border:1px solid var(--border);text-transform:uppercase;letter-spacing:1px;display:flex;align-items:center;gap:12px;transition:all 0.2s ease;}
+.nav-item:hover{background:var(--accent);color:white;transform:translateX(5px);box-shadow:0 0 10px var(--glow);}
+.nav-item:active{transform:translateX(5px) scale(0.98);}
+.page{display:none;padding:25px;max-width:580px;margin:0 auto;animation:fadeIn 0.3s ease;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+.page.active{display:block;}
+.card{background:var(--card);border-radius:16px;padding:24px;margin-bottom:20px;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,0.4);transition:box-shadow 0.2s ease;}
+label{font-size:0.7rem;color:var(--muted);margin-top:16px;display:block;font-weight:800;text-transform:uppercase;letter-spacing:1px;}
+input,select,textarea{width:100%;padding:12px 15px;border-radius:8px;border:1px solid var(--border);background:var(--log-bg);color:var(--ink);margin-top:8px;font-size:0.9rem;outline:none;transition:border-color 0.2s ease,box-shadow 0.2s ease;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 2px var(--glow);}
+button{width:100%;padding:14px;border-radius:8px;border:none;margin-top:18px;cursor:pointer;font-weight:800;color:white;background:linear-gradient(135deg,var(--accent),#3d4dc7);font-size:0.85rem;text-transform:uppercase;letter-spacing:1px;box-shadow:0 4px 15px rgba(0,0,0,0.3);transition:transform 0.15s ease,box-shadow 0.15s ease,opacity 0.15s ease;}
+button:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,0.4);}
+button:active{transform:scale(0.97) translateY(0);}
+button.sec{background:linear-gradient(135deg,var(--border),#2a325a);}
+button.good-btn{background:linear-gradient(135deg,#14532d,#166534);border:1px solid var(--good);color:#86efac;}
+button.bad-btn{background:linear-gradient(135deg,#7f1d1d,#991b1b);border:1px solid var(--bad);color:#fca5a5;}
+.rail{background:var(--log-bg);border-radius:8px;height:20px;margin-top:10px;border:1px solid var(--border);overflow:hidden;}
+.fill{height:100%;width:0%;transition:width 0.6s cubic-bezier(0.17,0.67,0.83,0.67);}
+.sim-clock{font-family:'Courier New',monospace;color:var(--warn);font-size:2.2rem;font-weight:800;text-align:center;text-shadow:0 0 15px rgba(251,191,36,0.3);}
+.tag{font-size:0.65rem;padding:3px 8px;border-radius:4px;font-weight:900;text-transform:uppercase;letter-spacing:1px;}
+.tag-win{background:#14532d;color:#86efac;border:1px solid #4ade80;}
+.tag-loss{background:#7f1d1d;color:#fca5a5;border:1px solid #f87171;}
+.tag-lock{background:#451a1a;color:#fca5a5;}
+.tag-today{background:#1e3a1a;color:var(--warn);border:1px solid var(--warn);}
+.avatar-mini{width:64px;height:64px;border-radius:50%;border:2px solid var(--border);margin-right:12px;vertical-align:middle;object-fit:cover;}
+.stat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:0.8rem;font-weight:800;}
+.log-terminal{background:var(--log-bg);border-radius:10px;padding:15px;font-size:0.7rem;font-family:'Courier New',monospace;color:var(--good);height:110px;overflow-y:auto;margin-top:16px;border:1px solid var(--border);line-height:1.4;}
+#toast-wrap{position:fixed;bottom:25px;left:50%;transform:translateX(-50%);z-index:5000;width:90%;max-width:420px;pointer-events:none;}
+.toast{background:var(--card);border-left:5px solid var(--accent);padding:16px 20px;border-radius:12px;margin-top:12px;box-shadow:0 15px 40px rgba(0,0,0,0.6);animation:slideIn 0.35s ease forwards;font-size:0.85rem;}
+@keyframes slideIn{from{transform:translateY(40px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* Pass dots */
+.pass-dot{width:22px;height:22px;border-radius:50%;border:2px solid var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:900;cursor:pointer;margin:0 2px;transition:all 0.2s;}
+.pass-dot:hover{transform:scale(1.15);}
+.pass-dot.done{border-color:var(--good);background:#14532d;color:var(--good);}
+.pass-dot.planned{border-color:var(--warn);background:#2d1f00;color:var(--warn);}
+
+/* Chapter / topic rows */
+.chapter-header{padding:12px 10px;background:rgba(92,108,255,0.07);border-radius:8px;margin-bottom:3px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;border:1px solid transparent;}
+.chapter-header:hover{border-color:var(--accent);}
+.topic-row{padding:10px 8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.topic-row:last-child{border-bottom:none;}
+
+/* Planner */
+.plan-day{border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;}
+.plan-day.locked{border-color:#3d1515;opacity:0.75;}
+.plan-day.today{border-color:var(--warn);}
+.plan-entry{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(255,255,255,0.05);font-size:0.82rem;gap:8px;}
+.plan-entry:last-child{border-bottom:none;}
+
+/* VS grid */
+.vs-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;text-align:center;margin-bottom:14px;}
+.big-num{font-size:2.4rem;font-weight:900;font-family:'Courier New',monospace;}
+
+/* Profile */
+.profile-avatar-preview{width:120px;height:120px;border-radius:50%;border:3px solid var(--border);object-fit:cover;display:block;margin:14px auto 6px;box-shadow:0 0 20px var(--glow);}
+.profile-section-header{display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:14px;border-bottom:1px solid var(--border);}
+.profile-section-icon{width:80px;height:80px;border-radius:50%;border:2px solid var(--border);object-fit:cover;flex-shrink:0;}
+.photo-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px;}
+.photo-slot{background:var(--log-bg);border:1px solid var(--border);border-radius:10px;padding:12px;text-align:center;}
+.photo-slot img{width:100px;height:100px;border-radius:50%;border:2px solid var(--border);object-fit:cover;display:block;margin:0 auto 8px;}
+.reset-photo-btn{background:var(--border);color:var(--muted);font-size:0.6rem;padding:5px 8px;margin-top:6px;border:none;border-radius:5px;cursor:pointer;width:100%;}
+
+/* Day report */
+.day-report-card{border:2px solid var(--accent);background:linear-gradient(135deg,#15192d,#0f1225);animation:pulseGlow 2s ease-in-out;position:relative;margin-bottom:20px;}
+@keyframes pulseGlow{0%,100%{box-shadow:0 0 10px var(--glow);}50%{box-shadow:0 0 25px var(--glow);}}
+.close-report{position:absolute;top:15px;right:15px;background:var(--border);color:var(--ink);border:none;border-radius:50%;width:30px;height:30px;cursor:pointer;font-weight:bold;display:flex;align-items:center;justify-content:center;font-size:1.2rem;line-height:1;}
+.close-report:hover{background:var(--bad);color:white;}
+.report-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.report-stat{text-align:center;padding:14px;background:var(--log-bg);border-radius:10px;border:1px solid var(--border);}
+.report-value{font-size:1.8rem;font-weight:900;margin:5px 0;}
+.report-label{font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+.report-result{text-align:center;padding:14px;border-radius:10px;margin-bottom:16px;font-weight:900;font-size:1.1rem;letter-spacing:1px;}
+table{width:100%;border-collapse:collapse;margin-top:12px;}
+th{text-align:left;font-size:0.65rem;color:var(--muted);text-transform:uppercase;padding:10px;border-bottom:1px solid var(--border);}
+td{padding:10px;font-size:0.82rem;border-bottom:1px solid var(--border);}
+
+/* Sync */
+.sync-btn{background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;padding:14px;}
+
+/* Chronicle drill buttons */
+.drill-btn{background:#1a1f3d;padding:18px;border-radius:12px;margin-bottom:12px;border:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;font-size:0.8rem;font-weight:700;cursor:pointer;box-shadow:0 4px 10px rgba(0,0,0,0.2);transition:all 0.2s ease;}
+.drill-btn:hover{border-color:var(--accent);background:#1f264d;transform:translateY(-2px);}
+.drill-btn:active{transform:scale(0.98);}
+.tag-study{background:#166534;color:#4ade80;}
+.tag-rest{background:#7f1d1d;color:#f87171;}
+
+/* Day report details */
+.report-details{border-top:1px solid var(--border);padding-top:15px;margin-top:5px;}
+.detail-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.04);}
+.detail-row:last-child{border-bottom:none;}
+.detail-label{font-size:0.72rem;color:var(--muted);font-weight:700;}
+.detail-value{font-size:0.82rem;font-weight:900;}
+
+/* ── Adaptive layout: card floats with breathing room on larger screens ── */
+body{padding:0;}
+.page{padding:16px;max-width:600px;margin:0 auto;}
+
+@media (min-width:600px){
+  body{padding:0 16px;}
+  .page{padding:20px 0;max-width:560px;}
+  .card{border-radius:18px;}
+  .sim-clock{font-size:2.6rem;}
+}
+@media (min-width:900px){
+  body{padding:0 40px;background:#070910;}
+  .page{padding:28px 0;max-width:620px;}
+  header{padding:15px 40px;}
+  .big-num{font-size:2.8rem;}
+}
+@media (min-width:1200px){
+  body{padding:0 80px;}
+  .page{max-width:660px;}
+}
+
+</style>
+<script>var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length;n++)t[o][o.charAt(n)]=n}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},i={compressToBase64:function(o){if(null==o)return"";var r=i._compress(o,6,function(o){return n.charAt(o)});switch(r.length%4){default:case 0:return r;case 1:return r+"===";case 2:return r+"==";case 3:return r+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(e){return o(n,r.charAt(e))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(o){return null==o?"":""==o?null:i._decompress(o.length,16384,function(r){return o.charCodeAt(r)-32})},compressToUint8Array:function(o){for(var r=i.compress(o),n=new Uint8Array(2*r.length),e=0,t=r.length;t>e;e++){var s=r.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null===o||void 0===o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;t>e;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(o){return null==o?"":i._compress(o,6,function(o){return e.charAt(o)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(n){return o(e,r.charAt(n))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(o,r,n){if(null==o)return"";var e,t,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else{if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u)}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==r-1){d.push(n(m));break}v++}return d.join("")},decompress:function(o){return null==o?"":""==o?null:i._decompress(o.length,32768,function(r){return o.charCodeAt(r)})},_decompress:function(o,n,e){var t,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:e(0),position:n,index:1};for(i=0;3>i;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(t=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return"";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else{if(l!==d)return null;v=s+s.charAt(0)}w.push(v),f[d++]=s+v.charAt(0),h--,s=v,0==h&&(h=Math.pow(2,m),m++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module&&(module.exports=LZString);</script></head>
+<body>
+
+<header>
+  <div class="hamburger" onclick="toggleMenu()">☰</div>
+  <div id="headerTitle">OMEGA PROTOCOL v2</div>
+  <div id="headerClock" style="font-family:'Courier New',monospace;color:var(--warn);font-size:1rem;">00:00</div>
+</header>
+
+<div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
+<div class="mobile-menu" id="mobileMenu">
+  <div class="menu-header">
+    <div style="font-size:0.9rem;font-weight:900;color:var(--accent);letter-spacing:2px">NAVIGATION</div>
+    <button class="close-menu" onclick="closeMenu()">×</button>
+  </div>
+  <div class="menu-profile">
+    <div class="pfp-wrap">
+      <img id="menuUserPfp" src="https://iili.io/q7kMZ6N.md.jpg" class="pfp">
+      <div id="menuUserLabel" style="font-size:0.6rem;margin-top:6px;color:var(--muted);font-weight:900">YOU</div>
+    </div>
+    <div class="vs-divider">VS</div>
+    <div class="pfp-wrap">
+      <img id="menuAliciaPfp" src="https://iili.io/qR0vySS.md.jpg" class="pfp">
+      <div id="menuAliciaLabel" style="font-size:0.6rem;margin-top:6px;color:var(--muted);font-weight:900">ALICIA</div>
+    </div>
+  </div>
+  <div class="nav-list">
+    <div class="nav-item" onclick="nav('dash')">📊 Terminal Dashboard</div>
+    <div class="nav-item" onclick="nav('schedule')">📅 Schedule</div>
+    <div class="nav-item" onclick="nav('log')">✍️ Log Session</div>
+    <div class="nav-item" onclick="nav('syllabus')">🧬 Syllabus Matrix</div>
+    <div class="nav-item" onclick="nav('editSyllabus')">✏️ Edit Syllabus</div>
+    <div class="nav-item" onclick="nav('archive')">📂 Chronicle Archive</div>
+    <div class="nav-item" onclick="nav('profile')" style="background:#1a2240;border-color:#3a4a7a;">👤 Profile &amp; Engine</div>
+    <div class="nav-item" onclick="nav('sync')" style="background:#222a4d;margin-top:5px">💾 Kernel Sync</div>
+    <div class="nav-item" onclick="nav('sim')" style="background:#1a2a1a;margin-top:5px;border-color:#2a4a2a;">⚡ Simulation Engine</div>
+    <div class="nav-item" onclick="confirmPurge()" style="background:#451a1a;margin-top:10px;color:#ffbaba">⚠️ Purge All Data</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ DASHBOARD -->
+<div id="dash" class="page active">
+  <div id="dayReportCard" class="card day-report-card" style="display:none;">
+    <button class="close-report" onclick="closeDayReport()">×</button>
+    <h2 style="margin-top:0;color:var(--accent);text-align:center;text-transform:uppercase;letter-spacing:2px">📊 End of Day Report</h2>
+    <div id="reportDate" style="text-align:center;color:var(--muted);font-size:0.8rem;margin-bottom:20px;font-weight:700"></div>
+    <div class="report-grid">
+      <div class="report-stat">
+        <div class="report-label">Your Passes</div>
+        <div id="repUserCh" class="report-value" style="color:var(--good)">0</div>
+        <div class="report-label">completed</div>
+      </div>
+      <div class="report-stat">
+        <div class="report-label">Alicia Passes</div>
+        <div id="repAliciaCh" class="report-value" style="color:var(--accent)">0.0</div>
+        <div class="report-label">simulated</div>
+      </div>
+    </div>
+    <div id="repResult" class="report-result"></div>
+    <div class="report-details">
+      <div class="detail-row">
+        <span class="detail-label">Passes Scheduled Today</span>
+        <span id="repGoal" class="detail-value" style="color:var(--warn)">--</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Pass Gap</span>
+        <span id="repGap" class="detail-value">--</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Alicia Boost Active</span>
+        <span id="repBoost" class="detail-value">--</span>
+      </div>
+      <div class="detail-row">
+        <span class="detail-label">Study Budget Used</span>
+        <span id="repBudget" class="detail-value">--</span>
+      </div>
+    </div>
+    <div style="margin-top:20px;font-size:0.65rem;color:var(--muted);text-align:center;font-style:italic;border-top:1px solid var(--border);padding-top:14px;">
+      Protocol Omega — New cycle begins at anchor hour
+    </div>
+  </div>
+
+  <!-- Main status card -->
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;">
+      <div>
+        <div class="sim-clock" id="mainClock">--:--</div>
+        <div id="aStatus" style="font-size:0.62rem;color:var(--muted);font-weight:900;text-transform:uppercase;margin-top:2px;">System Standby</div>
+      </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+        <div id="intensityBadge" style="padding:6px 14px;border-radius:8px;font-weight:900;font-size:0.68rem;letter-spacing:1px;">ALICIA: STUDYING</div>
+        <div id="anchorLabel" style="font-size:0.55rem;color:var(--muted);font-weight:900;text-transform:uppercase;">Anchor: --:--</div>
+      </div>
+    </div>
+    <div class="rail" style="margin-top:12px;"><div id="loadBar" class="fill" style="background:var(--accent);opacity:0.4;"></div></div>
+    <div id="leadText" style="text-align:center;margin-top:14px;font-size:0.9rem;font-weight:900;letter-spacing:1px;">WAITING FOR SCHEDULE...</div>
+    <div id="totalDeficit" style="text-align:center;margin-top:6px;font-size:0.6rem;color:var(--muted);font-weight:800;border-top:1px solid var(--border);padding-top:8px;"></div>
+  </div>
+
+  <!-- VS card -->
+  <div class="card">
+    <!-- You row -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
+      <img id="dashUserPfp" src="https://iili.io/q7kMZ6N.md.jpg" class="avatar-mini">
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span id="dashUserName" style="font-weight:900;font-size:0.85rem;">YOU</span>
+          <span id="uChNum" style="color:var(--good);font-weight:900;font-family:'Courier New',monospace;font-size:0.85rem;">0 / 0</span>
+        </div>
+        <div class="rail" style="height:14px;"><div id="uChBar" class="fill" style="background:var(--good);"></div></div>
+      </div>
+    </div>
+    <!-- Divider -->
+    <div style="display:flex;align-items:center;gap:10px;margin:6px 0;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+      <span style="font-size:0.7rem;font-weight:900;color:var(--bad);">VS</span>
+      <div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+    <!-- Alicia row -->
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
+      <img id="dashAliciaPfp" src="https://iili.io/qR0vySS.md.jpg" class="avatar-mini">
+      <div style="flex:1;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
+          <span id="dashAliciaName" style="font-weight:900;font-size:0.85rem;">ALICIA</span>
+          <span id="aChNum" style="color:var(--accent);font-weight:900;font-family:'Courier New',monospace;font-size:0.85rem;">0.0 / 0</span>
+        </div>
+        <div class="rail" style="height:14px;"><div id="aChBar" class="fill" style="background:var(--accent);"></div></div>
+      </div>
+    </div>
+    <!-- Mini stats row -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+      <div style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
+        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Alicia hrs</div>
+        <div id="aliciaHrsWorked" style="font-size:1.1rem;font-weight:900;color:var(--warn);">0.0</div>
+        <div style="font-size:0.55rem;color:var(--muted);">of <span id="aliciaDailyHrs">--</span>h</div>
+      </div>
+      <div style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
+        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Alicia passes</div>
+        <div id="aliciaTodayTotal" style="font-size:1.1rem;font-weight:900;color:var(--accent);">0.0</div>
+        <div style="font-size:0.55rem;color:var(--muted);">today</div>
+      </div>
+      <div id="boostCard" style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
+        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">Boost</div>
+        <div id="boostVal" style="font-size:1.1rem;font-weight:900;color:var(--muted);">1.00×</div>
+        <div style="font-size:0.55rem;color:var(--muted);" id="boostLabel">no boost</div>
+      </div>
+    </div>
+    <div id="heatAlert" style="color:var(--bad);text-align:center;font-size:0.65rem;font-weight:900;margin-top:10px;opacity:0;text-transform:uppercase;">🔥 Alicia is ahead — push harder</div>
+  </div>
+
+  <!-- Today's schedule -->
+  <div class="card">
+    <h3 style="margin:0 0 12px;font-size:0.85rem;color:var(--accent);text-transform:uppercase;">Today's Schedule</h3>
+    <div id="dashToday"></div>
+  </div>
+
+  <!-- Syllabus progress — collapsed by default -->
+  <details style="margin-bottom:20px;">
+    <summary style="cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:0.78rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:1px;list-style:none;display:flex;justify-content:space-between;align-items:center;">
+      <span>📈 Syllabus Progress</span><span style="font-size:0.6rem;">▼</span>
+    </summary>
+    <div class="card" style="margin-top:8px;margin-bottom:0;">
+      <div id="dashSyllabus"></div>
+    </div>
+  </details>
+
+  <!-- System log — collapsed by default -->
+  <details style="margin-bottom:20px;">
+    <summary style="cursor:pointer;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:0.78rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:1px;list-style:none;display:flex;justify-content:space-between;align-items:center;">
+      <span>🖥 System Log</span><span style="font-size:0.6rem;">▼</span>
+    </summary>
+    <div class="card" style="margin-top:8px;margin-bottom:0;padding:0;">
+      <div class="log-terminal" id="sysLog" style="height:130px;margin:0;border-radius:12px;"></div>
+    </div>
+  </details>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SCHEDULE -->
+<div id="schedule" class="page">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <h2 style="margin:0;font-size:1rem;text-transform:uppercase;">📅 Schedule</h2>
+      <div style="display:flex;gap:8px;">
+        <details style="position:relative;">
+          <summary style="cursor:pointer;background:var(--log-bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;font-size:0.65rem;font-weight:900;color:var(--muted);text-transform:uppercase;list-style:none;">ℹ️ How it works</summary>
+          <div style="position:absolute;right:0;top:34px;z-index:100;width:280px;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:14px;font-size:0.7rem;color:var(--muted);line-height:1.7;box-shadow:0 10px 30px rgba(0,0,0,0.5);">
+            <b style="color:var(--ink);">1. Add a topic</b> — pick chapter/topic, choose pass types, set hours per pass.<br>
+            <b style="color:var(--ink);">2. Scheduler fills days</b> — packs topics into days by priority, up to the daily budget (auto-calc from bio constraints).<br>
+            <b style="color:var(--ink);">3. Alicia mirrors it</b> — her chapter count = hours clocked ÷ topic hours.<br>
+            <b style="color:var(--ink);">4. Tick passes in Log Session</b> — when all done, topic drops from future days.<br>
+            <b style="color:var(--ink);">5. Re-add anytime</b> — for revision rounds.
+          </div>
+        </details>
+        <button onclick="regenerateSchedule()" style="width:auto;padding:6px 14px;margin:0;font-size:0.65rem;" class="good-btn">⟳ Regen</button>
+      </div>
+    </div>
+    <div id="schedSummaryBar" style="background:var(--log-bg);border-radius:8px;padding:8px 12px;margin-bottom:12px;border:1px solid var(--border);font-size:0.7rem;display:flex;gap:16px;flex-wrap:wrap;"></div>
+    <div id="scheduleWeek"></div>
+  </div>
+
+  <div class="card" style="border-color:var(--accent);">
+    <h3 style="margin:0 0 14px;font-size:0.9rem;text-transform:uppercase;color:var(--accent);">+ Add Topic to Schedule</h3>
+    <label>Subject</label>
+    <select id="addSubject" onchange="addSubjectChanged()"></select>
+    <label>Chapter</label>
+    <select id="addChapter" onchange="addChapterChanged()"></select>
+    <label>Topic</label>
+    <select id="addTopic"></select>
+    <label>Pass Types to include</label>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--ink);font-weight:700;text-transform:none;letter-spacing:0;margin:0;background:var(--log-bg);padding:6px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;"><input type="checkbox" id="chk_Lecture" checked onchange="rebuildSubPassBuilder()" style="width:auto;margin:0;padding:0;"> 📹 Lecture</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--ink);font-weight:700;text-transform:none;letter-spacing:0;margin:0;background:var(--log-bg);padding:6px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;"><input type="checkbox" id="chk_Reading" onchange="rebuildSubPassBuilder()" style="width:auto;margin:0;padding:0;"> 📖 Reading</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--ink);font-weight:700;text-transform:none;letter-spacing:0;margin:0;background:var(--log-bg);padding:6px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;"><input type="checkbox" id="chk_Question_Bank" onchange="rebuildSubPassBuilder()" style="width:auto;margin:0;padding:0;"> ❓ Question Bank</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--ink);font-weight:700;text-transform:none;letter-spacing:0;margin:0;background:var(--log-bg);padding:6px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;"><input type="checkbox" id="chk_Revision" onchange="rebuildSubPassBuilder()" style="width:auto;margin:0;padding:0;"> 🔁 Revision</label>
+      <label style="display:flex;align-items:center;gap:6px;font-size:0.78rem;color:var(--ink);font-weight:700;text-transform:none;letter-spacing:0;margin:0;background:var(--log-bg);padding:6px 10px;border-radius:6px;border:1px solid var(--border);cursor:pointer;"><input type="checkbox" id="chk_Notes" onchange="rebuildSubPassBuilder()" style="width:auto;margin:0;padding:0;"> ✍️ Notes</label>
+    </div>
+    <div id="subPassBuilder" style="margin-top:14px;"></div>
+    <label>Priority (lower = sooner)</label>
+    <input id="addPriority" type="number" min="1" value="50" style="width:100px;">
+    <button onclick="addTopicToSchedule()" class="good-btn" style="width:100%;margin-top:16px;">+ Add to Schedule</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ LOG -->
+<div id="log" class="page">
+  <div class="card">
+    <h2 style="margin:0 0 4px;font-size:1rem;text-transform:uppercase;">✍️ Log Session</h2>
+    <p style="font-size:0.7rem;color:var(--muted);margin:0 0 14px;">Tick sub-passes from the schedule below, or from Syllabus Matrix.</p>
+    <div id="logScheduleItems"></div>
+  </div>
+  <div class="card">
+    <h3 style="margin:0 0 10px;font-size:0.85rem;color:var(--accent);text-transform:uppercase;">Today's Activity</h3>
+    <div id="logTodayList"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SYLLABUS -->
+<div id="syllabus" class="page">
+  <div class="card">
+    <h2 style="margin:0 0 14px;font-size:1rem;text-transform:uppercase;">🧬 Syllabus Matrix</h2>
+    <select id="syllSubject" onchange="renderSyllabus()"></select>
+    <div id="syllTree" style="margin-top:14px;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ EDIT SYLLABUS -->
+<div id="editSyllabus" class="page">
+  <div class="card">
+    <h2 style="margin:0 0 6px;font-size:1rem;text-transform:uppercase;">✏️ Edit Syllabus</h2>
+    <p style="font-size:0.65rem;color:var(--muted);margin:0 0 14px 0;">Add, remove, or batch-import chapters and topics. Changes persist and affect scheduling.</p>
+
+    <!-- Single Add -->
+    <div style="background:var(--log-bg);border-radius:10px;padding:14px;border:1px solid var(--border);margin-bottom:14px;">
+      <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">➕ Add Single Topic</div>
+      <label>Chapter Name</label>
+      <input id="newChapName" type="text" placeholder="e.g. Gram Negative Bacteria" autocomplete="off">
+      <label>Topic Name</label>
+      <input id="newTopicName" type="text" placeholder="e.g. Salmonella & Shigella" autocomplete="off" onkeydown="if(event.key==='Enter')addSyllTopic()">
+      <button onclick="addSyllTopic()" class="good-btn" style="width:100%;margin-top:12px;">+ Add Topic</button>
+    </div>
+
+    <!-- Batch Import -->
+    <details style="margin-bottom:14px;">
+      <summary style="font-size:0.7rem;font-weight:900;text-transform:uppercase;color:var(--warn);cursor:pointer;padding:10px 0;">📋 Batch Import</summary>
+      <div style="background:var(--log-bg);border-radius:10px;padding:14px;border:1px solid #3a2e00;margin-top:8px;">
+        <p style="font-size:0.65rem;color:var(--muted);margin:0 0 10px 0;">One entry per line, format: <code style="background:#1a1a2e;padding:2px 6px;border-radius:4px;color:var(--accent);">Chapter Name, Topic Name;</code></p>
+        <textarea id="batchSyllInput" style="height:140px;font-family:monospace;font-size:0.7rem;" placeholder="General Microbiology, Scientists & Stains;
+General Microbiology, Bacterial Anatomy;
+Virology, DNA Virus Pt 1;"></textarea>
+        <div style="display:flex;gap:8px;margin-top:10px;">
+          <button onclick="batchImportSyll(false)" style="flex:1;margin:0;font-size:0.7rem;background:linear-gradient(135deg,#1a2a0d,#243d10);border:1px solid #4a7a1a;color:#a3e635;">➕ Add (keep existing)</button>
+          <button onclick="batchImportSyll(true)" style="flex:1;margin:0;font-size:0.7rem;background:linear-gradient(135deg,#3d1010,#5a1a1a);border:1px solid #7f1d1d;color:#fca5a5;">⚠️ Replace All</button>
+        </div>
+      </div>
+    </details>
+
+    <!-- Current Syllabus Tree -->
+    <div style="font-size:0.7rem;font-weight:900;text-transform:uppercase;color:var(--muted);margin-bottom:8px;">Current Syllabus</div>
+    <div id="editSyllTree"></div>
+  </div>
+</div>
+
+
+<div id="archive" class="page">
+  <div class="card">
+    <h2 style="margin:0 0 4px;font-size:1rem;text-transform:uppercase;">📂 Chronicle Archive</h2>
+    <div style="font-size:0.6rem;color:var(--muted);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px;">Temporal Records</div>
+    <div id="chronicleBox"></div>
+  </div>
+</div>
+
+<div id="drill" class="page">
+  <div style="display:flex;gap:10px;margin-bottom:20px;align-items:center;">
+    <button onclick="nav('archive')" style="width:auto;padding:10px 20px;margin:0;background:var(--border);color:white;font-size:0.75rem;flex:1;">← Return</button>
+  </div>
+  <div id="drillDate" style="font-weight:900;font-size:1.2rem;margin-bottom:16px;color:var(--accent);letter-spacing:1px;"></div>
+  <div class="card">
+    <label>Your Sub-Pass Log</label>
+    <div id="drillUser" style="margin-top:10px;"></div>
+  </div>
+  <div class="card">
+    <label>Alicia Logic Path</label>
+    <div id="drillAlicia" style="font-size:0.75rem;margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ PROFILE + ENGINE -->
+<div id="profile" class="page">
+  <!-- Your profile -->
+  <div class="card">
+    <div class="profile-section-header">
+      <img id="profileUserIcon" src="https://iili.io/q7kMZ6N.md.jpg" class="profile-section-icon" style="border-color:var(--good);">
+      <div>
+        <div style="font-size:1rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--good);" id="profileUserNameDisplay">YOU</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;" id="profileUserTaglineDisplay">The Operator</div>
+        <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:900;text-transform:uppercase;background:#14532d;color:#4ade80;border:1px solid #4ade80;margin-top:4px;">YOUR PROFILE</span>
+      </div>
+    </div>
+    <label>Display Name</label>
+    <input id="inputUserName" type="text" maxlength="20" placeholder="Your codename..." oninput="livePreviewUser()">
+    <label>Tagline</label>
+    <input id="inputUserTagline" type="text" maxlength="40" oninput="livePreviewUser()">
+    <!-- Photo states — collapsed -->
+    <details style="margin-top:14px;">
+      <summary style="cursor:pointer;font-size:0.68rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 0;">🖼 Photo States (Win / Loss / Default)</summary>
+      <div class="photo-grid" style="margin-top:10px;">
+        <div class="photo-slot">
+          <div style="font-size:0.6rem;color:#4ade80;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Win</div>
+          <img id="prevUserWin" src="https://iili.io/q7venWX.md.jpg">
+          <input id="urlUserWin" type="url" value="https://iili.io/q7venWX.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Win')">
+          <button class="reset-photo-btn" onclick="resetPhoto('User','Win')">Reset</button>
+        </div>
+        <div class="photo-slot">
+          <div style="font-size:0.6rem;color:#f87171;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Loss</div>
+          <img id="prevUserLoss" src="https://iili.io/q7v3cDQ.md.jpg">
+          <input id="urlUserLoss" type="url" value="https://iili.io/q7v3cDQ.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Loss')">
+          <button class="reset-photo-btn" onclick="resetPhoto('User','Loss')">Reset</button>
+        </div>
+        <div class="photo-slot">
+          <div style="font-size:0.6rem;color:var(--muted);font-weight:900;text-transform:uppercase;margin-bottom:6px;">Default</div>
+          <img id="prevUserDefault" src="https://iili.io/q7kMZ6N.md.jpg">
+          <input id="urlUserDefault" type="url" value="https://iili.io/q7kMZ6N.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Default')">
+          <button class="reset-photo-btn" onclick="resetPhoto('User','Default')">Reset</button>
+        </div>
+      </div>
+    </details>
+    <button onclick="saveProfile('user')" class="good-btn" style="width:100%;margin-top:16px;">💾 Save Your Profile</button>
+  </div>
+
+  <!-- Rival profile -->
+  <div class="card">
+    <div class="profile-section-header">
+      <img id="profileAliciaIcon" src="https://iili.io/qR0vySS.md.jpg" class="profile-section-icon" style="border-color:var(--accent);">
+      <div>
+        <div style="font-size:1rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--accent);" id="profileAliciaNameDisplay">ALICIA</div>
+        <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;" id="profileAliciaTaglineDisplay">The Rival</div>
+        <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:900;text-transform:uppercase;background:#1a1f4d;color:#818cf8;border:1px solid #4f57cc;margin-top:4px;">RIVAL PROFILE</span>
+      </div>
+    </div>
+    <label>Display Name</label>
+    <input id="inputAliciaName" type="text" maxlength="20" oninput="livePreviewAlicia()">
+    <label>Tagline</label>
+    <input id="inputAliciaTagline" type="text" maxlength="40" oninput="livePreviewAlicia()">
+    <!-- Photo states — collapsed -->
+    <details style="margin-top:14px;">
+      <summary style="cursor:pointer;font-size:0.68rem;font-weight:900;color:var(--muted);text-transform:uppercase;letter-spacing:1px;padding:6px 0;">🖼 Photo States (Loss / Default / Win)</summary>
+      <div class="photo-grid" style="margin-top:10px;">
+        <div class="photo-slot">
+          <div style="font-size:0.6rem;color:#f87171;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Loss (she wins)</div>
+          <img id="prevAliciaLoss" src="https://iili.io/qR08IOF.md.jpg">
+          <input id="urlAliciaLoss" type="url" value="https://iili.io/qR08IOF.md.jpg" oninput="previewPhoto('Alicia','Loss')">
+          <button class="reset-photo-btn" onclick="resetPhoto('Alicia','Loss')">Reset</button>
+        </div>
+        <div class="photo-slot">
+          <div style="font-size:0.6rem;color:var(--muted);font-weight:900;text-transform:uppercase;margin-bottom:6px;">Default</div>
+          <img id="prevAliciaDefault" src="https://iili.io/qR0vySS.md.jpg">
+          <input id="urlAliciaDefault" type="url" value="https://iili.io/qR0vySS.md.jpg" oninput="previewPhoto('Alicia','Default')">
+          <button class="reset-photo-btn" onclick="resetPhoto('Alicia','Default')">Reset</button>
+        </div>
+        <div class="photo-slot">
+          <div style="font-size:0.6rem;color:#4ade80;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Win (she loses)</div>
+          <img id="prevAliciaWin" src="https://iili.io/qR0kSY7.md.jpg">
+          <input id="urlAliciaWin" type="url" value="https://iili.io/qR0kSY7.md.jpg" oninput="previewPhoto('Alicia','Win')">
+          <button class="reset-photo-btn" onclick="resetPhoto('Alicia','Win')">Reset</button>
+        </div>
+      </div>
+    </details>
+    <button onclick="saveProfile('alicia')" style="background:linear-gradient(135deg,#1a1f4d,#252a6d);border:1px solid #4f57cc;color:#818cf8;width:100%;margin-top:16px;">💾 Save Rival Profile</button>
+  </div>
+
+  <!-- Engine + Bio Constraints — merged into one card -->
+  <div class="card">
+    <h3 style="margin:0 0 14px;font-size:0.9rem;text-transform:uppercase;color:var(--accent);">⚙️ Engine &amp; Constraints</h3>
+
+    <label>Exam Date</label>
+    <input id="cfgExamDate" type="date">
+    <label>Anchor Hour (end-of-day contest)</label>
+    <input id="cfgAnchor" type="number" step="0.5" min="0" max="23.5" value="3.5" oninput="updateAnchorPreview()">
+    <div id="anchorPreview" style="font-size:0.72rem;color:var(--warn);margin-top:4px;font-weight:900;"></div>
+    <button onclick="saveEngineConfig()" class="good-btn" style="width:100%;margin-top:14px;">💾 Save Config</button>
+
+    <div style="border-top:1px solid var(--border);margin:20px 0 14px;"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span style="font-size:0.75rem;font-weight:900;color:var(--muted);text-transform:uppercase;">🧬 Bio Constraints</span>
+      <div id="cfgDailyHrsDisplay" style="font-size:1.1rem;font-weight:900;color:var(--good);font-family:'Courier New',monospace;">--h/day</div>
+    </div>
+    <p style="font-size:0.62rem;color:var(--muted);margin:0 0 10px;">When Alicia is NOT studying. Budget auto-calculates from what's left.</p>
+
+    <label>😴 Sleep — HH:MM-HH:MM, comma-separate for multiple</label>
+    <input id="rtSleep" type="text" placeholder="e.g. 23:00-06:30, 14:00-15:00">
+    <label>🍽️ Meals — comma-separated start times (each blocks 45 min)</label>
+    <input id="rtMeal" type="text" placeholder="e.g. 08:30, 13:00, 20:00">
+    <label>🧘 Buffer / Personal — HH:MM-HH:MM, comma-separate for multiple</label>
+    <input id="rtPers" type="text" placeholder="e.g. 17:00-18:30, 21:00-21:30">
+    <div id="rtAvailPreview" style="margin-top:8px;font-size:0.7rem;color:var(--good);font-weight:900;min-height:18px;"></div>
+    <button onclick="saveRoutine()" class="good-btn" style="width:100%;margin-top:12px;">💾 Save Constraints</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SIMULATION ENGINE -->
+<div id="sim" class="page">
+  <div class="card" style="border-color:#2a4a2a;">
+    <h2 style="margin:0 0 4px;font-size:1rem;text-transform:uppercase;color:#4ade80;">⚡ Simulation Engine</h2>
+    <p style="font-size:0.68rem;color:var(--muted);margin:0 0 16px;">Fast-forward time to test how the rival engine, day reports, and scheduling behave without waiting for real time.</p>
+
+    <div style="background:var(--log-bg);border-radius:10px;padding:14px;border:1px solid #2a4a2a;margin-bottom:14px;">
+      <div style="font-size:0.62rem;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;">Simulated Clock</div>
+      <div id="simClockDisplay" style="font-size:2rem;font-weight:900;font-family:'Courier New',monospace;color:var(--warn);text-align:center;text-shadow:0 0 15px rgba(251,191,36,0.3);">NOT RUNNING</div>
+      <div id="simDateDisplay" style="text-align:center;font-size:0.7rem;color:var(--muted);margin-top:4px;"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:var(--log-bg);border-radius:8px;padding:12px;border:1px solid var(--border);text-align:center;">
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Sim Speed</div>
+        <select id="simSpeed" style="margin:0;padding:6px 10px;font-size:0.8rem;text-align:center;">
+          <option value="60">1 min/sec</option>
+          <option value="300">5 min/sec</option>
+          <option value="900" selected>15 min/sec</option>
+          <option value="1800">30 min/sec</option>
+          <option value="3600">1 hr/sec</option>
+        </select>
+      </div>
+      <div style="background:var(--log-bg);border-radius:8px;padding:12px;border:1px solid var(--border);text-align:center;">
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Start From</div>
+        <input id="simStartTime" type="time" value="08:00" style="margin:0;padding:6px 10px;font-size:0.8rem;text-align:center;">
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+      <div style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">You (chapters)</div>
+        <div id="simUserCh" style="font-size:1.5rem;font-weight:900;color:var(--good);">0</div>
+      </div>
+      <div style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">Alicia (chapters)</div>
+        <div id="simAliciaCh" style="font-size:1.5rem;font-weight:900;color:var(--accent);">0.0</div>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:10px;">
+      <button onclick="simStart()" class="good-btn" style="flex:1;margin:0;padding:12px;font-size:0.8rem;" id="simStartBtn">▶ Start Sim</button>
+      <button onclick="simStop()" class="bad-btn" style="flex:1;margin:0;padding:12px;font-size:0.8rem;" id="simStopBtn" disabled>⏹ Stop</button>
+    </div>
+    <button onclick="simReset()" class="sec" style="width:100%;margin-top:10px;padding:10px;font-size:0.75rem;">↺ Reset to Real Time</button>
+
+    <div style="margin-top:14px;">
+      <div style="font-size:0.62rem;color:var(--muted);font-weight:900;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Sim Log</div>
+      <div id="simLog" style="background:var(--log-bg);border-radius:8px;padding:10px;font-size:0.68rem;font-family:'Courier New',monospace;color:#4ade80;height:120px;overflow-y:auto;border:1px solid var(--border);line-height:1.5;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ SYNC -->
+<div id="sync" class="page">
+  <div class="card">
+    <h2 style="margin:0 0 16px;font-size:1rem;text-transform:uppercase;">💾 Kernel Sync</h2>
+    <div id="exportStatus" style="font-size:0.75rem;color:var(--muted);margin-bottom:14px;min-height:20px;"></div>
+    <button onclick="exportBackup()" style="background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;width:100%;margin-top:0;">💾 Save Backup to Downloads</button>
+    <label for="importFilePick" style="display:block;width:100%;margin-top:10px;padding:14px;border-radius:8px;border:1px solid #3a5a9a;background:linear-gradient(135deg,#1a2a4d,#0f1a35);color:#90b8ff;font-size:0.8rem;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📂 Pick Backup File</label>
+    <input id="importFilePick" type="file" accept=".txt" style="display:none;" onchange="importFromFile(event)">
+    <details style="margin-top:16px;">
+      <summary style="font-size:0.7rem;color:var(--muted);cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Manual String</summary>
+      <textarea id="syncField" style="height:100px;font-size:0.65rem;font-family:monospace;margin-top:10px;" placeholder="Paste backup string here..."></textarea>
+      <div style="display:flex;gap:8px;margin-top:8px;">
+        <button onclick="exportToField()" class="sec" style="flex:1;margin:0;padding:10px;font-size:0.7rem;">Export</button>
+        <button onclick="importFromField()" class="sec" style="flex:1;margin:0;padding:10px;font-size:0.7rem;">Import</button>
+      </div>
+    </details>
+  </div>
+</div>
+
+<div id="toast-wrap"></div>
+<script>
+// ══════════════════════════════════════════════════════════════════════
+// CONSTANTS
+// ══════════════════════════════════════════════════════════════════════
+const PASS_TYPES = ['Lecture','Reading','Question Bank','Revision','Notes'];
+const PASS_ICON  = {Lecture:'📹',Reading:'📖','Question Bank':'❓',Revision:'🔁',Notes:'✍️'};
+const PASS_SHORT = {Lecture:'L',Reading:'R','Question Bank':'Q',Revision:'Rv',Notes:'N'};
+const PASS_COLOR = {Lecture:'#1e3a5f:#60a5fa',Reading:'#3b2a1a:#fb923c','Question Bank':'#14532d:#4ade80',Revision:'#2d1b69:#a78bfa',Notes:'#1f2937:#9ca3af'};
+const D_USER_PFP   = 'https://iili.io/q7kMZ6N.md.jpg';
+const D_ALICIA_PFP = 'https://iili.io/qR0vySS.md.jpg';
+
+// ══════════════════════════════════════════════════════════════════════
+// MICROBIOLOGY SYLLABUS (always re-injected, never saved)
+// ══════════════════════════════════════════════════════════════════════
+const MICRO = {chapters:[
+  {id:'mc1',name:'General Microbiology',topics:[
+    {id:'mt1',name:'Scientists & Stains'},{id:'mt2',name:'Microscopes'},
+    {id:'mt3',name:'Bacterial Anatomy'},{id:'mt4',name:'Bacterial Shapes & Physiology'},
+    {id:'mt5',name:'Bacterial Genetics'},{id:'mt6',name:'Culture Media'},
+    {id:'mt7',name:'Sterilization & Disinfection'}]},
+  {id:'mc2',name:'Gram Positive Bacteria',topics:[
+    {id:'mt8',name:'Staphylococcus'},{id:'mt9',name:'Streptococcus & Enterococci'},
+    {id:'mt11',name:'Corynebacterium, Nocardia, Actinomyces, Listeria'},
+    {id:'mt12',name:'Bacillus & Clostridium'},{id:'mt13',name:'Mycobacteria'}]},
+  {id:'mc3',name:'Gram Negative Bacteria',topics:[
+    {id:'mt10',name:'Neisseria & Moraxella'},{id:'mt14',name:'GNB – Part 1'},
+    {id:'mt15',name:'GNB – Part 2'},{id:'mt16',name:'Vibrio, Pseudomonas, Burkholderia'},
+    {id:'mt17',name:'HBB'},{id:'mt18',name:'Spirochetes'}]},
+  {id:'mc4',name:'Atypical Bacteria',topics:[
+    {id:'mt19',name:'Chlamydia'},{id:'mt20',name:'Rickettsiae'},{id:'mt21',name:'Miscellaneous'}]},
+  {id:'mc5',name:'Virology',topics:[
+    {id:'mt22',name:'Virus – General'},{id:'mt23',name:'DNA Virus Pt 1'},
+    {id:'mt24',name:'DNA Virus Pt 2'},{id:'mt25',name:'DNA Virus Pt 3'},
+    {id:'mt26',name:'RNA Myxo'},{id:'mt27',name:'Picornaviridae'},
+    {id:'mt28',name:'Rhabdo'},{id:'mt29',name:'Arbo'},
+    {id:'mt30',name:'Retro'},{id:'mt31',name:'Other RNA'},{id:'mt32',name:'Covid'}]},
+  {id:'mc6',name:'Mycology',topics:[
+    {id:'mt33',name:'Intro & Classification'},{id:'mt34',name:'Superficial & Subcutaneous'},
+    {id:'mt35',name:'Dimorphic'},{id:'mt36',name:'Mycology Pt 2'}]},
+  {id:'mc7',name:'Parasitology',topics:[
+    {id:'mt37',name:'Amoeba'},{id:'mt38',name:'Giardia & Trichomonas'},
+    {id:'mt39',name:'Trypanosoma & Leishmania'},{id:'mt40',name:'Coccidian'},
+    {id:'mt41',name:'Plasmodium'},{id:'mt42',name:'Cestodes'},
+    {id:'mt43',name:'Trematodes'},{id:'mt44',name:'Nematodes'}]},
+  {id:'mc8',name:'Immunology',topics:[
+    {id:'mt45',name:'Introduction'},{id:'mt46',name:'Hypersensitivity'},
+    {id:'mt47',name:'Tolerance & Autoimmune'},{id:'mt48',name:'Immune Deficiency'},
+    {id:'mt49',name:'Transplant'},{id:'mt50',name:'Antigen & Antibody'},
+    {id:'mt51',name:'Antigen-Antibody Reactions'}]}
+]};
+
+// ══════════════════════════════════════════════════════════════════════
+// STATE SHAPE
+// scheduleItems: array of { id, subjectId, chapterId, topicId, priority,
+//   passes: [ { type, subPasses: [ {id, label, done} ] } ] }
+// Sorted by priority asc. Schedule generator assigns each item a date.
+// generatedSchedule: { "YYYY-MM-DD": [itemId, ...] }
+// ══════════════════════════════════════════════════════════════════════
+function mkDefault(){
+  return {
+    subjects: {'MICROBIOLOGY': MICRO},
+    scheduleItems: [],        // the master ordered list
+    generatedSchedule: {},    // date → [itemId, ...]  (auto-generated)
+    history: {},              // date → {userCh, aliciaCh, win}
+    logs: [],                 // {itemId, subPassId, iso}
+    rival: { cur: 0, _hrsWorked: 0 },
+    rt: { slp:[{s:23,e:6.5}], ml:[8.5,13,20], bf:[{s:17,e:18.5}] },
+    engine: {
+      anchorHour: 3.5,
+      dailyHrs: 8,
+      examDate: '',
+      lastResetDay: '',
+      passDurations: {Lecture:1.5, Reading:1.0, 'Question Bank':1.0, Revision:0.5, Notes:0.5}
+    },
+    profiles: {
+      user:  {name:'YOU',   tagline:'The Operator', photoDefault:'https://iili.io/q7kMZ6N.md.jpg', photoWin:'https://iili.io/q7venWX.md.jpg', photoLoss:'https://iili.io/q7v3cDQ.md.jpg'},
+      alicia:{name:'ALICIA',tagline:'The Rival',    photoDefault:'https://iili.io/qR0vySS.md.jpg', photoWin:'https://iili.io/qR0kSY7.md.jpg', photoLoss:'https://iili.io/qR08IOF.md.jpg'}
+    }
+  };
+}
+let S = mkDefault();
+
+// ══════════════════════════════════════════════════════════════════════
+// PERSISTENCE
+// ══════════════════════════════════════════════════════════════════════
+function save(){
+  try{
+    const d = JSON.parse(JSON.stringify(S));
+    delete d.subjects;
+    localStorage.setItem('srv3',LZString.compressToBase64(JSON.stringify(d)));
+  }catch(e){}
+}
+function loadState(){
+  try{
+    const raw = localStorage.getItem('srv3');
+    if(raw){
+      const p = JSON.parse(LZString.decompressFromBase64(raw));
+      S = {...mkDefault(), ...p};
+      S.engine   = {...mkDefault().engine,   ...(p.engine  ||{})};
+      S.engine.passDurations = {...mkDefault().engine.passDurations, ...(p.engine?.passDurations||{})};
+      S.rival    = {...mkDefault().rival,    ...(p.rival   ||{})};
+      S.profiles = {
+        user:  {...mkDefault().profiles.user,   ...(p.profiles?.user  ||{})},
+        alicia:{...mkDefault().profiles.alicia, ...(p.profiles?.alicia||{})}
+      };
+      S.scheduleItems    = p.scheduleItems    || [];
+      S.generatedSchedule= p.generatedSchedule|| {};
+      S.history          = p.history          || {};
+      S.logs             = p.logs             || [];
+      S.rt = p.rt ? {
+        slp: p.rt.slp||[{s:23,e:6.5}],
+        ml:  p.rt.ml ||[8.5,13,20],
+        bf:  p.rt.bf ||[{s:17,e:18.5}]
+      } : mkDefault().rt;
+    }
+  }catch(e){ S = mkDefault(); }
+  // Always recalculate daily budget from bio constraints (never stale)
+  S.engine.dailyHrs = rtAvailableHrs();
+  // Inject subjects: use saved customSyllabus if present, otherwise seed from MICRO
+  if(!S.customSyllabus) S.customSyllabus = deepCloneSyllabus(MICRO);
+  S.subjects = {'MICROBIOLOGY': S.customSyllabus};
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// TIME — sim-aware: all engine code calls simNow() not Date.now()
+// ══════════════════════════════════════════════════════════════════════
+let _simOffset = 0;      // ms added to real time when sim is running
+let _simRunning = false;
+let _simInterval = null;
+let _simWallMs = 0;      // real ms when sim last ticked
+
+function simNow(){ return Date.now() + _simOffset; }
+function simDate(){ return new Date(simNow()); }
+function nowMs(){ return simNow(); }
+function todayStr(){
+  const d = simDate();
+  return d.toISOString().slice(0,10);
+}
+function fmtDate(s){ return new Date(s+'T12:00:00').toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'}); }
+function addDays(s,n){ const d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+function anchorHr(){ return S.engine.anchorHour??3.5; }
+function anchorLabel(){ const h=anchorHr(); return String(Math.floor(h)).padStart(2,'0')+':'+(h%1?'30':'00'); }
+function daysToExam(){
+  if(!S.engine.examDate) return null;
+  const diff = new Date(S.engine.examDate+'T12:00:00') - new Date(todayStr()+'T12:00:00');
+  return Math.ceil(diff/86400000);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SIMULATION ENGINE
+// ══════════════════════════════════════════════════════════════════════
+function simStart(){
+  if(_simRunning) return;
+  const timeVal = document.getElementById('simStartTime').value || '08:00';
+  const [hh, mm] = timeVal.split(':').map(Number);
+  // Build a Date for today at the chosen start time
+  const realNow = new Date();
+  const simStart = new Date(realNow.getFullYear(), realNow.getMonth(), realNow.getDate(), hh, mm, 0);
+  _simOffset = simStart.getTime() - Date.now();
+  _simRunning = true;
+  _simWallMs = Date.now();
+  document.getElementById('simStartBtn').disabled = true;
+  document.getElementById('simStopBtn').disabled  = false;
+  simLog(`SIM START → ${timeVal}`);
+  const speed = parseInt(document.getElementById('simSpeed').value)||900;
+  _simInterval = setInterval(()=>{ simTick(speed); }, 200);
+  simTick(speed);
+}
+
+function simTick(speed){
+  const wallNow = Date.now();
+  const wallElapsed = wallNow - _simWallMs; // real ms since last tick
+  _simWallMs = wallNow;
+  _simOffset += wallElapsed * (speed - 1); // advance sim by (speed-1)x extra
+  const sd = simDate();
+  const timeStr = sd.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+  const dateStr = sd.toLocaleDateString(undefined,{weekday:'short',month:'short',day:'numeric'});
+  document.getElementById('simClockDisplay').textContent = timeStr;
+  document.getElementById('simDateDisplay').textContent  = dateStr;
+  // Run rival engine tick
+  tickRival();
+  const ac = S.rival.cur;
+  const uc = userChaptersTodayCount();
+  document.getElementById('simUserCh').textContent   = uc;
+  document.getElementById('simAliciaCh').textContent = ac.toFixed(1);
+  // Check end of day anchor
+  const h = sd.getHours() + sd.getMinutes()/60;
+  if(Math.abs(h - anchorHr()) < (speed/3600 * 0.6)){
+    simLog(`ANCHOR HIT ${timeStr} — You:${uc} Alicia:${ac.toFixed(1)} → ${uc>ac?'WIN':uc<ac?'LOSS':'TIED'}`);
+    showDayReport();
+  }
+  // Update clock displays too
+  document.getElementById('headerClock').textContent = timeStr;
+  document.getElementById('mainClock').textContent   = timeStr;
+  // Refresh dash if open
+  if(document.getElementById('dash').classList.contains('active')) renderDash();
+}
+
+function simStop(){
+  if(_simInterval){ clearInterval(_simInterval); _simInterval=null; }
+  _simRunning = false;
+  document.getElementById('simStartBtn').disabled = false;
+  document.getElementById('simStopBtn').disabled  = true;
+  simLog('SIM PAUSED');
+}
+
+function simReset(){
+  simStop();
+  _simOffset = 0;
+  _simRunning = false;
+  const now = new Date();
+  const t = now.toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+  document.getElementById('simClockDisplay').textContent = 'NOT RUNNING';
+  document.getElementById('simDateDisplay').textContent  = '';
+  document.getElementById('simUserCh').textContent   = '0';
+  document.getElementById('simAliciaCh').textContent = '0.0';
+  simLog('RESET → real time restored');
+  tickClock();
+}
+
+function simLog(msg){
+  const b = document.getElementById('simLog'); if(!b) return;
+  const d = document.createElement('div');
+  d.textContent = '› ' + msg;
+  b.prepend(d);
+  while(b.children.length > 50) b.removeChild(b.lastChild);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCHEDULE ITEM HELPERS
+// ══════════════════════════════════════════════════════════════════════
+function getItem(id){ return S.scheduleItems.find(x=>x.id===id); }
+
+function itemTotalHrs(item){
+  // each sub-pass now stores its own hrs field set at creation time
+  return (item.passes||[]).reduce((s,p)=>
+    s + p.subPasses.reduce((ss,sp)=>ss+(sp.hrs||1), 0)
+  , 0);
+}
+
+// how many sub-passes are done for this item
+function itemDoneCount(item){
+  return (item.passes||[]).reduce((s,p)=>s+p.subPasses.filter(sp=>sp.done).length,0);
+}
+function itemTotalCount(item){
+  return (item.passes||[]).reduce((s,p)=>s+p.subPasses.length,0);
+}
+function isItemComplete(item){ return itemDoneCount(item)===itemTotalCount(item) && itemTotalCount(item)>0; }
+
+// chapter = all items for this chapter complete
+function isChapterDone(chapterId){
+  const chItems = S.scheduleItems.filter(x=>x.chapterId===chapterId);
+  return chItems.length>0 && chItems.every(isItemComplete);
+}
+
+// how many complete hours Alicia has worked through a list of items in order
+function aliciaPassesFromHrs(items, hrsWorked){
+  // returns decimal chapter count Alicia has completed from her worked hours
+  // she works through items in schedule order, topic by topic
+  // a "chapter" completes when all its items are done
+  // we track hrs consumed per item
+  let remaining = hrsWorked;
+  // group items by chapter to count chapter completion
+  const chapterMap = {}; // chapterId → {total, done}
+  for(const item of items){
+    const hrs = itemTotalHrs(item);
+    if(remaining >= hrs){
+      remaining -= hrs;
+      if(!chapterMap[item.chapterId]) chapterMap[item.chapterId]={total:0,done:0};
+      chapterMap[item.chapterId].total++;
+      chapterMap[item.chapterId].done++;
+    } else {
+      // partial
+      if(!chapterMap[item.chapterId]) chapterMap[item.chapterId]={total:0,done:0};
+      chapterMap[item.chapterId].total++;
+      // fractional within this item
+      chapterMap[item.chapterId].done += hrs>0 ? remaining/hrs : 0;
+      break;
+    }
+  }
+  // sum completed chapters (integer completes + fractions don't count as chapter)
+  let completedCh = 0;
+  for(const k of Object.keys(chapterMap)){
+    const c = chapterMap[k];
+    // check if all items for this chapter are in our traversed set
+    const allForCh = items.filter(x=>x.chapterId===k).length;
+    if(c.total === allForCh && c.done >= allForCh) completedCh++;
+  }
+  return completedCh;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SCHEDULE GENERATOR
+// How it works:
+//   1. Takes all incomplete schedule items, sorted by priority (lower = sooner).
+//   2. Fills days starting from today, fitting items into the daily hour budget.
+//   3. An item that is bigger than the daily budget gets its own day alone.
+//   4. Completed items are removed from future days (they stay in history).
+//   5. Past days that already exist are preserved as-is.
+// Alicia's chapter count is derived from how many hours she's worked today
+// vs the total hours of the items scheduled for today.
+// ══════════════════════════════════════════════════════════════════════
+function generateSchedule(skipSplitCheck){
+  const dailyHrs = S.engine.dailyHrs || 8;
+  const today = todayStr();
+
+  // Preserve past days exactly as they were
+  const preserved = {};
+  for(const [day, ids] of Object.entries(S.generatedSchedule)){
+    if(day < today) preserved[day] = ids;
+  }
+
+  // Sort incomplete items by priority asc
+  const items = [...S.scheduleItems]
+    .filter(it => !isItemComplete(it))
+    .sort((a,b) => (a.priority||50) - (b.priority||50));
+
+  const schedule = {...preserved};
+  let day = today;
+  let dayHrsUsed = 0;
+  const splitOpportunities = []; // {item, remaining, day}
+
+  for(const item of items){
+    const hrs = itemTotalHrs(item);
+    if(hrs === 0) continue;
+
+    while(true){
+      const remaining = dailyHrs - dayHrsUsed;
+      if(remaining >= hrs || dayHrsUsed === 0){
+        if(!schedule[day]) schedule[day] = [];
+        schedule[day].push(item.id);
+        dayHrsUsed += hrs;
+        if(dayHrsUsed >= dailyHrs){ day = addDays(day,1); dayHrsUsed = 0; }
+        break;
+      } else {
+        // gap detected — record split opportunity
+        if(!skipSplitCheck && remaining >= 0.25){
+          splitOpportunities.push({item, slotHrs: remaining, day});
+        }
+        day = addDays(day,1); dayHrsUsed = 0;
+      }
+    }
+  }
+
+  S.generatedSchedule = schedule;
+  save();
+  logSys('Schedule regenerated — '+items.length+' items across days');
+
+  // If gaps found, prompt user
+  if(!skipSplitCheck && splitOpportunities.length > 0){
+    showSplitModal(splitOpportunities);
+  }
+}
+
+function showSplitModal(opportunities){
+  // build summary of gaps
+  const lines = opportunities.map(o => {
+    const tname = topicName(o.item.subjectId, o.item.topicId);
+    const itemHrs = itemTotalHrs(o.item);
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
+      <span style="color:var(--ink);font-weight:900;">${tname}</span>
+      <span style="color:var(--muted);font-size:0.7rem;"> — ${o.slotHrs.toFixed(2)}h free on ${fmtDate(o.day)}, item needs ${itemHrs.toFixed(2)}h</span>
+    </div>`;
+  }).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'splitModal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;';
+  modal.innerHTML = `
+    <div style="background:var(--card);border:1px solid var(--accent);border-radius:16px;padding:24px;max-width:400px;width:100%;">
+      <h3 style="margin:0 0 6px;color:var(--accent);font-size:0.9rem;text-transform:uppercase;letter-spacing:1px;">⚠ Schedule Gap Detected</h3>
+      <p style="font-size:0.72rem;color:var(--muted);margin:0 0 14px;">Some days have unused time because the next item doesn't fit. Split those items to fill the gap?</p>
+      <div style="background:var(--log-bg);border-radius:8px;padding:10px 14px;margin-bottom:18px;border:1px solid var(--border);">${lines}</div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="applySplits()" class="good-btn" style="flex:1;margin:0;">✂ Split & Fill Gaps</button>
+        <button onclick="document.getElementById('splitModal').remove()" style="flex:1;margin:0;background:var(--log-bg);border:1px solid var(--border);color:var(--muted);">Leave Gap</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  // store opportunities for applySplits
+  window._splitOpportunities = opportunities;
+}
+
+function applySplits(){
+  document.getElementById('splitModal')?.remove();
+  const opps = window._splitOpportunities || [];
+  for(const o of opps){
+    splitItemAtHrs(o.item, o.slotHrs);
+  }
+  generateSchedule(true); // regenerate without re-checking
+  renderActive();
+  notify('Items split to fill day gaps.','good');
+}
+
+function splitItemAtHrs(item, splitHrs){
+  // Walk sub-passes and divide at splitHrs boundary
+  const allSPs = item.passes.flatMap(p => p.subPasses.map(sp => ({...sp, type: p.type})));
+  let budget = splitHrs;
+  const partA = []; // sub-passes that fit in slot
+  const partB = []; // remainder
+
+  for(const sp of allSPs){
+    if(budget > 0 && budget >= sp.hrs){
+      partA.push(sp);
+      budget -= sp.hrs;
+    } else if(budget > 0 && budget > 0){
+      // split this sub-pass: put partial in A, rest in B
+      // We can't split a sub-pass itself, so just put it in B (keep atomic)
+      partB.push(sp);
+      budget = 0;
+    } else {
+      partB.push(sp);
+    }
+  }
+
+  if(partA.length === 0 || partB.length === 0) return; // nothing to split
+
+  // Rebuild passes arrays from flat sp lists
+  function rebuildPasses(spList){
+    const grouped = {};
+    for(const sp of spList){
+      if(!grouped[sp.type]) grouped[sp.type] = [];
+      grouped[sp.type].push({id:sp.id, label:sp.label, hrs:sp.hrs, done:sp.done});
+    }
+    return Object.entries(grouped).map(([type, subPasses]) => ({type, subPasses}));
+  }
+
+  // Modify original item to only have partA
+  item.passes = rebuildPasses(partA);
+
+  // Create new item for partB
+  const newItem = {
+    id: 'item_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
+    subjectId: item.subjectId,
+    chapterId: item.chapterId,
+    topicId:   item.topicId,
+    priority:  item.priority,
+    passes:    rebuildPasses(partB),
+    part:      (item.part||1) + 0.5 // mark as split continuation
+  };
+
+  // Insert newItem right after original in scheduleItems
+  const idx = S.scheduleItems.findIndex(x => x.id === item.id);
+  S.scheduleItems.splice(idx + 1, 0, newItem);
+  save();
+}
+
+function todayItems(){
+  const ids = S.generatedSchedule[todayStr()] || [];
+  return ids.map(id=>getItem(id)).filter(Boolean);
+}
+
+// sub-passes user has ticked today across all scheduled items
+function userChaptersTodayCount(){
+  return todayItems().reduce((s, item) => s + itemDoneCount(item), 0);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// RIVAL ENGINE
+// ══════════════════════════════════════════════════════════════════════
+function tickRival(){
+  const today = todayStr();
+  if(S.engine.lastResetDay !== today){
+    if(S.engine.lastResetDay && S.engine.lastResetDay < today) archiveDay(S.engine.lastResetDay);
+    S.engine.lastResetDay = today;
+    S.rival.cur = 0;
+    logSys('NEW DAY → '+today);
+    save();
+  }
+  const now = simDate();
+  const elapsedHrs = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+  const rt = S.rt || {slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+
+  // For each blocked range, compute how much of it has elapsed so far today
+  function blockedSoFar(s, e){
+    // handle overnight ranges (e < s means spans midnight)
+    if(e < s){
+      // Part before midnight (s to 24) — always fully in past if we're past midnight
+      const preRange = Math.max(0, Math.min(24, elapsedHrs) - s);
+      // Part after midnight (0 to e)
+      const postRange = Math.min(e, elapsedHrs);
+      return Math.max(0, preRange) + Math.max(0, postRange);
+    }
+    return Math.max(0, Math.min(e, elapsedHrs) - s);
+  }
+
+  let blocked = 0;
+  for(const r of rt.slp.concat(rt.bf)) blocked += blockedSoFar(r.s, r.e);
+  for(const m of rt.ml) blocked += blockedSoFar(m, m+0.75);
+
+  const aliciaHrs = Math.max(0, elapsedHrs - blocked);
+  S.rival._hrsWorked = aliciaHrs;
+
+  // Elastic boost: if YOU are ahead, Alicia speeds up
+  // Lead = your passes - her current passes (use last known value to avoid circular)
+  const uc = userChaptersTodayCount();
+  const prevAc = S.rival.cur || 0;
+  const lead = uc - prevAc;
+  let boost = 1.0;
+  if(lead >= 2.5)      boost = 1.30;
+  else if(lead >= 1.0) boost = 1.15;
+  S.rival._boost = boost;
+
+  S.rival.cur = aliciaChapterCount(aliciaHrs * boost);
+}
+
+function aliciaChapterCount(hrsWorked){
+  const items = todayItems();
+  if(!items.length) return 0;
+  let remaining = hrsWorked;
+  let passes = 0;
+  for(const item of items){
+    const itemHrs = itemTotalHrs(item);
+    const itemPasses = itemTotalCount(item);
+    if(itemHrs === 0) continue;
+    if(remaining >= itemHrs){
+      // fully done with this item
+      remaining -= itemHrs;
+      passes += itemPasses;
+    } else {
+      // partway through this item — fractional sub-passes
+      passes += (remaining / itemHrs) * itemPasses;
+      break;
+    }
+  }
+  return passes;
+}
+
+function archiveDay(dateStr){
+  const uc = userChaptersTodayCount();
+  const ac = S.rival.cur;
+  const totalPasses = todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
+  const boost = S.rival._boost||1.0;
+  const budget = rtAvailableHrs();
+  const hrsUsed = S.rival._hrsWorked||0;
+  S.history[dateStr]={
+    userCh:uc, aliciaCh:parseFloat(ac.toFixed(2)),
+    win:uc>=ac, totalPasses, boost,
+    hrsUsed:parseFloat(hrsUsed.toFixed(2)), budget:parseFloat(budget.toFixed(2))
+  };
+}
+
+let _lastEod='';
+function checkEndOfDay(){
+  const now=simDate(); const h=now.getHours()+now.getMinutes()/60;
+  const today=todayStr();
+  if(Math.abs(h-anchorHr())<(1/60) && _lastEod!==today){ _lastEod=today; showDayReport(); }
+}
+function showDayReport(){
+  const uc=userChaptersTodayCount(), ac=S.rival.cur;
+  const totalPasses=todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
+  const gap=uc-ac;
+  const boost=S.rival._boost||1.0;
+  const hrsUsed=S.rival._hrsWorked||0;
+  const budget=rtAvailableHrs();
+
+  document.getElementById('reportDate').textContent=fmtDate(todayStr());
+  document.getElementById('repUserCh').textContent=uc;
+  document.getElementById('repAliciaCh').textContent=ac.toFixed(1);
+  document.getElementById('repGoal').textContent=totalPasses+' passes';
+  const gapEl=document.getElementById('repGap');
+  gapEl.textContent=(gap>=0?'+':'')+gap.toFixed(1)+' passes';
+  gapEl.style.color=gap>=0?'var(--good)':'var(--bad)';
+  document.getElementById('repBoost').textContent=boost>=1.15?boost.toFixed(2)+'× (ACTIVE)':'None';
+  document.getElementById('repBoost').style.color=boost>=1.15?'#fb923c':'var(--muted)';
+  document.getElementById('repBudget').textContent=hrsUsed.toFixed(1)+' / '+budget.toFixed(1)+'h';
+
+  const res=document.getElementById('repResult');
+  if(uc>ac){
+    res.style.background='linear-gradient(135deg,#14532d,#166534)';
+    res.style.color='#86efac'; res.style.border='2px solid #4ade80';
+    res.textContent='🎯 DAY CLEARED — VICTORY ACHIEVED';
+  } else if(uc<ac){
+    res.style.background='linear-gradient(135deg,#7f1d1d,#991b1b)';
+    res.style.color='#fca5a5'; res.style.border='2px solid #f87171';
+    res.textContent='⚠️ KERNEL DEFICIT — DEFEAT ACCEPTED';
+  } else {
+    res.style.background='linear-gradient(135deg,#1e3a8a,#1e40af)';
+    res.style.color='#93c5fd'; res.style.border='2px solid #5c6cff';
+    res.textContent='⚖️ PERFECT TIE — STANDOFF';
+  }
+  document.getElementById('dayReportCard').style.display='block';
+  archiveDay(todayStr()); save();
+  setTimeout(()=>{ const c=document.getElementById('dayReportCard'); if(c.style.display!=='none') c.style.opacity='0.5'; },25000);
+}
+function closeDayReport(){
+  const c=document.getElementById('dayReportCard');
+  c.style.opacity='1'; c.style.display='none';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SUB-PASS TICK
+// ══════════════════════════════════════════════════════════════════════
+function tickSubPass(itemId, passIdx, spIdx, val){
+  const item = getItem(itemId); if(!item) return;
+  item.passes[passIdx].subPasses[spIdx].done = val;
+  S.logs.unshift({itemId, passIdx, spIdx, done:val, iso:new Date().toISOString()});
+  if(S.logs.length>1000) S.logs.length=1000;
+  save();
+  const sp = item.passes[passIdx].subPasses[spIdx];
+  logSys(`${val?'✓':'✗'} ${sp.label}`);
+  // NOTE: no auto-regenerate on tick — today's schedule stays stable until manual ⟳ Regen
+  renderActive();
+}
+
+function renameSubPass(itemId, passIdx, spIdx){
+  const item = getItem(itemId); if(!item) return;
+  const sp = item.passes[passIdx].subPasses[spIdx];
+  const newLabel = prompt('Rename sub-pass:', sp.label);
+  if(newLabel && newLabel.trim()){ sp.label=newLabel.trim(); save(); renderActive(); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SUB-PASS BUILDER UI
+// Each pass type gets a count spinner + one row per part (label + hrs)
+// ══════════════════════════════════════════════════════════════════════
+const PASS_DEFAULT_HRS = {Lecture:1.5, Reading:1.0, 'Question Bank':1.0, Revision:0.5, Notes:0.5};
+const PASS_CHK_ID = {'Lecture':'chk_Lecture','Reading':'chk_Reading','Question Bank':'chk_Question_Bank','Revision':'chk_Revision','Notes':'chk_Notes'};
+
+function rebuildSubPassBuilder(){
+  const box = document.getElementById('subPassBuilder');
+  box.innerHTML = '';
+  PASS_TYPES.forEach(pt => {
+    const chk = document.getElementById(PASS_CHK_ID[pt]);
+    if(!chk || !chk.checked) return;
+    const countId = 'spc_'+pt.replace(/ /g,'_');
+    const existCount = parseInt(document.getElementById(countId)?.value) || 1;
+    const section = document.createElement('div');
+    section.style.cssText = 'margin-bottom:16px;padding:12px;background:var(--log-bg);border-radius:8px;border:1px solid var(--border);';
+    section.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+        <span style="font-size:0.8rem;font-weight:900;">${PASS_ICON[pt]} ${pt}</span>
+        <div style="display:flex;align-items:center;gap:6px;margin-left:auto;">
+          <span style="font-size:0.65rem;color:var(--muted);">Parts:</span>
+          <button onclick="changePartCount('${pt}',${countId?`document.getElementById('${countId}').value`:1},-1)" style="width:28px;height:28px;padding:0;margin:0;font-size:1rem;border-radius:4px;line-height:1;">−</button>
+          <input id="${countId}" type="number" min="1" max="30" value="${existCount}" style="width:50px;padding:6px;margin:0;text-align:center;" onchange="rebuildSubPassRows('${pt}')">
+          <button onclick="changePartCount('${pt}',document.getElementById('${countId}').value,1)" style="width:28px;height:28px;padding:0;margin:0;font-size:1rem;border-radius:4px;line-height:1;">+</button>
+        </div>
+      </div>
+      <div id="sprows_${pt.replace(/ /g,'_')}"></div>`;
+    box.appendChild(section);
+    rebuildSubPassRows(pt);
+  });
+}
+
+function changePartCount(pt, cur, delta){
+  const countId = 'spc_'+pt.replace(/ /g,'_');
+  const inp = document.getElementById(countId);
+  if(!inp) return;
+  const newVal = Math.max(1, Math.min(30, parseInt(inp.value||1)+delta));
+  inp.value = newVal;
+  rebuildSubPassRows(pt);
+}
+
+function rebuildSubPassRows(pt){
+  const countId = 'spc_'+pt.replace(/ /g,'_');
+  const rowsId  = 'sprows_'+pt.replace(/ /g,'_');
+  const inp = document.getElementById(countId);
+  const rowBox = document.getElementById(rowsId);
+  if(!inp||!rowBox) return;
+  const count = Math.max(1, parseInt(inp.value)||1);
+  // preserve existing values
+  const existing = [];
+  rowBox.querySelectorAll('.sp-row').forEach(r=>existing.push({label:r.querySelector('.sp-label').value, hrs:r.querySelector('.sp-hrs').value}));
+  rowBox.innerHTML = '';
+  const defHrs = PASS_DEFAULT_HRS[pt]||1;
+  for(let i=0;i<count;i++){
+    const prevLabel = existing[i]?.label || `${pt} Part ${i+1}`;
+    const prevHrs   = existing[i]?.hrs   || defHrs;
+    const row = document.createElement('div');
+    row.className = 'sp-row';
+    row.style.cssText = 'display:flex;gap:8px;align-items:center;margin-bottom:6px;';
+    row.innerHTML = `
+      <span style="font-size:0.65rem;color:var(--muted);width:20px;text-align:right;flex-shrink:0;">${i+1}.</span>
+      <input class="sp-label" type="text" value="${prevLabel}" style="flex:1;padding:7px 10px;margin:0;font-size:0.78rem;" placeholder="Label...">
+      <input class="sp-hrs" type="number" value="${prevHrs}" min="0.25" step="0.25" style="width:65px;padding:7px 8px;margin:0;font-size:0.78rem;" title="Hours for Alicia">
+      <span style="font-size:0.6rem;color:var(--muted);flex-shrink:0;">h</span>`;
+    rowBox.appendChild(row);
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// ADD TOPIC TO SCHEDULE
+// Each add = one study round. You can re-add a topic any number of times.
+// Each round gets its own schedule item. The schedule generator places
+// all incomplete items across days based on your daily hour budget.
+// Alicia mirrors the same schedule — her chapter count is computed from
+// how many hours she has clocked today vs. the total hours of today's items.
+// ══════════════════════════════════════════════════════════════════════
+function addTopicToSchedule(){
+  const subjectId = document.getElementById('addSubject').value;
+  const chapterId = document.getElementById('addChapter').value;
+  const topicId   = document.getElementById('addTopic').value;
+  if(!subjectId||!chapterId||!topicId){ notify('Select subject/chapter/topic','warn'); return; }
+
+  const passes = [];
+  PASS_TYPES.forEach(pt=>{
+    const chk = document.getElementById(PASS_CHK_ID[pt]);
+    if(!chk||!chk.checked) return;
+    const rowsId = 'sprows_'+pt.replace(/ /g,'_');
+    const rowBox = document.getElementById(rowsId);
+    if(!rowBox) return;
+    const subPasses = [];
+    rowBox.querySelectorAll('.sp-row').forEach((r,i)=>{
+      subPasses.push({
+        id:    `${topicId}_${pt}_${i}_${Date.now()}`,
+        label: r.querySelector('.sp-label').value.trim() || `${pt} Part ${i+1}`,
+        hrs:   parseFloat(r.querySelector('.sp-hrs').value)||1,
+        done:  false
+      });
+    });
+    if(subPasses.length) passes.push({type:pt, subPasses});
+  });
+
+  if(!passes.length){ notify('Select at least one pass type.','warn'); return; }
+
+  // Count existing rounds for this topic (for part label)
+  const roundNum = S.scheduleItems.filter(x=>x.topicId===topicId).length + 1;
+  const priority = parseInt(document.getElementById('addPriority').value)||50;
+
+  S.scheduleItems.push({
+    id: `item_${Date.now()}_${Math.random().toString(36).slice(2,6)}`,
+    subjectId, chapterId, topicId, priority, passes,
+    part: roundNum
+  });
+  generateSchedule();
+  notify(roundNum > 1 ? `Round ${roundNum} added for this topic.` : 'Topic added to schedule.','good');
+  addChapterChanged(false);
+  renderSchedule();
+}
+
+function removeScheduleItem(itemId){
+  S.scheduleItems = S.scheduleItems.filter(x=>x.id!==itemId);
+  generateSchedule();
+  notify('Removed from schedule.','bad');
+  renderActive();
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SYLLABUS HELPERS
+// ══════════════════════════════════════════════════════════════════════
+function findTopic(subjectId, topicId){
+  const subj=S.subjects[subjectId]; if(!subj) return null;
+  for(const ch of subj.chapters){ const t=ch.topics.find(t=>t.id===topicId); if(t) return {topic:t,chapter:ch}; }
+  return null;
+}
+function findChapter(subjectId, chapterId){
+  return (S.subjects[subjectId]?.chapters||[]).find(c=>c.id===chapterId)||null;
+}
+function topicName(subjectId, topicId){
+  const f=findTopic(subjectId,topicId); return f?f.topic.name:topicId;
+}
+function chapterName(subjectId, chapterId){
+  const ch=findChapter(subjectId,chapterId); return ch?ch.name:chapterId;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// RENDERS
+// ══════════════════════════════════════════════════════════════════════
+function renderDash(){
+  tickRival(); checkEndOfDay();
+  const uc = userChaptersTodayCount();
+  const ac = S.rival.cur;
+  const p = S.profiles;
+  const todayItemList = todayItems();
+  const dte = daysToExam();
+  const totalTodayCh = todayItemList.reduce((s, item) => s + itemTotalCount(item), 0);
+  const diff = uc - ac;
+  const diffAbs = Math.abs(diff).toFixed(1);
+
+  let uPhoto=p.user.photoDefault, aPhoto=p.alicia.photoDefault;
+  if(todayItemList.length){
+    uPhoto = diff>0?p.user.photoWin   :(diff<0?p.user.photoLoss   :p.user.photoDefault);
+    aPhoto = diff>0?p.alicia.photoLoss:(diff<0?p.alicia.photoWin  :p.alicia.photoDefault);
+  }
+  ['dashUserPfp','menuUserPfp'].forEach(id=>document.getElementById(id).src=uPhoto);
+  ['dashAliciaPfp','menuAliciaPfp'].forEach(id=>document.getElementById(id).src=aPhoto);
+  document.getElementById('dashUserName').textContent   = p.user.name;
+  document.getElementById('dashAliciaName').textContent = p.alicia.name;
+  document.getElementById('menuUserLabel').textContent   = p.user.name;
+  document.getElementById('menuAliciaLabel').textContent = p.alicia.name;
+  document.getElementById('anchorLabel').textContent = 'Anchor: '+anchorLabel();
+  document.getElementById('aliciaDailyHrs').textContent = rtAvailableHrs().toFixed(1);
+
+  // boost card
+  const boost = S.rival._boost || 1.0;
+  const boostEl = document.getElementById('boostVal');
+  const boostCard = document.getElementById('boostCard');
+  const boostLbl = document.getElementById('boostLabel');
+  boostEl.textContent = boost.toFixed(2)+'×';
+  if(boost >= 1.30){
+    boostEl.style.color='#f87171'; boostCard.style.borderColor='#7f1d1d'; boostLbl.textContent='max boost';
+  } else if(boost >= 1.15){
+    boostEl.style.color='#fb923c'; boostCard.style.borderColor='#ea580c'; boostLbl.textContent='+1 lead';
+  } else {
+    boostEl.style.color='var(--muted)'; boostCard.style.borderColor='var(--border)'; boostLbl.textContent='no boost';
+  }
+
+  // top bar = alicia's study hours elapsed / daily budget (pure time)
+  const dailyBudget = rtAvailableHrs();
+  const studyHrsElapsed = S.rival._hrsWorked || 0;
+  const timePct = dailyBudget > 0 ? Math.min(studyHrsElapsed / dailyBudget * 100, 100) : 0;
+  document.getElementById('loadBar').style.width = timePct+'%';
+
+  // what is Alicia doing right now?
+  const nowD = simDate();
+  const hNow = nowD.getHours() + nowD.getMinutes()/60 + nowD.getSeconds()/3600;
+  const rt = S.rt || {slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  function inRange(s, e, h){
+    if(e < s) return h >= s || h < e;
+    return h >= s && h < e;
+  }
+  let aliciaStatus = 'STUDYING';
+  let badgeBg = '#0a2a0a'; let badgeColor = '#4ade80'; let badgeBorder = '#22c55e';
+  for(const r of rt.slp){ if(inRange(r.s, r.e, hNow)){ aliciaStatus='SLEEPING'; badgeBg='#0d1b2e'; badgeColor='#60a5fa'; badgeBorder='#3b82f6'; break; } }
+  if(aliciaStatus === 'STUDYING'){
+    for(const r of rt.bf){ if(inRange(r.s, r.e, hNow)){ aliciaStatus='BUFFER'; badgeBg='#1e1a2e'; badgeColor='#a78bfa'; badgeBorder='#7c3aed'; break; } }
+  }
+  if(aliciaStatus === 'STUDYING'){
+    for(const m of rt.ml){ if(inRange(m, m+0.75, hNow)){ aliciaStatus='EATING'; badgeBg='#2a1a0a'; badgeColor='#fb923c'; badgeBorder='#ea580c'; break; } }
+  }
+  if(!todayItemList.length){ aliciaStatus='NO SCHEDULE'; badgeBg='var(--border)'; badgeColor='var(--muted)'; badgeBorder='transparent'; }
+  const badge = document.getElementById('intensityBadge');
+  badge.textContent = 'ALICIA: ' + aliciaStatus;
+  badge.style.background = badgeBg;
+  badge.style.color = badgeColor;
+  badge.style.border = `1px solid ${badgeBorder}`;
+  document.getElementById('aStatus').textContent = dailyBudget > 0
+    ? `${studyHrsElapsed.toFixed(1)}h / ${dailyBudget.toFixed(1)}h`
+    : 'System Standby';
+
+  const lt=document.getElementById('leadText');
+  if(!todayItemList.length){ lt.textContent='NO SCHEDULE — ADD TOPICS'; lt.style.color='var(--muted)'; }
+  else if(diff>0.05){ lt.textContent=`LEADING BY ${diffAbs} PASSES ▲`; lt.style.color='var(--good)'; }
+  else if(diff<-0.05){ lt.textContent=`BEHIND BY ${diffAbs} PASSES ▼`; lt.style.color='var(--bad)'; }
+  else { lt.textContent='DEAD EVEN — TIED'; lt.style.color='var(--warn)'; }
+
+  document.getElementById('totalDeficit').textContent =
+    `TODAY: ${totalTodayCh} PASSES SCHEDULED  •  ${dte!==null?dte+' DAYS TO EXAM':'SET EXAM DATE'}`;
+
+  // user bars (sub-passes)
+  document.getElementById('uChNum').textContent     = `${uc} / ${totalTodayCh} passes`;
+  document.getElementById('uChBar').style.width     = totalTodayCh?Math.min(uc/totalTodayCh*100,100)+'%':'0%';
+
+  // alicia bars (fractional sub-passes from time)
+  document.getElementById('aChNum').textContent     = `${ac.toFixed(1)} / ${totalTodayCh} passes`;
+  document.getElementById('aChBar').style.width     = totalTodayCh?Math.min(ac/totalTodayCh*100,100)+'%':'0%';
+  document.getElementById('aliciaTodayTotal').textContent = ac.toFixed(1);
+  document.getElementById('aliciaHrsWorked').textContent  = (S.rival._hrsWorked||0).toFixed(1);
+  document.getElementById('heatAlert').style.opacity = ac>uc && todayItemList.length ? '1':'0';
+
+  // today schedule quick view
+  const box = document.getElementById('dashToday');
+  if(!todayItemList.length){
+    box.innerHTML='<div style="color:var(--muted);font-size:0.82rem;">No items scheduled today. Go to Schedule to set up.</div>';
+  } else {
+    box.innerHTML = todayItemList.map(item=>{
+      const done = isItemComplete(item);
+      const doneCount = itemDoneCount(item), totalCount = itemTotalCount(item);
+      const pct = totalCount?Math.round(doneCount/totalCount*100):0;
+      const tname = topicName(item.subjectId,item.topicId);
+      const cname = chapterName(item.subjectId,item.chapterId);
+      return `<div style="padding:10px 0;border-bottom:1px solid var(--border);">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <div>
+            <div style="font-size:0.82rem;font-weight:900;color:${done?'var(--good)':'var(--ink)'};">${done?'✓ ':''}${tname}</div>
+            <div style="font-size:0.65rem;color:var(--muted);">${cname} • ${item.passes.map(p=>PASS_ICON[p.type]).join(' ')}</div>
+          </div>
+          <div style="text-align:right;flex-shrink:0;">
+            <div style="font-size:0.75rem;font-weight:900;color:${done?'var(--good)':'var(--warn)'};">${doneCount}/${totalCount}</div>
+            <div style="font-size:0.6rem;color:var(--muted);">${pct}%</div>
+          </div>
+        </div>
+        <div class="rail" style="height:8px;margin-top:6px;"><div class="fill" style="width:${pct}%;background:${done?'var(--good)':'var(--accent)'};"></div></div>
+      </div>`;
+    }).join('');
+  }
+
+  // syllabus progress
+  document.getElementById('dashSyllabus').innerHTML = Object.keys(S.subjects).map(sid=>{
+    const topics=(S.subjects[sid]?.chapters||[]).flatMap(c=>c.topics);
+    const scheduled=topics.filter(t=>S.scheduleItems.find(x=>x.topicId===t.id));
+    const done=scheduled.filter(t=>{ const it=S.scheduleItems.find(x=>x.topicId===t.id); return it&&isItemComplete(it); });
+    const pct=scheduled.length?Math.round(done.length/scheduled.length*100):0;
+    return `<div style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;font-size:0.78rem;font-weight:800;">
+        <span>${sid}</span><span style="color:var(--accent);">${done.length}/${scheduled.length} topics (${pct}%)</span>
+      </div>
+      <div class="rail" style="height:12px;margin-top:6px;"><div class="fill" style="width:${pct}%;background:var(--accent);"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderSchedule(){
+  // populate add-topic selectors
+  const ss=document.getElementById('addSubject'); const prev=ss.value;
+  ss.innerHTML=Object.keys(S.subjects).map(s=>`<option value="${s}" ${s===prev?'selected':''}>${s}</option>`).join('');
+  addSubjectChanged(true);
+  // build the dynamic sub-pass UI if not yet built
+  rebuildSubPassBuilder();
+
+  // Summary bar
+  const summBar = document.getElementById('schedSummaryBar');
+  if(summBar){
+    const allItems = S.scheduleItems.filter(it=>!isItemComplete(it));
+    const totalHrsRemaining = allItems.reduce((s,it)=>s+itemTotalHrs(it),0);
+    const allDays = Object.keys(S.generatedSchedule);
+    const dailyHrs = S.engine.dailyHrs||8;
+    summBar.innerHTML = `
+      <span>📋 <strong style="color:var(--ink);">${S.scheduleItems.length}</strong> <span style="color:var(--muted);">total topics</span></span>
+      <span>⏱ <strong style="color:var(--warn);">${totalHrsRemaining.toFixed(1)}h</strong> <span style="color:var(--muted);">remaining (Alicia)</span></span>
+      <span>📅 <strong style="color:var(--accent);">${allDays.length}</strong> <span style="color:var(--muted);">days scheduled @ ${dailyHrs}h/day</span></span>
+    `;
+  }
+
+  const box=document.getElementById('scheduleWeek');
+  // get all scheduled days
+  const allDays = Object.keys(S.generatedSchedule).sort();
+  if(!allDays.length){
+    box.innerHTML='<div style="color:var(--muted);font-size:0.82rem;padding:10px 0;">No schedule generated yet. Add topics below and it will auto-generate.</div>';
+    return;
+  }
+
+  const today=todayStr();
+  box.innerHTML=allDays.map(day=>{
+    const ids=S.generatedSchedule[day]||[];
+    const items=ids.map(id=>getItem(id)).filter(Boolean);
+    const isToday=day===today;
+    const isPast=day<today;
+    const totalHrs=items.reduce((s,it)=>s+itemTotalHrs(it),0);
+    return `<div style="border:1px solid ${isToday?'var(--warn)':isPast?'#2a1a1a':'var(--border)'};border-radius:10px;padding:14px;margin-bottom:12px;transition:border-color 0.2s;${isPast?'opacity:0.65;':''}">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+        <div>
+          <span style="font-weight:900;font-size:0.88rem;">${fmtDate(day)}</span>
+          ${isToday?'<span style="background:#2a1a00;color:var(--warn);border:1px solid var(--warn);padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:900;margin-left:6px;">TODAY</span>':''}
+          ${isPast?'<span style="background:#1a1a1a;color:var(--muted);padding:2px 8px;border-radius:4px;font-size:0.6rem;font-weight:900;margin-left:6px;">PAST</span>':''}
+        </div>
+        <span style="font-size:0.7rem;color:var(--muted);">${totalHrs.toFixed(1)}h • ${items.length} topics</span>
+      </div>
+      ${items.map(item=>{
+        const done=isItemComplete(item);
+        const dc=itemDoneCount(item), tc=itemTotalCount(item);
+        const pct=tc?Math.round(dc/tc*100):0;
+        const partLabel = item.part>1 ? ` <span style="font-size:0.6rem;color:var(--warn);background:#2a1a00;padding:1px 5px;border-radius:3px;border:1px solid var(--warn);">P${item.part}</span>` : '';
+        return `<div style="padding:8px 0;border-bottom:1px solid rgba(255,255,255,0.05);">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div style="flex:1;min-width:0;">
+              <span style="font-size:0.82rem;color:${done?'var(--good)':'var(--ink)'};">${done?'✓ ':''}${topicName(item.subjectId,item.topicId)}</span>${partLabel}
+              <span style="font-size:0.65rem;color:var(--muted);margin-left:6px;">${chapterName(item.subjectId,item.chapterId)}</span>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+              <span style="font-size:0.7rem;color:${done?'var(--good)':'var(--warn)'};">${dc}/${tc}</span>
+              <button onclick="removeScheduleItem('${item.id}')" class="bad-btn" style="padding:2px 8px;font-size:0.6rem;margin:0;width:auto;">✕</button>
+            </div>
+          </div>
+          <div class="rail" style="height:6px;margin-top:5px;"><div class="fill" style="width:${pct}%;background:${done?'var(--good)':'var(--accent)'};"></div></div>
+        </div>`;
+      }).join('')}
+    </div>`;
+  }).join('');
+}
+
+function addSubjectChanged(keep){
+  const subj=document.getElementById('addSubject').value;
+  const cs=document.getElementById('addChapter'), prev=cs.value;
+  cs.innerHTML=(S.subjects[subj]?.chapters||[]).map(c=>`<option value="${c.id}" ${c.id===prev&&keep?'selected':''}>${c.name}</option>`).join('');
+  addChapterChanged(keep);
+}
+function addChapterChanged(keep){
+  const subj=document.getElementById('addSubject').value;
+  const chId=document.getElementById('addChapter').value;
+  const ch=findChapter(subj,chId);
+  const ts=document.getElementById('addTopic'), prev=ts.value;
+  const topics = ch?.topics || [];
+  ts.innerHTML = topics.map(t=>{
+    const allItems = S.scheduleItems.filter(x=>x.topicId===t.id);
+    const incomplete = allItems.filter(x=>!isItemComplete(x));
+    let suffix = '';
+    if(allItems.length === 0) suffix = '';
+    else if(incomplete.length > 0) suffix = ` — round ${allItems.length} in progress`;
+    else suffix = ` — ${allItems.length} round${allItems.length>1?'s':''} done ✓`;
+    return `<option value="${t.id}" ${t.id===prev&&keep?'selected':''}>${t.name}${suffix}</option>`;
+  }).join('');
+  if(!ts.options.length) ts.innerHTML='<option value="">No topics in this chapter</option>';
+}
+
+function renderLog(){
+  const items=todayItems();
+  const box=document.getElementById('logScheduleItems');
+  if(!items.length){
+    box.innerHTML='<div style="color:var(--muted);font-size:0.82rem;">Nothing scheduled today.</div>';
+  } else {
+    box.innerHTML=items.map(item=>{
+      const tname=topicName(item.subjectId,item.topicId);
+      const cname=chapterName(item.subjectId,item.chapterId);
+      return `<div style="margin-bottom:16px;">
+        <div style="font-size:0.85rem;font-weight:900;margin-bottom:6px;color:${isItemComplete(item)?'var(--good)':'var(--ink)'};">
+          ${isItemComplete(item)?'✓ ':''}${tname} <span style="font-size:0.65rem;color:var(--muted);font-weight:600;">${cname}</span>
+        </div>
+        ${item.passes.map((p,pi)=>
+          p.subPasses.map((sp,si)=>{
+            const [bg,fg]=(PASS_COLOR[p.type]||'#333:#fff').split(':');
+            return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--log-bg);border-radius:6px;margin-bottom:4px;border:1px solid ${sp.done?'var(--good)':'var(--border)'};">
+              <input type="checkbox" ${sp.done?'checked':''} onchange="tickSubPass('${item.id}',${pi},${si},this.checked)" style="width:18px;height:18px;margin:0;padding:0;cursor:pointer;accent-color:var(--good);">
+              <span style="background:${bg};color:${fg};padding:2px 6px;border-radius:4px;font-size:0.6rem;font-weight:900;flex-shrink:0;">${PASS_ICON[p.type]}</span>
+              <span style="font-size:0.8rem;flex:1;color:${sp.done?'var(--good)':'var(--ink)'};">${sp.label}</span>
+              <span style="font-size:0.6rem;color:var(--muted);flex-shrink:0;" title="Alicia hrs">${sp.hrs||1}h</span>
+              <button onclick="renameSubPass('${item.id}',${pi},${si})" style="width:auto;padding:3px 8px;margin:0;font-size:0.6rem;" class="sec">✏️</button>
+            </div>`;
+          }).join('')
+        ).join('')}
+      </div>`;
+    }).join('');
+  }
+
+  // today logs
+  const today=todayStr();
+  const tl=S.logs.filter(l=>l.iso?.slice(0,10)===today);
+  const tlBox=document.getElementById('logTodayList');
+  tlBox.innerHTML=tl.length
+    ?tl.map(l=>{
+        const item=getItem(l.itemId);
+        if(!item) return '';
+        const sp=item.passes[l.passIdx]?.subPasses[l.spIdx];
+        return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:0.8rem;">
+          <span>${l.done?'✓':'✗'} ${sp?sp.label:''}</span>
+          <span style="color:var(--muted);">${new Date(l.iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false})}</span>
+        </div>`;
+      }).join('')
+    :'<div style="color:var(--muted);font-size:0.82rem;">Nothing logged today.</div>';
+}
+
+function renderSyllabus(){
+  const sp=document.getElementById('syllSubject');
+  const cur=sp.value;
+  sp.innerHTML=Object.keys(S.subjects).map(s=>`<option value="${s}" ${s===cur?'selected':''}>${s}</option>`).join('');
+  const sid=sp.value, subj=S.subjects[sid]; if(!subj) return;
+  const box=document.getElementById('syllTree'); box.innerHTML='';
+  subj.chapters.forEach(ch=>{
+    const chItem=S.scheduleItems.filter(x=>x.chapterId===ch.id);
+    const chDiv=document.createElement('div'); chDiv.style.marginBottom='14px';
+    const bodyId='sb_'+ch.id;
+    const chDone=chItem.filter(isItemComplete).length;
+    chDiv.innerHTML=`
+      <div class="chapter-header" onclick="document.getElementById('${bodyId}').style.display=document.getElementById('${bodyId}').style.display==='none'?'block':'none'">
+        <span style="font-weight:900;font-size:0.85rem;">${ch.name}</span>
+        <span style="font-size:0.72rem;color:var(--accent);">${chDone}/${ch.topics.length} topics done</span>
+      </div>
+      <div id="${bodyId}" style="display:none;">
+        ${ch.topics.map(t=>{
+          const items=S.scheduleItems.filter(x=>x.topicId===t.id);
+          const inSched=items.length>0;
+          const latestItem=items[items.length-1]; // show latest entry
+          const dc=latestItem?itemDoneCount(latestItem):0, tc=latestItem?itemTotalCount(latestItem):0;
+          const pct=tc?Math.round(dc/tc*100):0;
+          const done=latestItem&&isItemComplete(latestItem);
+          const partLabel = items.length>1 ? ` · P${items.length}` : '';
+          return `<div style="padding:10px 8px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.82rem;color:${done?'var(--good)':inSched?'var(--ink)':'var(--muted)'};">${done?'✓ ':''}${t.name}</span>
+            <span style="font-size:0.7rem;color:${inSched?'var(--accent)':'var(--muted)'};">${inSched?`${dc}/${tc} (${pct}%)${partLabel}`:'not scheduled'}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+    box.appendChild(chDiv);
+  });
+}
+
+function renderArchive(){
+  const box=document.getElementById('chronicleBox');
+  const ys=[...new Set(Object.keys(S.history).map(d=>d.slice(0,4)))].sort().reverse();
+  if(!ys.length){box.innerHTML='<div style="color:var(--muted);text-align:center;padding:30px;font-size:0.85rem;">NO CHRONICLES DETECTED</div>';return;}
+  box.innerHTML=ys.map(y=>`<div class="drill-btn" onclick="renderArchiveMonths('${y}')">YEAR: ${y} <span style="color:var(--accent);">VIEW →</span></div>`).join('');
+}
+function renderArchiveMonths(y){
+  const MONTHS=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const box=document.getElementById('chronicleBox');
+  const ms=[...new Set(Object.keys(S.history).filter(d=>d.startsWith(y)).map(d=>parseInt(d.slice(5,7))-1))].sort((a,b)=>b-a);
+  box.innerHTML=`<div class="drill-btn" onclick="renderArchive()" style="margin-bottom:16px;border-color:var(--border);background:var(--log-bg);font-size:0.65rem;padding:10px 14px;">← ALL YEARS</div>`+
+    ms.map(m=>`<div class="drill-btn" onclick="renderArchiveDays('${y}',${m})">${MONTHS[m]} ${y} <span style="color:var(--accent);">OPEN →</span></div>`).join('');
+}
+function renderArchiveDays(y,m){
+  const MONTHS=["JAN","FEB","MAR","APR","MAY","JUN","JUL","AUG","SEP","OCT","NOV","DEC"];
+  const box=document.getElementById('chronicleBox');
+  const days=Object.keys(S.history).filter(d=>{const dt=new Date(d);return dt.getFullYear()===parseInt(y)&&dt.getMonth()===m;}).sort().reverse();
+  box.innerHTML=`<div class="drill-btn" onclick="renderArchiveMonths('${y}')" style="margin-bottom:16px;border-color:var(--border);background:var(--log-bg);font-size:0.65rem;padding:10px 14px;">← ${MONTHS[m]} ${y}</div>`+
+    days.map(d=>{
+      const h=S.history[d];
+      const tag=h.win?`<span class="tag tag-win">WIN</span>`:`<span class="tag tag-loss">LOSS</span>`;
+      return `<div class="drill-btn" onclick="drillSession('${d}')">${d} ${tag} <span style="color:var(--accent);font-size:0.7rem;">INSPECT →</span></div>`;
+    }).join('');
+}
+
+let _currentDrillDay='';
+function drillSession(dayStr){
+  _currentDrillDay=dayStr;
+  document.getElementById('drillDate').textContent=dayStr.toUpperCase();
+  const uB=document.getElementById('drillUser'), aB=document.getElementById('drillAlicia');
+
+  // User sub-pass log for this day
+  const dayLogs=S.logs.filter(l=>{
+    try{ return new Date(l.iso).toISOString().slice(0,10)===dayStr; }catch(e){ return false; }
+  });
+  if(!dayLogs.length){
+    uB.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">No sub-pass logs for this day.</div>';
+  } else {
+    uB.innerHTML=dayLogs.map(l=>{
+      const item=getItem(l.itemId);
+      const sp=item?.passes?.[l.passIdx]?.subPasses?.[l.spIdx];
+      const label=sp?.label||l.itemId;
+      const t=new Date(l.iso).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+      return `<div style="padding:12px 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <div style="font-weight:900;color:var(--accent);font-size:0.85rem;">${label}</div>
+          <div style="color:var(--muted);font-size:0.6rem;margin-top:2px;">${t}</div>
+        </div>
+        <span class="tag ${l.done?'tag-win':'tag-loss'}">${l.done?'DONE':'UNDONE'}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // History summary + Alicia schedule
+  const h=S.history[dayStr];
+  if(h){
+    const gapVal=h.userCh-h.aliciaCh;
+    aB.innerHTML=`<div style="padding:14px;background:var(--log-bg);border-radius:10px;border:1px solid ${h.win?'var(--good)':'var(--bad)'};margin-bottom:14px;">
+      <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;">Day Result</div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Outcome</span>
+        <span class="tag ${h.win?'tag-win':'tag-loss'}" style="font-size:0.75rem;">${h.win?'VICTORY':'DEFEAT'}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Your passes</span>
+        <span style="font-weight:900;color:var(--good);">${h.userCh}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Alicia passes</span>
+        <span style="font-weight:900;color:var(--accent);">${(h.aliciaCh||0).toFixed?h.aliciaCh.toFixed(1):h.aliciaCh}</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Pass gap</span>
+        <span style="font-weight:900;color:${gapVal>=0?'var(--good)':'var(--bad)'};">${gapVal>=0?'+':''}${gapVal.toFixed?gapVal.toFixed(1):gapVal}</span>
+      </div>
+      ${h.boost&&h.boost>1?`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+        <span style="font-size:0.75rem;color:var(--muted);">Boost active</span>
+        <span style="font-weight:900;color:#fb923c;">${h.boost.toFixed(2)}×</span>
+      </div>`:''}
+      ${h.hrsUsed!=null?`<div style="display:flex;justify-content:space-between;align-items:center;">
+        <span style="font-size:0.75rem;color:var(--muted);">Budget used</span>
+        <span style="font-weight:900;color:var(--warn);">${h.hrsUsed}h / ${h.budget}h</span>
+      </div>`:''}
+    </div>`;
+  } else {
+    aB.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">No end-of-day data recorded.</div>';
+  }
+
+  // Alicia's schedule for the day
+  const rt=S.rt||{slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  let events=[];
+  rt.slp.forEach(s=>events.push({s:s.s<3.5?s.s+24:s.s,e:s.e<3.5?s.e+24:s.e,l:'SLEEP'}));
+  rt.ml.forEach(m=>events.push({s:m<3.5?m+24:m,e:(m+0.75)<3.5?m+0.75+24:m+0.75,l:'MEAL'}));
+  rt.bf.forEach(b=>events.push({s:b.s<3.5?b.s+24:b.s,e:b.e<3.5?b.e+24:b.e,l:'BUFFER'}));
+  events.sort((a,b)=>a.s-b.s);
+  let cur=3.5, schedHTML=`<div style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border);">
+    <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;letter-spacing:1px;">ALICIA'S DAILY SCHEDULE</div>`;
+  events.forEach(ev=>{
+    if(ev.s>cur) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur)} – ${d2t(ev.s)}</span><span class="tag tag-study">STUDY</span></div>`;
+    schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(ev.s)} – ${d2t(ev.e)}</span><span class="tag tag-rest">${ev.l}</span></div>`;
+    cur=ev.e;
+  });
+  if(cur<27.5) schedHTML+=`<div style="padding:5px 0;display:flex;justify-content:space-between;"><span style="font-size:0.75rem;">> ${d2t(cur)} – ${d2t(3.5)}</span><span class="tag tag-study">STUDY</span></div>`;
+  schedHTML+='</div>';
+  aB.innerHTML+=(h?'':'')+schedHTML;
+
+  show('drill');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PROFILE
+// ══════════════════════════════════════════════════════════════════════
+function renderProfile(){
+  const p=S.profiles,e=S.engine;
+  document.getElementById('inputUserName').value      = p.user.name||'';
+  document.getElementById('inputUserTagline').value   = p.user.tagline||'';
+  document.getElementById('urlUserDefault').value     = p.user.photoDefault||D_USER_PHOTOS.Default;
+  document.getElementById('urlUserWin').value         = p.user.photoWin    ||D_USER_PHOTOS.Win;
+  document.getElementById('urlUserLoss').value        = p.user.photoLoss   ||D_USER_PHOTOS.Loss;
+  document.getElementById('prevUserDefault').src      = p.user.photoDefault||D_USER_PHOTOS.Default;
+  document.getElementById('prevUserWin').src          = p.user.photoWin    ||D_USER_PHOTOS.Win;
+  document.getElementById('prevUserLoss').src         = p.user.photoLoss   ||D_USER_PHOTOS.Loss;
+  document.getElementById('profileUserNameDisplay').textContent   = p.user.name;
+  document.getElementById('profileUserTaglineDisplay').textContent= p.user.tagline;
+  document.getElementById('profileUserIcon').src      = p.user.photoDefault||D_USER_PFP;
+
+  document.getElementById('inputAliciaName').value    = p.alicia.name||'';
+  document.getElementById('inputAliciaTagline').value = p.alicia.tagline||'';
+  document.getElementById('urlAliciaDefault').value   = p.alicia.photoDefault||D_ALICIA_PHOTOS.Default;
+  document.getElementById('urlAliciaWin').value       = p.alicia.photoWin    ||D_ALICIA_PHOTOS.Win;
+  document.getElementById('urlAliciaLoss').value      = p.alicia.photoLoss   ||D_ALICIA_PHOTOS.Loss;
+  document.getElementById('prevAliciaDefault').src    = p.alicia.photoDefault||D_ALICIA_PHOTOS.Default;
+  document.getElementById('prevAliciaWin').src        = p.alicia.photoWin    ||D_ALICIA_PHOTOS.Win;
+  document.getElementById('prevAliciaLoss').src       = p.alicia.photoLoss   ||D_ALICIA_PHOTOS.Loss;
+  document.getElementById('profileAliciaNameDisplay').textContent   = p.alicia.name;
+  document.getElementById('profileAliciaTaglineDisplay').textContent= p.alicia.tagline;
+  document.getElementById('profileAliciaIcon').src    = p.alicia.photoDefault||D_ALICIA_PFP;
+
+  document.getElementById('cfgAnchor').value    = e.anchorHour??3.5;
+  document.getElementById('cfgExamDate').value  = e.examDate||'';
+  updateAnchorPreview();
+  updateDailyHrsDisplay();
+  // Populate biological constraints
+  const rt = S.rt || {slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  document.getElementById('rtSleep').value = rt.slp.map(r=>d2t(r.s)+'-'+d2t(r.e)).join(', ');
+  document.getElementById('rtMeal').value  = rt.ml.map(d2t).join(', ');
+  document.getElementById('rtPers').value  = rt.bf.map(r=>d2t(r.s)+'-'+d2t(r.e)).join(', ');
+  updateRtPreview();
+}
+function livePreviewUser(){
+  document.getElementById('profileUserNameDisplay').textContent   = document.getElementById('inputUserName').value||'YOU';
+  document.getElementById('profileUserTaglineDisplay').textContent= document.getElementById('inputUserTagline').value||'The Operator';
+}
+function livePreviewAlicia(){
+  document.getElementById('profileAliciaNameDisplay').textContent   = document.getElementById('inputAliciaName').value||'ALICIA';
+  document.getElementById('profileAliciaTaglineDisplay').textContent= document.getElementById('inputAliciaTagline').value||'The Rival';
+}
+const D_USER_PHOTOS   = {Default:'https://iili.io/q7kMZ6N.md.jpg', Win:'https://iili.io/q7venWX.md.jpg', Loss:'https://iili.io/q7v3cDQ.md.jpg'};
+const D_ALICIA_PHOTOS = {Default:'https://iili.io/qR0vySS.md.jpg', Win:'https://iili.io/qR0kSY7.md.jpg', Loss:'https://iili.io/qR08IOF.md.jpg'};
+
+function previewPhoto(who,state){
+  const url=document.getElementById(`url${who}${state}`).value.trim();
+  if(url) document.getElementById(`prev${who}${state}`).src=url;
+}
+function resetPhoto(who,state){
+  const defaults = who==='User' ? D_USER_PHOTOS : D_ALICIA_PHOTOS;
+  const def = defaults[state] || (who==='User'?D_USER_PFP:D_ALICIA_PFP);
+  document.getElementById(`url${who}${state}`).value = def;
+  document.getElementById(`prev${who}${state}`).src  = def;
+}
+function saveProfile(who){
+  if(who==='user'){
+    S.profiles.user.name         = document.getElementById('inputUserName').value||'YOU';
+    S.profiles.user.tagline      = document.getElementById('inputUserTagline').value||'The Operator';
+    S.profiles.user.photoDefault = document.getElementById('urlUserDefault').value||D_USER_PHOTOS.Default;
+    S.profiles.user.photoWin     = document.getElementById('urlUserWin').value    ||D_USER_PHOTOS.Win;
+    S.profiles.user.photoLoss    = document.getElementById('urlUserLoss').value   ||D_USER_PHOTOS.Loss;
+  } else {
+    S.profiles.alicia.name         = document.getElementById('inputAliciaName').value||'ALICIA';
+    S.profiles.alicia.tagline      = document.getElementById('inputAliciaTagline').value||'The Rival';
+    S.profiles.alicia.photoDefault = document.getElementById('urlAliciaDefault').value||D_ALICIA_PHOTOS.Default;
+    S.profiles.alicia.photoWin     = document.getElementById('urlAliciaWin').value    ||D_ALICIA_PHOTOS.Win;
+    S.profiles.alicia.photoLoss    = document.getElementById('urlAliciaLoss').value   ||D_ALICIA_PHOTOS.Loss;
+  }
+  save(); notify('Profile saved.','good'); renderProfile();
+}
+function saveEngineConfig(){
+  S.engine.anchorHour = parseFloat(document.getElementById('cfgAnchor').value)||3.5;
+  S.engine.examDate   = document.getElementById('cfgExamDate').value||'';
+  // dailyHrs is always derived from bio constraints — never manually set
+  S.engine.dailyHrs   = rtAvailableHrs();
+  generateSchedule();
+  save(); notify('Config saved & schedule regenerated.','good'); updateAnchorPreview(); updateDailyHrsDisplay();
+}
+function updateAnchorPreview(){
+  const v=parseFloat(document.getElementById('cfgAnchor').value)||3.5;
+  const hh=Math.floor(v); const mm=v%1?'30':'00';
+  document.getElementById('anchorPreview').textContent='Anchor: '+String(hh).padStart(2,'0')+':'+mm+'  — contest ends & resets here';
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BIOLOGICAL CONSTRAINTS HELPERS
+// ══════════════════════════════════════════════════════════════════════
+function t2d(s){ // "HH:MM" → decimal hours
+  const p=s.trim().split(':'); if(p.length<2) return NaN;
+  return parseInt(p[0])+(parseInt(p[1])/60);
+}
+function d2t(d){ // decimal hours → "HH:MM"
+  const h=Math.floor(d); const m=Math.round((d-h)*60);
+  return String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+}
+function parseRange(s){ // "HH:MM-HH:MM" or "HH:MM-HH:MM, HH:MM-HH:MM" → [{s,e},...]
+  return s.split(',').map(r=>{
+    const parts=r.trim().split('-');
+    if(parts.length<2) return null;
+    const sv=t2d(parts[0]), ev=t2d(parts[1]);
+    if(isNaN(sv)||isNaN(ev)) return null;
+    return {s:sv, e:ev};
+  }).filter(Boolean);
+}
+function isAliciaActive(h){ // h = decimal hour, returns false if in blocked period
+  const rt = S.rt || {slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  for(const r of rt.slp.concat(rt.bf)){
+    if(r.e < r.s){ if(h>=r.s || h<r.e) return false; }
+    else { if(h>=r.s && h<r.e) return false; }
+  }
+  for(const m of rt.ml){ if(h>=m && h<m+0.75) return false; }
+  return true;
+}
+function rtAvailableHrs(){ // compute net available hours/day from rt
+  const rt = S.rt || {slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  let blocked = 0;
+  for(const r of rt.slp.concat(rt.bf)){
+    const dur = r.e < r.s ? (24-r.s+r.e) : (r.e-r.s);
+    blocked += dur;
+  }
+  blocked += rt.ml.length * 0.75;
+  return Math.max(0, 24-blocked);
+}
+function saveRoutine(){
+  if(!S.rt) S.rt={slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  const slpVal = document.getElementById('rtSleep').value;
+  const mlVal  = document.getElementById('rtMeal').value;
+  const pfVal  = document.getElementById('rtPers').value;
+  const slp = parseRange(slpVal);
+  const bf  = parseRange(pfVal);
+  const ml  = mlVal.split(',').map(m=>t2d(m.trim())).filter(n=>!isNaN(n));
+  if(!slp.length && slpVal.trim()) { notify('Sleep format error. Use HH:MM-HH:MM','bad'); return; }
+  S.rt = { slp: slp.length?slp:[{s:23,e:6.5}], ml, bf: bf.length?bf:[] };
+  // Auto-derive daily budget from constraints
+  S.engine.dailyHrs = rtAvailableHrs();
+  generateSchedule();
+  save(); notify('Constraints saved — daily budget auto-updated to '+S.engine.dailyHrs.toFixed(1)+'h.','good');
+  updateRtPreview(); updateDailyHrsDisplay();
+}
+function updateDailyHrsDisplay(){
+  const el = document.getElementById('cfgDailyHrsDisplay');
+  if(el) el.textContent = rtAvailableHrs().toFixed(1)+'h';
+}
+function updateRtPreview(){
+  const el = document.getElementById('rtAvailPreview');
+  if(!el) return;
+  const hrs = rtAvailableHrs();
+  el.innerHTML = `→ <strong style="color:var(--good);font-size:1rem;">${hrs.toFixed(1)}h</strong> available/day — this becomes Alicia's daily study budget`;
+  updateDailyHrsDisplay();
+}
+function regenerateSchedule(){ generateSchedule(); renderActive(); notify('Schedule regenerated.','good'); }
+
+// ══════════════════════════════════════════════════════════════════════
+// SYNC
+// ══════════════════════════════════════════════════════════════════════
+function exportBackup(){
+  try{
+    const data=LZString.compressToBase64(JSON.stringify({
+      scheduleItems:S.scheduleItems, generatedSchedule:S.generatedSchedule,
+      history:S.history, logs:S.logs, rival:S.rival,
+      engine:S.engine, profiles:S.profiles, rt:S.rt
+    }));
+    const fname=`studyrival_backup_${todayStr()}.txt`;
+    if(typeof Android!=='undefined'&&Android.writeFile){ Android.writeFile(fname,data); }
+    else{ const a=document.createElement('a'); a.href='data:text/plain;charset=utf-8,'+encodeURIComponent(data); a.download=fname; a.click(); }
+    document.getElementById('exportStatus').textContent='✓ Exported: '+fname;
+    notify('Backup saved.','good');
+  }catch(e){ notify('Export failed: '+e.message,'bad'); }
+}
+function onFileWritten(f){ document.getElementById('exportStatus').textContent='✓ Saved: '+f; notify('Saved.','good'); }
+function onFileWriteFailed(m){ document.getElementById('exportStatus').textContent='✗ Failed: '+m; notify('Write failed.','bad'); }
+function importFromFile(evt){ const f=evt.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=e=>impStr(e.target.result); r.readAsText(f); evt.target.value=''; }
+function onFileImported(c){ impStr(c); }
+function exportToField(){ document.getElementById('syncField').value=LZString.compressToBase64(JSON.stringify({scheduleItems:S.scheduleItems,generatedSchedule:S.generatedSchedule,history:S.history,logs:S.logs,rival:S.rival,engine:S.engine,profiles:S.profiles,rt:S.rt})); }
+function importFromField(){ impStr(document.getElementById('syncField').value); }
+function impStr(raw){
+  try{
+    const p=JSON.parse(LZString.decompressFromBase64(raw.trim()));
+    if(p.scheduleItems)     S.scheduleItems     = p.scheduleItems;
+    if(p.generatedSchedule) S.generatedSchedule = p.generatedSchedule;
+    if(p.history)   S.history   = p.history;
+    if(p.logs)      S.logs      = p.logs;
+    if(p.rival)     S.rival     = {...mkDefault().rival,...p.rival};
+    if(p.engine)    S.engine    = {...mkDefault().engine,...p.engine,...{passDurations:{...mkDefault().engine.passDurations,...(p.engine.passDurations||{})}}};
+    if(p.profiles)  S.profiles  = {user:{...mkDefault().profiles.user,...p.profiles.user},alicia:{...mkDefault().profiles.alicia,...p.profiles.alicia}};
+    if(p.rt) S.rt = { slp:p.rt.slp||[{s:23,e:6.5}], ml:p.rt.ml||[8.5,13,20], bf:p.rt.bf||[{s:17,e:18.5}] };
+    S.engine.dailyHrs = rtAvailableHrs();
+    save(); renderActive(); notify('Import successful.','good');
+  }catch(e){ notify('Import failed: '+e.message,'bad'); }
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// TOAST / LOG
+// ══════════════════════════════════════════════════════════════════════
+function notify(msg,type='info'){
+  const c={good:'#4ade80',bad:'#f87171',warn:'#fbbf24',info:'var(--accent)'};
+  const w=document.getElementById('toast-wrap');
+  const t=document.createElement('div'); t.className='toast';
+  t.style.borderLeftColor=c[type]||c.info; t.textContent=msg; w.appendChild(t);
+  setTimeout(()=>t.style.opacity='0',2800); setTimeout(()=>t.remove(),3200);
+}
+function logSys(msg){
+  const b=document.getElementById('sysLog'); if(!b) return;
+  const d=document.createElement('div');
+  d.textContent=`[${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false})}] ${msg}`;
+  b.prepend(d); while(b.children.length>20) b.removeChild(b.lastChild);
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// NAV
+// ══════════════════════════════════════════════════════════════════════
+function nav(id){ closeMenu(); show(id); }
+function show(id){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='dash')     renderDash();
+  if(id==='schedule') renderSchedule();
+  if(id==='log')      renderLog();
+  if(id==='syllabus')      renderSyllabus();
+  if(id==='editSyllabus')  renderEditSyllabus();
+  if(id==='archive')  renderArchive();
+  if(id==='profile')  renderProfile();
+  if(id==='sim')      { /* sim is self-contained */ }
+}
+function renderActive(){ const a=document.querySelector('.page.active'); if(a) show(a.id); }
+function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('show'); document.getElementById('menuOverlay').classList.toggle('show'); }
+function closeMenu(){ document.getElementById('mobileMenu').classList.remove('show'); document.getElementById('menuOverlay').classList.remove('show'); }
+function confirmPurge(){ closeMenu(); if(confirm('PURGE ALL DATA?')){ localStorage.removeItem('srv3'); S=mkDefault(); renderActive(); notify('Purged.','bad'); } }
+
+// ══════════════════════════════════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════════════════════════════════
+function tickClock(){
+  if(_simRunning) return; // sim manages clock display itself
+  const s=simDate().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',hour12:false});
+  document.getElementById('headerClock').textContent=s;
+  document.getElementById('mainClock').textContent=s;
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// SYLLABUS EDITOR
+// ══════════════════════════════════════════════════════════════════════
+function deepCloneSyllabus(src){
+  return {chapters: src.chapters.map(ch=>({
+    id: ch.id, name: ch.name,
+    topics: ch.topics.map(t=>({id:t.id, name:t.name}))
+  }))};
+}
+function syllNextId(prefix){
+  // generate a unique ID that won't clash
+  return prefix + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+}
+function saveSyllabus(){
+  S.subjects = {'MICROBIOLOGY': S.customSyllabus};
+  save();
+}
+function addSyllTopic(){
+  const chName  = document.getElementById('newChapName').value.trim();
+  const topName = document.getElementById('newTopicName').value.trim();
+  if(!chName||!topName){ notify('Fill in both Chapter and Topic name.','bad'); return; }
+  const syll = S.customSyllabus;
+  let ch = syll.chapters.find(c=>c.name.toLowerCase()===chName.toLowerCase());
+  if(!ch){
+    ch = {id: syllNextId('ch'), name: chName, topics:[]};
+    syll.chapters.push(ch);
+  }
+  if(ch.topics.find(t=>t.name.toLowerCase()===topName.toLowerCase())){
+    notify('Topic already exists in that chapter.','bad'); return;
+  }
+  ch.topics.push({id: syllNextId('mt'), name: topName});
+  document.getElementById('newTopicName').value='';
+  saveSyllabus(); renderEditSyllabus();
+  notify('Topic added.','good');
+}
+function deleteSyllTopic(chIdx, tIdx){
+  S.customSyllabus.chapters[chIdx].topics.splice(tIdx,1);
+  if(!S.customSyllabus.chapters[chIdx].topics.length) S.customSyllabus.chapters.splice(chIdx,1);
+  saveSyllabus(); renderEditSyllabus(); renderSyllabus();
+}
+function deleteSyllChapter(chIdx){
+  const name = S.customSyllabus.chapters[chIdx].name;
+  if(!confirm('Delete entire chapter "'+name+'" and all its topics?')) return;
+  S.customSyllabus.chapters.splice(chIdx,1);
+  saveSyllabus(); renderEditSyllabus(); renderSyllabus();
+  notify('Chapter deleted.','bad');
+}
+function batchImportSyll(replace){
+  const raw = document.getElementById('batchSyllInput').value.trim();
+  if(!raw){ notify('Paste some entries first.','bad'); return; }
+  const lines = raw.split(/[;\n]+/).map(l=>l.trim()).filter(Boolean);
+  let added=0, skipped=0;
+  const syll = replace ? {chapters:[]} : S.customSyllabus;
+  for(const line of lines){
+    const comma = line.indexOf(',');
+    if(comma<1){ skipped++; continue; }
+    const chName  = line.slice(0,comma).trim();
+    const topName = line.slice(comma+1).trim();
+    if(!chName||!topName){ skipped++; continue; }
+    let ch = syll.chapters.find(c=>c.name.toLowerCase()===chName.toLowerCase());
+    if(!ch){ ch={id:syllNextId('ch'),name:chName,topics:[]}; syll.chapters.push(ch); }
+    if(!ch.topics.find(t=>t.name.toLowerCase()===topName.toLowerCase())){
+      ch.topics.push({id:syllNextId('mt'),name:topName}); added++;
+    } else skipped++;
+  }
+  if(replace) S.customSyllabus = syll;
+  document.getElementById('batchSyllInput').value='';
+  saveSyllabus(); renderEditSyllabus(); renderSyllabus();
+  notify(added+' topic(s) added, '+skipped+' skipped.','good');
+}
+function renderEditSyllabus(){
+  const box = document.getElementById('editSyllTree');
+  if(!box) return;
+  const chapters = S.customSyllabus.chapters;
+  if(!chapters.length){ box.innerHTML='<div style="color:var(--muted);font-size:0.75rem;padding:10px 0;">No syllabus data yet. Add topics above.</div>'; return; }
+  box.innerHTML = chapters.map((ch,ci)=>`
+    <details open style="margin-bottom:10px;background:var(--log-bg);border-radius:8px;border:1px solid var(--border);overflow:hidden;">
+      <summary style="padding:10px 14px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;list-style:none;">
+        <span style="font-size:0.8rem;font-weight:900;color:var(--accent);">${ch.name}</span>
+        <span style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:0.65rem;color:var(--muted);">${ch.topics.length} topics</span>
+          <button onclick="event.stopPropagation();deleteSyllChapter(${ci})" style="width:auto;padding:3px 8px;margin:0;background:#3d1010;color:#ff9999;border:1px solid #7f1d1d;border-radius:5px;font-size:0.6rem;cursor:pointer;transition:none;">🗑 Chapter</button>
+        </span>
+      </summary>
+      <div style="padding:6px 10px 10px;">
+        ${ch.topics.map((t,ti)=>`
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;border-radius:6px;border:1px solid var(--border);margin-bottom:5px;background:rgba(255,255,255,0.02);">
+            <span style="font-size:0.75rem;">${t.name}</span>
+            <button onclick="deleteSyllTopic(${ci},${ti})" style="width:auto;padding:2px 8px;margin:0;background:#3d1010;color:#ff9999;border:1px solid #7f1d1d;border-radius:5px;font-size:0.6rem;cursor:pointer;transition:none;">✕</button>
+          </div>`).join('')}
+      </div>
+    </details>`).join('');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════════════════
+loadState();
+show('dash');
+tickClock();
+setInterval(tickClock, 15000);
+setInterval(()=>{ tickRival(); checkEndOfDay(); save(); if(document.getElementById('dash').classList.contains('active')) renderDash(); }, 60000);
+logSys('OMEGA v2 ONLINE');
+</script>
+</body>
+</html>
