@@ -440,11 +440,17 @@ td{padding:10px;font-size:0.82rem;border-bottom:1px solid var(--border);}
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
       <h2 style="margin:0;font-size:1rem;text-transform:uppercase;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;">📅 Planner</h2>
-      <div style="display:flex;gap:8px;align-items:center;">
-        <button onclick="calPrev()" style="width:34px;height:34px;padding:0;margin:0;font-size:1rem;border-radius:10px;background:var(--log-bg);border:1px solid var(--border);color:var(--ink);">‹</button>
-        <span id="calMonthLabel" style="font-size:0.8rem;font-weight:900;color:var(--ink);min-width:90px;text-align:center;"></span>
-        <button onclick="calNext()" style="width:34px;height:34px;padding:0;margin:0;font-size:1rem;border-radius:10px;background:var(--log-bg);border:1px solid var(--border);color:var(--ink);">›</button>
+      <!-- Mode toggle -->
+      <div style="display:flex;background:var(--log-bg);border:1px solid var(--border);border-radius:99px;padding:3px;gap:2px;">
+        <button id="modeSelectBtn" onclick="setCalMode('select')" style="width:auto;margin:0;padding:5px 14px;font-size:0.65rem;border-radius:99px;background:var(--accent);color:white;box-shadow:0 0 10px var(--glow);">✦ Select</button>
+        <button id="modeViewBtn"   onclick="setCalMode('view')"   style="width:auto;margin:0;padding:5px 14px;font-size:0.65rem;border-radius:99px;background:transparent;color:var(--muted);box-shadow:none;">👁 View</button>
       </div>
+    </div>
+    <!-- Month nav -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <button onclick="calPrev()" style="width:34px;height:34px;padding:0;margin:0;font-size:1.1rem;border-radius:10px;background:var(--log-bg);border:1px solid var(--border);color:var(--ink);">‹</button>
+      <span id="calMonthLabel" style="font-size:0.85rem;font-weight:900;color:var(--ink);"></span>
+      <button onclick="calNext()" style="width:34px;height:34px;padding:0;margin:0;font-size:1.1rem;border-radius:10px;background:var(--log-bg);border:1px solid var(--border);color:var(--ink);">›</button>
     </div>
     <div class="cal-header">
       <div class="cal-dow">Su</div><div class="cal-dow">Mo</div><div class="cal-dow">Tu</div>
@@ -452,16 +458,17 @@ td{padding:10px;font-size:0.82rem;border-bottom:1px solid var(--border);}
     </div>
     <div class="cal-grid" id="calGrid"></div>
 
-    <!-- Selection status row -->
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px;">
+    <!-- Select mode status -->
+    <div id="selModeBar" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px;">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
         <span id="calSelCount" style="display:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;font-size:0.68rem;font-weight:900;padding:4px 12px;border-radius:99px;"></span>
-        <span style="font-size:0.65rem;color:var(--muted);">Tap dates to select · tap again to deselect</span>
+        <span style="font-size:0.65rem;color:var(--muted);">Tap to select · tap again to deselect</span>
       </div>
-      <button onclick="_calSelected.clear();renderCalendar();renderCalDayView();" style="display:none;width:auto;padding:4px 12px;margin:0;font-size:0.65rem;border-radius:99px;background:var(--log-bg);border:1px solid var(--border);color:var(--muted);" id="calClearBtn">✕ Clear</button>
+      <button onclick="_calSelected.clear();renderCalendar();" style="display:none;width:auto;padding:4px 12px;margin:0;font-size:0.65rem;border-radius:99px;background:var(--log-bg);border:1px solid var(--border);color:var(--muted);" id="calClearBtn">✕ Clear all</button>
     </div>
-    <!-- Selected day view -->
-    <div id="calDayView" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;display:none;">
+
+    <!-- View mode day detail -->
+    <div id="calDayView" style="margin-top:14px;border-top:1px solid var(--border);padding-top:14px;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
         <div id="calDayLabel" style="font-weight:900;font-size:0.95rem;color:var(--accent);"></div>
         <div id="calDayBudget" style="font-size:0.7rem;color:var(--muted);"></div>
@@ -1147,30 +1154,26 @@ function generateSchedule(skipSplitCheck, startDay){
   S._pinnedOverload = {}; // clear old badge data
 
   // Greedy bin-pack unpinned items day by day
-  // For each day, compute hours already used by pinned items, then fill remaining
   let day = fromDay;
   let remaining = [...unpinned];
-  // Seed splitOpportunities with any pinned overflows so both get the same modal
   const splitOpportunities = [...pinnedOverflow];
   const MAX_DAYS = 400;
   let safetyCounter = 0;
 
   while(remaining.length > 0 && safetyCounter++ < MAX_DAYS){
-    // How many hours are already pinned on this day?
     const pinnedHrs = (schedule[day]||[])
       .map(id=>getItem(id))
       .filter(Boolean)
       .reduce((s,it)=>s+(it.pinDate?itemTotalHrs(it):0), 0);
     let slotLeft = dailyHrs - pinnedHrs;
-    if(slotLeft <= 0){ day = addDays(day,1); continue; }
+    if(slotLeft <= 0.01){ day = addDays(day,1); continue; }
 
     if(!schedule[day]) schedule[day] = [];
 
-    // Greedy: try to fill slotLeft — pick items that fit, smallest gap first
-    let filled = true;
-    while(filled && slotLeft >= 0.75 && remaining.length > 0){
-      filled = false;
-      // Find the largest item that fits in slotLeft (greedy largest-fit)
+    // Greedy largest-fit: keep placing until nothing fits
+    let placed = true;
+    while(placed && slotLeft > 0.01 && remaining.length > 0){
+      placed = false;
       let best = -1;
       for(let i=0;i<remaining.length;i++){
         const h = itemTotalHrs(remaining[i]);
@@ -1182,14 +1185,15 @@ function generateSchedule(skipSplitCheck, startDay){
         const item = remaining.splice(best,1)[0];
         schedule[day].push(item.id);
         slotLeft -= itemTotalHrs(item);
-        filled = true;
+        placed = true;
       }
     }
 
-    // If still have items but nothing fits, record split opportunity
+    // Record split opportunity only if gap >= 0.25h and something is too big to fit
     if(!skipSplitCheck && remaining.length > 0 && slotLeft >= 0.25){
-      const nextItem = remaining[0];
-      splitOpportunities.push({item:nextItem, slotHrs:slotLeft, day});
+      // Check there's actually something that doesn't fit (not just nothing left)
+      const tooBig = remaining.find(it => itemTotalHrs(it) > slotLeft);
+      if(tooBig) splitOpportunities.push({item:tooBig, slotHrs:slotLeft, day});
     }
 
     day = addDays(day, 1);
@@ -1254,37 +1258,35 @@ function applySplits(){
   document.getElementById('splitModal')?.remove();
   const opps = window._splitOpportunities || [];
   for(const o of opps){
-    splitItemAtHrs(o.item, o.slotHrs);
+    // splitItemAtHrs modifies item in-place (partA) and inserts partB into scheduleItems
+    // partA stays wherever it already was in the schedule (or gets placed on o.day)
+    // partB is NEW — it's NOT in any day yet (pool only), which is correct
+    splitItemAtHrs(o.item, o.slotHrs, o.day);
   }
-  generateSchedule(true); // regenerate without re-checking
+  save();
   renderActive();
-  notify('Items split to fill day gaps.','good');
+  notify('Items split. Remainder is now in the unscheduled pool — assign it to a day.','good');
 }
 
-function splitItemAtHrs(item, splitHrs){
-  // Walk sub-passes and divide at splitHrs boundary
+function splitItemAtHrs(item, splitHrs, day){
+  // Walk sub-passes and divide at splitHrs boundary (sub-passes are atomic)
   const allSPs = item.passes.flatMap(p => p.subPasses.map(sp => ({...sp, type: p.type})));
   let budget = splitHrs;
-  const partA = []; // sub-passes that fit in slot
-  const partB = []; // remainder
+  const partA = [];
+  const partB = [];
 
   for(const sp of allSPs){
-    if(budget > 0 && budget >= sp.hrs){
+    if(budget >= sp.hrs - 0.001){
       partA.push(sp);
       budget -= sp.hrs;
-    } else if(budget > 0 && budget > 0){
-      // split this sub-pass: put partial in A, rest in B
-      // We can't split a sub-pass itself, so just put it in B (keep atomic)
-      partB.push(sp);
-      budget = 0;
     } else {
       partB.push(sp);
+      budget = 0; // once budget runs out, rest goes to B
     }
   }
 
   if(partA.length === 0 || partB.length === 0) return; // nothing to split
 
-  // Rebuild passes arrays from flat sp lists
   function rebuildPasses(spList){
     const grouped = {};
     for(const sp of spList){
@@ -1294,10 +1296,18 @@ function splitItemAtHrs(item, splitHrs){
     return Object.entries(grouped).map(([type, subPasses]) => ({type, subPasses}));
   }
 
-  // Modify original item to only have partA
+  // Modify original item in-place → partA (fits in the day slot)
   item.passes = rebuildPasses(partA);
+  // If day provided, make sure item is in that day's schedule
+  if(day){
+    if(!S.generatedSchedule[day]) S.generatedSchedule[day] = [];
+    if(!S.generatedSchedule[day].includes(item.id))
+      S.generatedSchedule[day].push(item.id);
+  }
 
-  // Create new item for partB
+  // Create new item for partB — intentionally NOT added to any day (stays in pool)
+  // Count how many split continuations already exist for this topic to get correct round
+  const existingParts = S.scheduleItems.filter(x=>x.topicId===item.topicId).length;
   const newItem = {
     id: 'item_'+Date.now()+'_'+Math.random().toString(36).slice(2,6),
     subjectId: item.subjectId,
@@ -1305,13 +1315,12 @@ function splitItemAtHrs(item, splitHrs){
     topicId:   item.topicId,
     priority:  item.priority,
     passes:    rebuildPasses(partB),
-    part:      (item.part||1) + 0.5 // mark as split continuation
+    part:      existingParts + 1
   };
 
-  // Insert newItem right after original in scheduleItems
+  // Insert newItem right after original in scheduleItems list
   const idx = S.scheduleItems.findIndex(x => x.id === item.id);
   S.scheduleItems.splice(idx + 1, 0, newItem);
-  save();
 }
 
 function todayItems(){
@@ -1823,19 +1832,48 @@ function loadTheme(){
 // CALENDAR STATE
 // ══════════════════════════════════════════════════════════════════════
 let _calYear  = new Date().getFullYear();
-let _calMonth = new Date().getMonth(); // 0-based
-let _calSelected = new Set(); // Set of 'YYYY-MM-DD'
+let _calMonth = new Date().getMonth();
+let _calSelected = new Set(); // days selected in select-mode
+let _calViewDay  = null;      // day shown in view-mode
+let _calMode     = 'select';  // 'select' | 'view'
 
 const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function setCalMode(mode){
+  _calMode = mode;
+  const sb = document.getElementById('modeSelectBtn');
+  const vb = document.getElementById('modeViewBtn');
+  const selBar  = document.getElementById('selModeBar');
+  const dayView = document.getElementById('calDayView');
+  if(sb && vb){
+    const accentStyle = 'width:auto;margin:0;padding:5px 14px;font-size:0.65rem;border-radius:99px;box-shadow:none;';
+    if(mode==='select'){
+      sb.style.cssText = accentStyle + 'background:var(--accent);color:white;';
+      vb.style.cssText = accentStyle + 'background:transparent;color:var(--muted);';
+      if(selBar) selBar.style.display='flex';
+      if(dayView) dayView.style.display='none';
+    } else {
+      vb.style.cssText = accentStyle + 'background:var(--accent2);color:white;';
+      sb.style.cssText = accentStyle + 'background:transparent;color:var(--muted);';
+      if(selBar) selBar.style.display='none';
+    }
+  }
+  renderCalendar();
+}
 
 function calPrev(){ _calMonth--; if(_calMonth<0){_calMonth=11;_calYear--;} renderCalendar(); }
 function calNext(){ _calMonth++; if(_calMonth>11){_calMonth=0;_calYear++;} renderCalendar(); }
 
 function calSelectDay(dayStr){
-  if(_calSelected.has(dayStr)) _calSelected.delete(dayStr);
-  else _calSelected.add(dayStr);
-  renderCalendar();
-  renderCalDayView();
+  if(_calMode === 'view'){
+    _calViewDay = (dayStr === _calViewDay) ? null : dayStr;
+    renderCalendar();
+    renderCalDayView();
+  } else {
+    if(_calSelected.has(dayStr)) _calSelected.delete(dayStr);
+    else _calSelected.add(dayStr);
+    renderCalendar();
+  }
 }
 
 function renderCalendar(){
@@ -1847,7 +1885,6 @@ function renderCalendar(){
 
   const today = todayStr();
   const daily = S.engine.dailyHrs || 8;
-
   const firstDay = new Date(_calYear, _calMonth, 1).getDay();
   const daysInMonth = new Date(_calYear, _calMonth+1, 0).getDate();
 
@@ -1861,8 +1898,9 @@ function renderCalendar(){
     const usedHrs = items.reduce((s,it)=>s+itemTotalHrs(it),0);
     const isPast = ds < today;
     const isToday = ds === today;
-    const isSel = _calSelected.has(ds);
-    const hasFull = usedHrs >= daily - 0.74; // within 0.75h = "full enough"
+    // In select mode: show selected set; in view mode: highlight the viewed day
+    const isSel = _calMode==='select' ? _calSelected.has(ds) : ds===_calViewDay;
+    const hasFull = usedHrs >= daily - 0.74;
     const hasItems = items.length > 0;
     const isEmpty = !hasItems && !isPast;
 
@@ -1878,29 +1916,25 @@ function renderCalendar(){
   }
   grid.innerHTML = html;
 
-  // Update selection count indicator
+  // Select-mode status
   const selCount = document.getElementById('calSelCount');
-  if(selCount){
-    const n = _calSelected.size;
-    selCount.textContent = n > 0 ? `${n} day${n>1?'s':''} selected` : '';
-    selCount.style.display = n > 0 ? 'inline-block' : 'none';
-  }
-  const fillBtn = document.getElementById('calFillBtn');
-  if(fillBtn) fillBtn.style.display = _calSelected.size > 0 ? 'block' : 'none';
+  const fillBtn  = document.getElementById('calFillBtn');
   const clearBtn = document.getElementById('calClearBtn');
-  if(clearBtn) clearBtn.style.display = _calSelected.size > 0 ? 'inline-block' : 'none';
+  const n = _calSelected.size;
+  if(selCount){ selCount.textContent=n>0?`${n} day${n>1?'s':''} selected`:''; selCount.style.display=n>0?'inline-block':'none'; }
+  if(fillBtn)  fillBtn.style.display  = n>0 ? 'block' : 'none';
+  if(clearBtn) clearBtn.style.display = n>0 ? 'inline-block' : 'none';
 }
 
 function renderCalDayView(){
   const view = document.getElementById('calDayView');
   if(!view) return;
 
-  // Show view for last selected day, or hide if nothing selected
-  const selArr = [..._calSelected].sort();
-  if(!selArr.length){ view.style.display='none'; return; }
+  // Only show in view mode
+  if(_calMode !== 'view' || !_calViewDay){ view.style.display='none'; return; }
   view.style.display = 'block';
 
-  const dayStr = selArr[selArr.length-1]; // show most-recently toggled
+  const dayStr = _calViewDay;
   const today = todayStr();
   const daily = S.engine.dailyHrs || 8;
   const ids = S.generatedSchedule[dayStr] || [];
@@ -1908,7 +1942,6 @@ function renderCalDayView(){
   const usedHrs = items.reduce((s,it)=>s+itemTotalHrs(it),0);
   const remaining = Math.max(0, daily - usedHrs);
   const isPast = dayStr < today;
-
   document.getElementById('calDayLabel').textContent = fmtDate(dayStr) + (dayStr===today?' 📍':'');
   document.getElementById('calDayBudget').textContent = `${usedHrs.toFixed(1)}h / ${daily.toFixed(1)}h used · ${remaining.toFixed(1)}h free`;
 
@@ -1922,16 +1955,23 @@ function renderCalDayView(){
       const pct = tc ? Math.round(dc/tc*100) : 0;
       const hrs = itemTotalHrs(item).toFixed(1);
       const backlog = item._backlogCount||0;
+      const roundLabel = item.part > 1 ? `<span style="font-size:0.58rem;background:rgba(255,203,71,0.15);color:var(--warn);border:1px solid rgba(255,203,71,0.4);border-radius:99px;padding:1px 6px;font-weight:900;margin-left:4px;">R${item.part}</span>` : '';
+      const passBadges = item.passes.map(p=>{
+        const icon = PASS_ICON[p.type]||'';
+        const count = p.subPasses.length;
+        const [bg,fg] = (PASS_COLOR[p.type]||'#333:#fff').split(':');
+        return `<span style="background:${bg};color:${fg};font-size:0.55rem;font-weight:900;padding:1px 5px;border-radius:4px;">${icon} ×${count}</span>`;
+      }).join('');
       return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
-        <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:6px;">
           <div style="flex:1;min-width:0;">
-            <span style="font-size:0.82rem;font-weight:700;color:${done?'var(--good)':'var(--ink)'};">${done?'✓ ':''}${topicName(item.subjectId,item.topicId)}</span>
-            ${backlog>0?`<span class="backlog-badge">×${backlog} backlog</span>`:''}
-            <div style="font-size:0.62rem;color:var(--muted);margin-top:1px;">${chapterName(item.subjectId,item.chapterId)} · ${hrs}h · ${dc}/${tc} passes</div>
+            <div style="font-size:0.82rem;font-weight:700;color:${done?'var(--good)':'var(--ink)'};">${done?'✓ ':''}${topicName(item.subjectId,item.topicId)}${roundLabel}${backlog>0?` <span class="backlog-badge">×${backlog} backlog</span>`:''}</div>
+            <div style="font-size:0.62rem;color:var(--muted);margin-top:2px;">${chapterName(item.subjectId,item.chapterId)} · ${hrs}h · ${dc}/${tc} passes</div>
+            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${passBadges}</div>
           </div>
-          ${!isPast?`<button onclick="removeFromDay('${item.id}','${dayStr}')" style="width:auto;padding:2px 8px;margin:0;font-size:0.6rem;border-radius:8px;" class="bad-btn">✕</button>`:''}
+          ${!isPast?`<button onclick="removeFromDay('${item.id}','${dayStr}')" style="width:auto;padding:2px 8px;margin:0;font-size:0.6rem;border-radius:8px;flex-shrink:0;" class="bad-btn">✕</button>`:''}
         </div>
-        <div class="rail" style="height:5px;margin-top:5px;"><div class="fill" style="width:${pct}%;background:${done?'var(--good)':'var(--accent)'};"></div></div>
+        <div class="rail" style="height:5px;margin-top:6px;"><div class="fill" style="width:${pct}%;background:${done?'var(--good)':'var(--accent)'};"></div></div>
       </div>`;
     }).join('');
   }
@@ -1970,11 +2010,25 @@ function renderSourcePool(){
   box.innerHTML = pool.map(item=>{
     const hrs = itemTotalHrs(item).toFixed(1);
     const tname = topicName(item.subjectId, item.topicId);
-    const cname = chapterName(item.subjectId, item.chapterId);
-    return `<span class="source-chip" onclick="addFromPool('${item.id}')">
-      ${tname}
-      <span class="chip-hrs">${hrs}h</span>
-    </span>`;
+    const roundLabel = item.part > 1 ? `<span style="font-size:0.6rem;background:rgba(255,203,71,0.15);color:var(--warn);border:1px solid rgba(255,203,71,0.4);border-radius:99px;padding:1px 6px;font-weight:900;">R${item.part}</span>` : '';
+    // Pass type summary badges
+    const passBadges = item.passes.map(p=>{
+      const icon = PASS_ICON[p.type]||'';
+      const count = p.subPasses.length;
+      const [bg,fg] = (PASS_COLOR[p.type]||'#333:#fff').split(':');
+      return `<span style="background:${bg};color:${fg};font-size:0.55rem;font-weight:900;padding:1px 5px;border-radius:4px;">${icon} ×${count}</span>`;
+    }).join('');
+    const dc = itemDoneCount(item), tc = itemTotalCount(item);
+    return `<div class="source-chip" onclick="addFromPool('${item.id}')" style="display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:10px 14px;border-radius:14px;width:100%;margin:4px 0;">
+      <div style="display:flex;justify-content:space-between;align-items:center;width:100%;">
+        <span style="font-weight:900;font-size:0.82rem;">${tname} ${roundLabel}</span>
+        <span class="chip-hrs">${hrs}h</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        ${passBadges}
+        <span style="font-size:0.6rem;color:var(--muted);">${dc}/${tc} passes done</span>
+      </div>
+    </div>`;
   }).join('');
 }
 
@@ -2023,12 +2077,13 @@ function fillSelectedDays(){
   if(!selArr.length){ notify('Select future dates on the calendar first.','warn'); return; }
 
   const daily = S.engine.dailyHrs || 8;
+  // Snapshot which IDs are already scheduled so we don't re-add
   const scheduledIds = new Set(
     Object.entries(S.generatedSchedule)
       .filter(([d])=>d>=today)
       .flatMap(([,ids])=>ids)
   );
-  // Pool = incomplete, not already scheduled
+  // Pool = incomplete, not already scheduled, sorted by priority
   let pool = [...S.scheduleItems]
     .filter(it=>!isItemComplete(it) && !scheduledIds.has(it.id))
     .sort((a,b)=>(a.priority||50)-(b.priority||50));
@@ -2039,33 +2094,53 @@ function fillSelectedDays(){
   for(const ds of selArr){
     if(!pool.length) break;
     if(!S.generatedSchedule[ds]) S.generatedSchedule[ds] = [];
-    let usedHrs = (S.generatedSchedule[ds]||[]).map(id=>getItem(id)).filter(Boolean).reduce((s,it)=>s+itemTotalHrs(it),0);
+    let usedHrs = S.generatedSchedule[ds].map(id=>getItem(id)).filter(Boolean).reduce((s,it)=>s+itemTotalHrs(it),0);
 
-    // Greedy fill this day
+    // Keep filling until slot is too small or pool empty
     let again = true;
     while(again && pool.length){
       again = false;
       const slotLeft = daily - usedHrs;
-      if(slotLeft < 0.75) break;
-      // Find largest item that fits
+      if(slotLeft <= 0.01) break;
+
+      // Find largest item that fits whole
       let best = -1;
       for(let i=0;i<pool.length;i++){
         const h = itemTotalHrs(pool[i]);
-        if(h <= slotLeft + 0.01){
+        if(h <= slotLeft + 0.001){
           if(best===-1 || h > itemTotalHrs(pool[best])) best = i;
         }
       }
       if(best >= 0){
+        // Item fits whole — place it
         const item = pool.splice(best,1)[0];
-        S.generatedSchedule[ds].push(item.id);
+        if(!S.generatedSchedule[ds].includes(item.id))
+          S.generatedSchedule[ds].push(item.id);
         usedHrs += itemTotalHrs(item);
         placed++;
         again = true;
+      } else if(slotLeft >= 0.25 && pool.length > 0){
+        // Nothing fits whole but gap is worth filling — split the largest item
+        // Pick the largest pool item to split
+        let bigIdx = 0;
+        for(let i=1;i<pool.length;i++){
+          if(itemTotalHrs(pool[i]) > itemTotalHrs(pool[bigIdx])) bigIdx = i;
+        }
+        const itemToSplit = pool.splice(bigIdx, 1)[0];
+        splitItemAtHrs(itemToSplit, slotLeft, ds);
+        // partA is now on ds (handled inside splitItemAtHrs)
+        // partB was inserted into S.scheduleItems right after itemToSplit
+        // Add partB back to our working pool
+        const newPartB = S.scheduleItems[S.scheduleItems.findIndex(x=>x.id===itemToSplit.id)+1];
+        if(newPartB && newPartB !== itemToSplit) pool.splice(bigIdx, 0, newPartB);
+        usedHrs = daily; // day is now full (partA fills the rest)
+        placed++;
+        again = false; // move to next day
       }
     }
   }
   save();
-  notify(`Placed ${placed} topic${placed!==1?'s':''} across ${selArr.length} day${selArr.length!==1?'s':''}.`,'good');
+  notify(`Placed ${placed} item${placed!==1?'s':''} across ${selArr.length} day${selArr.length!==1?'s':''}.`,'good');
   renderSchedule();
 }
 
