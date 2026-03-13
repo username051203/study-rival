@@ -451,6 +451,15 @@ td{padding:10px;font-size:0.82rem;border-bottom:1px solid var(--border);}
       <div class="cal-dow">We</div><div class="cal-dow">Th</div><div class="cal-dow">Fr</div><div class="cal-dow">Sa</div>
     </div>
     <div class="cal-grid" id="calGrid"></div>
+
+    <!-- Selection status row -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;flex-wrap:wrap;gap:8px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <span id="calSelCount" style="display:none;background:linear-gradient(135deg,var(--accent),var(--accent2));color:white;font-size:0.68rem;font-weight:900;padding:4px 12px;border-radius:99px;"></span>
+        <span style="font-size:0.65rem;color:var(--muted);">Tap dates to select · tap again to deselect</span>
+      </div>
+      <button onclick="_calSelected.clear();renderCalendar();renderCalDayView();" style="display:none;width:auto;padding:4px 12px;margin:0;font-size:0.65rem;border-radius:99px;background:var(--log-bg);border:1px solid var(--border);color:var(--muted);" id="calClearBtn">✕ Clear</button>
+    </div>
     <!-- Selected day view -->
     <div id="calDayView" style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px;display:none;">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -467,7 +476,8 @@ td{padding:10px;font-size:0.82rem;border-bottom:1px solid var(--border);}
       <h3 style="margin:0;font-size:0.85rem;text-transform:uppercase;color:var(--accent);">📦 Unscheduled Topics</h3>
       <span id="sourceCount" style="font-size:0.7rem;color:var(--muted);"></span>
     </div>
-    <p style="font-size:0.7rem;color:var(--muted);margin:0 0 12px;">Select a date above, then tap a topic to add it to that day. Topics disappear from this pool once scheduled.</p>
+    <p style="font-size:0.7rem;color:var(--muted);margin:0 0 12px;">Select days on the calendar above, then tap a topic to assign it — or use Auto-Fill to greedily pack all selected days from the pool at once.</p>
+    <button id="calFillBtn" onclick="fillSelectedDays()" class="good-btn" style="display:none;margin:0 0 14px;padding:10px 16px;font-size:0.75rem;">⚡ Auto-Fill Selected Days from Pool</button>
     <div id="sourcePool"></div>
   </div>
 
@@ -1158,7 +1168,7 @@ function generateSchedule(skipSplitCheck, startDay){
 
     // Greedy: try to fill slotLeft — pick items that fit, smallest gap first
     let filled = true;
-    while(filled && slotLeft > 0.01 && remaining.length > 0){
+    while(filled && slotLeft >= 0.75 && remaining.length > 0){
       filled = false;
       // Find the largest item that fits in slotLeft (greedy largest-fit)
       let best = -1;
@@ -1814,7 +1824,7 @@ function loadTheme(){
 // ══════════════════════════════════════════════════════════════════════
 let _calYear  = new Date().getFullYear();
 let _calMonth = new Date().getMonth(); // 0-based
-let _calSelected = null; // 'YYYY-MM-DD'
+let _calSelected = new Set(); // Set of 'YYYY-MM-DD'
 
 const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
@@ -1822,7 +1832,8 @@ function calPrev(){ _calMonth--; if(_calMonth<0){_calMonth=11;_calYear--;} rende
 function calNext(){ _calMonth++; if(_calMonth>11){_calMonth=0;_calYear++;} renderCalendar(); }
 
 function calSelectDay(dayStr){
-  _calSelected = dayStr;
+  if(_calSelected.has(dayStr)) _calSelected.delete(dayStr);
+  else _calSelected.add(dayStr);
   renderCalendar();
   renderCalDayView();
 }
@@ -1837,11 +1848,10 @@ function renderCalendar(){
   const today = todayStr();
   const daily = S.engine.dailyHrs || 8;
 
-  const firstDay = new Date(_calYear, _calMonth, 1).getDay(); // 0=Sun
+  const firstDay = new Date(_calYear, _calMonth, 1).getDay();
   const daysInMonth = new Date(_calYear, _calMonth+1, 0).getDate();
 
   let html = '';
-  // Empty cells before first day
   for(let i=0;i<firstDay;i++) html += '<div></div>';
 
   for(let d=1; d<=daysInMonth; d++){
@@ -1851,8 +1861,8 @@ function renderCalendar(){
     const usedHrs = items.reduce((s,it)=>s+itemTotalHrs(it),0);
     const isPast = ds < today;
     const isToday = ds === today;
-    const isSel = ds === _calSelected;
-    const hasFull = usedHrs >= daily - 0.01;
+    const isSel = _calSelected.has(ds);
+    const hasFull = usedHrs >= daily - 0.74; // within 0.75h = "full enough"
     const hasItems = items.length > 0;
     const isEmpty = !hasItems && !isPast;
 
@@ -1867,27 +1877,44 @@ function renderCalendar(){
     html += `<div class="${cls}" onclick="calSelectDay('${ds}')">${d}</div>`;
   }
   grid.innerHTML = html;
+
+  // Update selection count indicator
+  const selCount = document.getElementById('calSelCount');
+  if(selCount){
+    const n = _calSelected.size;
+    selCount.textContent = n > 0 ? `${n} day${n>1?'s':''} selected` : '';
+    selCount.style.display = n > 0 ? 'inline-block' : 'none';
+  }
+  const fillBtn = document.getElementById('calFillBtn');
+  if(fillBtn) fillBtn.style.display = _calSelected.size > 0 ? 'block' : 'none';
+  const clearBtn = document.getElementById('calClearBtn');
+  if(clearBtn) clearBtn.style.display = _calSelected.size > 0 ? 'inline-block' : 'none';
 }
 
 function renderCalDayView(){
   const view = document.getElementById('calDayView');
-  if(!_calSelected || !view) return;
+  if(!view) return;
+
+  // Show view for last selected day, or hide if nothing selected
+  const selArr = [..._calSelected].sort();
+  if(!selArr.length){ view.style.display='none'; return; }
   view.style.display = 'block';
 
+  const dayStr = selArr[selArr.length-1]; // show most-recently toggled
   const today = todayStr();
   const daily = S.engine.dailyHrs || 8;
-  const ids = S.generatedSchedule[_calSelected] || [];
+  const ids = S.generatedSchedule[dayStr] || [];
   const items = ids.map(id=>getItem(id)).filter(Boolean);
   const usedHrs = items.reduce((s,it)=>s+itemTotalHrs(it),0);
   const remaining = Math.max(0, daily - usedHrs);
-  const isPast = _calSelected < today;
+  const isPast = dayStr < today;
 
-  document.getElementById('calDayLabel').textContent = fmtDate(_calSelected) + (_calSelected===today?' 📍':'');
+  document.getElementById('calDayLabel').textContent = fmtDate(dayStr) + (dayStr===today?' 📍':'');
   document.getElementById('calDayBudget').textContent = `${usedHrs.toFixed(1)}h / ${daily.toFixed(1)}h used · ${remaining.toFixed(1)}h free`;
 
   const box = document.getElementById('calDayItems');
   if(!items.length){
-    box.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;padding:8px 0;">No topics scheduled for this day.</div>';
+    box.innerHTML = '<div style="color:var(--muted);font-size:0.8rem;padding:8px 0;">No topics scheduled — tap a chip below to add.</div>';
   } else {
     box.innerHTML = items.map(item=>{
       const done = isItemComplete(item);
@@ -1902,7 +1929,7 @@ function renderCalDayView(){
             ${backlog>0?`<span class="backlog-badge">×${backlog} backlog</span>`:''}
             <div style="font-size:0.62rem;color:var(--muted);margin-top:1px;">${chapterName(item.subjectId,item.chapterId)} · ${hrs}h · ${dc}/${tc} passes</div>
           </div>
-          ${!isPast?`<button onclick="removeFromDay('${item.id}','${_calSelected}')" style="width:auto;padding:2px 8px;margin:0;font-size:0.6rem;border-radius:8px;" class="bad-btn">✕</button>`:''}
+          ${!isPast?`<button onclick="removeFromDay('${item.id}','${dayStr}')" style="width:auto;padding:2px 8px;margin:0;font-size:0.6rem;border-radius:8px;" class="bad-btn">✕</button>`:''}
         </div>
         <div class="rail" style="height:5px;margin-top:5px;"><div class="fill" style="width:${pct}%;background:${done?'var(--good)':'var(--accent)'};"></div></div>
       </div>`;
@@ -1952,37 +1979,93 @@ function renderSourcePool(){
 }
 
 function addFromPool(itemId){
-  if(!_calSelected){
-    notify('Select a date on the calendar first.','warn'); return;
-  }
   const today = todayStr();
-  if(_calSelected < today){
-    notify('Cannot schedule items on past days.','warn'); return;
+  const selArr = [..._calSelected].filter(d=>d>=today).sort();
+  if(!selArr.length){
+    notify('Select one or more future dates on the calendar first.','warn'); return;
   }
   const daily = S.engine.dailyHrs || 8;
-  const ids = S.generatedSchedule[_calSelected] || [];
-  const items = ids.map(id=>getItem(id)).filter(Boolean);
-  const usedHrs = items.reduce((s,it)=>s+itemTotalHrs(it),0);
   const item = getItem(itemId);
   if(!item){ notify('Item not found.','warn'); return; }
-  const itemHrs = itemTotalHrs(item);
 
-  if(usedHrs + itemHrs > daily + 0.01){
-    const remaining = daily - usedHrs;
-    if(remaining < 0.01){
-      notify(`This day is full (${daily}h used). Pick another day.`,'warn'); return;
+  // Try each selected day in order for first that fits
+  for(const ds of selArr){
+    const ids = S.generatedSchedule[ds] || [];
+    const usedHrs = ids.map(id=>getItem(id)).filter(Boolean).reduce((s,it)=>s+itemTotalHrs(it),0);
+    const itemHrs = itemTotalHrs(item);
+    if(usedHrs + itemHrs <= daily + 0.01){
+      if(!S.generatedSchedule[ds]) S.generatedSchedule[ds] = [];
+      if(!S.generatedSchedule[ds].includes(itemId)) S.generatedSchedule[ds].push(itemId);
+      save();
+      notify(`Added to ${fmtDate(ds)}.`,'good');
+      renderSchedule();
+      return;
     }
-    // Offer split
-    window._splitOpportunities = [{item, slotHrs: remaining, day: _calSelected}];
-    showSplitModal([{item, slotHrs: remaining, day: _calSelected}]);
-    return;
   }
+  // Nothing fit — offer split on first selected day with space
+  for(const ds of selArr){
+    const ids = S.generatedSchedule[ds] || [];
+    const usedHrs = ids.map(id=>getItem(id)).filter(Boolean).reduce((s,it)=>s+itemTotalHrs(it),0);
+    const remaining = daily - usedHrs;
+    if(remaining >= 0.25){
+      window._splitOpportunities = [{item, slotHrs: remaining, day: ds}];
+      showSplitModal([{item, slotHrs: remaining, day: ds}]);
+      return;
+    }
+  }
+  notify('All selected days are full. Select more dates.','warn');
+}
 
-  if(!S.generatedSchedule[_calSelected]) S.generatedSchedule[_calSelected] = [];
-  if(!S.generatedSchedule[_calSelected].includes(itemId))
-    S.generatedSchedule[_calSelected].push(itemId);
+// Fill all selected days from pool until pool is empty or days are full
+function fillSelectedDays(){
+  const today = todayStr();
+  const selArr = [..._calSelected].filter(d=>d>=today).sort();
+  if(!selArr.length){ notify('Select future dates on the calendar first.','warn'); return; }
+
+  const daily = S.engine.dailyHrs || 8;
+  const scheduledIds = new Set(
+    Object.entries(S.generatedSchedule)
+      .filter(([d])=>d>=today)
+      .flatMap(([,ids])=>ids)
+  );
+  // Pool = incomplete, not already scheduled
+  let pool = [...S.scheduleItems]
+    .filter(it=>!isItemComplete(it) && !scheduledIds.has(it.id))
+    .sort((a,b)=>(a.priority||50)-(b.priority||50));
+
+  if(!pool.length){ notify('Pool is empty — nothing to schedule.','warn'); return; }
+
+  let placed = 0;
+  for(const ds of selArr){
+    if(!pool.length) break;
+    if(!S.generatedSchedule[ds]) S.generatedSchedule[ds] = [];
+    let usedHrs = (S.generatedSchedule[ds]||[]).map(id=>getItem(id)).filter(Boolean).reduce((s,it)=>s+itemTotalHrs(it),0);
+
+    // Greedy fill this day
+    let again = true;
+    while(again && pool.length){
+      again = false;
+      const slotLeft = daily - usedHrs;
+      if(slotLeft < 0.75) break;
+      // Find largest item that fits
+      let best = -1;
+      for(let i=0;i<pool.length;i++){
+        const h = itemTotalHrs(pool[i]);
+        if(h <= slotLeft + 0.01){
+          if(best===-1 || h > itemTotalHrs(pool[best])) best = i;
+        }
+      }
+      if(best >= 0){
+        const item = pool.splice(best,1)[0];
+        S.generatedSchedule[ds].push(item.id);
+        usedHrs += itemTotalHrs(item);
+        placed++;
+        again = true;
+      }
+    }
+  }
   save();
-  notify(`Added to ${fmtDate(_calSelected)}.`,'good');
+  notify(`Placed ${placed} topic${placed!==1?'s':''} across ${selArr.length} day${selArr.length!==1?'s':''}.`,'good');
   renderSchedule();
 }
 
