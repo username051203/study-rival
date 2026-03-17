@@ -10,13 +10,21 @@ import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Toast;
-import android.net.Uri;
+import android.graphics.Bitmap;
+import android.app.AlertDialog;
+import android.widget.ImageView;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+
+import com.google.zxing.BarcodeFormat;
+import com.google.zxing.MultiFormatWriter;
+import com.google.zxing.common.BitMatrix;
+import com.journeyapps.barcodescanner.ScanContract;
+import com.journeyapps.barcodescanner.ScanOptions;
 
 import java.io.*;
 
@@ -25,11 +33,18 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private String pendingPhotoTargetIds = null;
     private boolean pendingFileImport = false;
-
-    // Camera permission request code
     private static final int CAMERA_PERMISSION_REQUEST = 1001;
-    // Holds the pending WebKit permission request until native dialog resolves
     private PermissionRequest pendingWebKitPermission = null;
+
+    private final ActivityResultLauncher<ScanOptions> qrScanLauncher =
+        registerForActivityResult(new ScanContract(), result -> {
+            if (result.getContents() != null) {
+                final String data = result.getContents()
+                    .replace("\\", "\\\\").replace("'", "\\'");
+                runOnUiThread(() -> webView.evaluateJavascript(
+                    "onQRScanned('" + data + "');", null));
+            }
+        });
 
     private final ActivityResultLauncher<String> imagePickerLauncher =
         registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -91,61 +106,40 @@ public class MainActivity extends AppCompatActivity {
         s.setAllowFileAccessFromFileURLs(true);
         s.setAllowUniversalAccessFromFileURLs(true);
         s.setCacheMode(WebSettings.LOAD_DEFAULT);
-        s.setMediaPlaybackRequiresUserGesture(false); // allow camera autoplay in <video>
-
+        s.setMediaPlaybackRequiresUserGesture(false);
         webView.setLayerType(View.LAYER_TYPE_HARDWARE, null);
         webView.setWebViewClient(new WebViewClient());
-
-        // WebChromeClient with camera permission handling
         webView.setWebChromeClient(new WebChromeClient() {
-
-            // Handle getUserMedia / camera permission requests from JS
             @Override
             public void onPermissionRequest(final PermissionRequest request) {
-                String[] requestedResources = request.getResources();
                 boolean needsCamera = false;
-                for (String r : requestedResources) {
-                    if (r.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) {
-                        needsCamera = true;
-                        break;
-                    }
-                }
-
+                for (String r : request.getResources())
+                    if (r.equals(PermissionRequest.RESOURCE_VIDEO_CAPTURE)) { needsCamera = true; break; }
                 if (needsCamera) {
-                    // Check if we already have the Android camera permission
                     if (ContextCompat.checkSelfPermission(MainActivity.this,
                             Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED) {
-                        // Already granted — grant the WebKit request immediately
                         runOnUiThread(() -> request.grant(request.getResources()));
                     } else {
-                        // Need to ask Android for camera permission first
                         pendingWebKitPermission = request;
                         ActivityCompat.requestPermissions(MainActivity.this,
-                            new String[]{Manifest.permission.CAMERA},
-                            CAMERA_PERMISSION_REQUEST);
+                            new String[]{Manifest.permission.CAMERA}, CAMERA_PERMISSION_REQUEST);
                     }
-                } else {
-                    request.deny();
-                }
+                } else { request.deny(); }
             }
         });
-
         webView.addJavascriptInterface(new AndroidBridge(), "Android");
         webView.loadUrl("file:///android_asset/index.html");
     }
 
-    // Called by Android after the user responds to the camera permission dialog
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         if (requestCode == CAMERA_PERMISSION_REQUEST && pendingWebKitPermission != null) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                final PermissionRequest req = pendingWebKitPermission;
-                runOnUiThread(() -> req.grant(req.getResources()));
-            } else {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                runOnUiThread(() -> pendingWebKitPermission.grant(pendingWebKitPermission.getResources()));
+            else {
                 pendingWebKitPermission.deny();
-                runOnUiThread(() ->
-                    Toast.makeText(this, "Camera permission denied — QR scan unavailable", Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> Toast.makeText(this, "Camera permission denied", Toast.LENGTH_LONG).show());
             }
             pendingWebKitPermission = null;
         }
@@ -161,6 +155,46 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private class AndroidBridge {
+        @JavascriptInterface
+        public void showQR(String data) {
+            runOnUiThread(() -> {
+                try {
+                    MultiFormatWriter writer = new MultiFormatWriter();
+                    BitMatrix matrix = writer.encode(data, BarcodeFormat.QR_CODE, 600, 600);
+                    int w = matrix.getWidth(), h = matrix.getHeight();
+                    int[] pixels = new int[w * h];
+                    for (int y = 0; y < h; y++)
+                        for (int x = 0; x < w; x++)
+                            pixels[y * w + x] = matrix.get(x, y) ? 0xFF000000 : 0xFFFFFFFF;
+                    Bitmap bmp = Bitmap.createBitmap(pixels, w, h, Bitmap.Config.ARGB_8888);
+                    ImageView iv = new ImageView(MainActivity.this);
+                    iv.setImageBitmap(bmp);
+                    iv.setBackgroundColor(0xFF0d0f1a);
+                    iv.setPadding(40, 40, 40, 40);
+                    new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Scan with other device")
+                        .setView(iv)
+                        .setPositiveButton("Done", null)
+                        .show();
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "QR failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            });
+        }
+
+        @JavascriptInterface
+        public void startQRScan() {
+            runOnUiThread(() -> {
+                ScanOptions opts = new ScanOptions();
+                opts.setDesiredBarcodeFormats(ScanOptions.QR_CODE);
+                opts.setPrompt("Point at the QR code on the other device");
+                opts.setBeepEnabled(false);
+                opts.setBarcodeImageEnabled(false);
+                opts.setOrientationLocked(false);
+                qrScanLauncher.launch(opts);
+            });
+        }
+
         @JavascriptInterface
         public void openImagePicker(String targetIdsJson) {
             pendingPhotoTargetIds = targetIdsJson;
@@ -179,8 +213,7 @@ public class MainActivity extends AppCompatActivity {
                 File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                 File file = new File(dir, filename);
                 FileWriter fw = new FileWriter(file, false);
-                fw.write(content);
-                fw.close();
+                fw.write(content); fw.close();
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this, "Saved to Downloads/" + filename, Toast.LENGTH_LONG).show();
                     webView.evaluateJavascript("onFileWritten('" + filename.replace("'", "\\'") + "');", null);
@@ -212,8 +245,7 @@ public class MainActivity extends AppCompatActivity {
 
     private static byte[] readBytes(InputStream is) throws IOException {
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
-        byte[] tmp = new byte[4096];
-        int n;
+        byte[] tmp = new byte[4096]; int n;
         while ((n = is.read(tmp)) != -1) buf.write(tmp, 0, n);
         return buf.toByteArray();
     }

@@ -4285,25 +4285,14 @@ function setSakura(on){
 }
 
 // ══════════════════════════════════════════════════════════════════════
-// QR SYNC — no server, no internet needed
-// Export: serialise state → compress → encode as QR code on canvas
-// Import: camera → jsQR decode → decompress → apply state
-// Library: qrcode.js (export) + jsQR (scan) from cdnjs
+// QR SYNC — native Android ZXing (no CDN, works in file:// WebView)
 // ══════════════════════════════════════════════════════════════════════
-
-// ── QR EXPORT ──────────────────────────────────────────────────────────
 function qrBuildPayload(){
   return JSON.stringify({
-    scheduleItems:      S.scheduleItems,
-    generatedSchedule:  S.generatedSchedule,
-    history:            S.history,
-    logs:               S.logs,
-    rival:              S.rival,
-    engine:             S.engine,
-    profiles:           S.profiles,
-    rt:                 S.rt,
-    customSyllabi:      S.customSyllabi||{},
-    _snapshots:         S._snapshots||{}
+    scheduleItems:S.scheduleItems, generatedSchedule:S.generatedSchedule,
+    history:S.history, logs:S.logs, rival:S.rival, engine:S.engine,
+    profiles:S.profiles, rt:S.rt, customSyllabi:S.customSyllabi||{},
+    _snapshots:S._snapshots||{}
   });
 }
 
@@ -4314,192 +4303,50 @@ function qrApplyPayload(jsonStr){
   if(p.history)           S.history           = p.history;
   if(p.logs)              S.logs              = p.logs;
   if(p.rival)             S.rival             = {...mkDefault().rival,    ...p.rival};
-  if(p.engine)            S.engine            = {...mkDefault().engine,   ...p.engine, passDurations:{...mkDefault().engine.passDurations,...(p.engine.passDurations||{})}};
-  if(p.profiles)          S.profiles          = {user:{...mkDefault().profiles.user,...p.profiles?.user},alicia:{...mkDefault().profiles.alicia,...p.profiles?.alicia}};
-  if(p.rt)                S.rt                = p.rt;
-  if(p.customSyllabi)     S.customSyllabi     = p.customSyllabi;
-  if(p._snapshots)        S._snapshots        = p._snapshots;
+  if(p.engine)            S.engine            = {...mkDefault().engine,   ...p.engine,
+    passDurations:{...mkDefault().engine.passDurations,...(p.engine.passDurations||{})}};
+  if(p.profiles)          S.profiles          = {
+    user:   {...mkDefault().profiles.user,   ...p.profiles?.user},
+    alicia: {...mkDefault().profiles.alicia, ...p.profiles?.alicia}};
+  if(p.rt)            S.rt           = p.rt;
+  if(p.customSyllabi) S.customSyllabi = p.customSyllabi;
+  if(p._snapshots)    S._snapshots   = p._snapshots;
   S.engine.dailyHrs = rtAvailableHrs();
-  // Rebuild subjects
   S.subjects = {};
-  for(const [k,v] of Object.entries(ALL_SYLLABI)) S.subjects[k] = (S.customSyllabi&&S.customSyllabi[k])||v;
-  if(S.customSyllabi) for(const [k,v] of Object.entries(S.customSyllabi)) if(!S.subjects[k]) S.subjects[k]=v;
-  save();
-  renderActive();
+  for(const [k,v] of Object.entries(ALL_SYLLABI))
+    S.subjects[k] = (S.customSyllabi&&S.customSyllabi[k])||v;
+  if(S.customSyllabi)
+    for(const [k,v] of Object.entries(S.customSyllabi))
+      if(!S.subjects[k]) S.subjects[k]=v;
+  save(); renderActive();
 }
 
-// Load qrcode.js lazily then draw
 function qrShowExport(){
-  const panel = document.getElementById('qrExportPanel');
-  const canvas = document.getElementById('qrCanvas');
-  panel.style.display = 'block';
-  document.getElementById('qrScanPanel').style.display = 'none';
-
-  // Compress payload
-  const compressed = LZString.compressToEncodedURIComponent(qrBuildPayload());
-
-  // QR codes have a data limit (~2953 bytes for binary, ~4296 alphanumeric).
-  // Our compressed string can be 5-15KB — too large for one QR.
-  // Solution: split into chunks, show them sequentially with auto-advance.
-  const CHUNK = 800; // chars per QR (safe margin for error correction)
-  const chunks = [];
-  for(let i=0; i<compressed.length; i+=CHUNK)
-    chunks.push(compressed.slice(i,i+CHUNK));
-
-  if(chunks.length === 1){
-    _qrDrawSingle(canvas, 'SR1:1:1:'+chunks[0]);
-    document.querySelector('#qrExportPanel .cal-dow')?.remove(); // no counter needed
+  if(typeof Android !== 'undefined'){
+    const compressed = LZString.compressToEncodedURIComponent(qrBuildPayload());
+    Android.showQR(compressed);
   } else {
-    let idx = 0;
-    const counter = document.createElement('div');
-    counter.style.cssText = 'font-size:0.7rem;color:var(--warn);font-weight:900;margin-bottom:8px;';
-    panel.insertBefore(counter, canvas);
-    const advance = () => {
-      counter.textContent = `QR ${idx+1} of ${chunks.length} — keep scanning in order`;
-      _qrDrawSingle(canvas, `SR1:${idx+1}:${chunks.length}:${chunks[idx]}`);
-      idx = (idx+1) % chunks.length;
-    };
-    advance();
-    // Auto-cycle every 3s so user can scan one at a time
-    const tid = setInterval(advance, 3000);
-    // Clean up when panel closes
-    document.getElementById('qrExportPanel').querySelector('button').addEventListener('click', ()=>clearInterval(tid), {once:true});
+    notify('QR sync only works in the Android app.','warn');
   }
 }
-
-function _qrDrawSingle(canvas, data){
-  if(typeof QRCode === 'undefined'){
-    // Load qrcode.js from cdnjs on demand
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js';
-    s.onload = () => _qrDrawSingle(canvas, data);
-    document.head.appendChild(s);
-    return;
-  }
-  // Clear previous
-  canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height);
-  // qrcodejs works on a div — we use a temp div then copy to canvas
-  const tmp = document.createElement('div');
-  tmp.style.cssText = 'position:absolute;left:-9999px;top:-9999px;';
-  document.body.appendChild(tmp);
-  new QRCode(tmp, {
-    text: data,
-    width: 280, height: 280,
-    colorDark: '#ffffff', colorLight: '#0d0f1a',
-    correctLevel: QRCode.CorrectLevel.M
-  });
-  setTimeout(()=>{
-    const img = tmp.querySelector('img') || tmp.querySelector('canvas');
-    if(img){
-      canvas.width  = 280;
-      canvas.height = 280;
-      const ctx = canvas.getContext('2d');
-      if(img.tagName === 'IMG'){
-        const i = new Image(); i.onload=()=>ctx.drawImage(i,0,0); i.src=img.src;
-      } else {
-        ctx.drawImage(img, 0, 0);
-      }
-    }
-    tmp.remove();
-  }, 100);
-}
-
-// ── QR SCAN ────────────────────────────────────────────────────────────
-let _qrStream     = null;
-let _qrScanLoop   = null;
-let _qrChunks     = {};   // {total, parts: {idx: data}}
 
 function qrStartScan(){
-  document.getElementById('qrScanPanel').style.display  = 'block';
-  document.getElementById('qrExportPanel').style.display = 'none';
-  _qrChunks = {};
-  const statusEl = document.getElementById('qrScanStatus');
-  statusEl.textContent = 'Requesting camera…';
-  statusEl.style.color = 'var(--muted)';
-
-  if(typeof jsQR === 'undefined'){
-    const s = document.createElement('script');
-    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.js';
-    s.onload = () => _qrOpenCamera();
-    s.onerror = () => { statusEl.textContent = '✗ Could not load QR scanner library.'; statusEl.style.color='var(--bad)'; };
-    document.head.appendChild(s);
+  if(typeof Android !== 'undefined'){
+    Android.startQRScan();
   } else {
-    _qrOpenCamera();
+    notify('QR scan only works in the Android app.','warn');
   }
 }
 
-function _qrOpenCamera(){
-  const video   = document.getElementById('qrVideo');
-  const statusEl = document.getElementById('qrScanStatus');
-  navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false})
-    .then(stream=>{
-      _qrStream = stream;
-      video.srcObject = stream;
-      video.play();
-      statusEl.textContent = 'Scanning… point at QR code';
-      _qrScanLoop = setInterval(_qrTick, 200);
-    })
-    .catch(err=>{
-      statusEl.textContent = '✗ Camera access denied — '+err.message;
-      statusEl.style.color = 'var(--bad)';
-    });
-}
-
-function _qrTick(){
-  const video  = document.getElementById('qrVideo');
-  const canvas = document.getElementById('qrScanCanvas');
-  const status = document.getElementById('qrScanStatus');
-  if(!video || video.readyState < 2) return;
-  const w = video.videoWidth, h = video.videoHeight;
-  if(!w || !h) return;
-  canvas.width = w; canvas.height = h;
-  const ctx = canvas.getContext('2d');
-  ctx.drawImage(video, 0, 0, w, h);
-  const imgData = ctx.getImageData(0, 0, w, h);
-  const result  = jsQR(imgData.data, w, h, {inversionAttempts:'dontInvert'});
-  if(!result) return;
-
-  const raw = result.data;
-  // Format: SR1:{partIdx}:{totalParts}:{chunkData}
-  if(!raw.startsWith('SR1:')){ status.textContent = '✗ Not an Omega Protocol QR code.'; status.style.color='var(--bad)'; return; }
-  const parts   = raw.split(':');
-  const partIdx = parseInt(parts[1]);
-  const total   = parseInt(parts[2]);
-  const chunk   = parts.slice(3).join(':'); // re-join in case data had colons
-
-  if(!_qrChunks.total) _qrChunks = {total, parts:{}};
-  _qrChunks.parts[partIdx] = chunk;
-
-  const got = Object.keys(_qrChunks.parts).length;
-  if(total === 1 || got >= total){
-    // All chunks received — reassemble
-    let compressed = '';
-    for(let i=1; i<=total; i++) compressed += (_qrChunks.parts[i]||'');
-    qrStopScan();
-    try{
-      const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
-      qrApplyPayload(jsonStr);
-      notify('✅ QR Sync complete! Data imported from other device.', 'good');
-      status.textContent = '✓ Sync successful!';
-      status.style.color = 'var(--good)';
-      document.getElementById('qrScanPanel').style.display = 'none';
-    } catch(e){
-      status.textContent = '✗ Failed to decode: '+e.message;
-      status.style.color = 'var(--bad)';
-      notify('QR decode failed.','bad');
-    }
-  } else {
-    status.textContent = `Got ${got}/${total} QR codes — keep scanning…`;
-    status.style.color = 'var(--warn)';
+// Called by Android after successful scan
+function onQRScanned(compressed){
+  try{
+    const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
+    qrApplyPayload(jsonStr);
+    notify('✅ QR Sync complete! Data imported.','good');
+  } catch(e){
+    notify('QR decode failed: '+e.message,'bad');
   }
-}
-
-function qrStopScan(){
-  if(_qrScanLoop){ clearInterval(_qrScanLoop); _qrScanLoop=null; }
-  if(_qrStream){ _qrStream.getTracks().forEach(t=>t.stop()); _qrStream=null; }
-  const video = document.getElementById('qrVideo');
-  if(video) video.srcObject = null;
-  document.getElementById('qrScanPanel').style.display = 'none';
 }
 
 // ── ASYNC STARTUP ──────────────────────────────────────────────────────
