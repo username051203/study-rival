@@ -1338,7 +1338,9 @@ function save(){
 
     // 1. Room DB via Android bridge — primary, survives all WebView wipes
     if(typeof Android !== 'undefined' && Android.dbSave){
-      try{ Android.dbSave('srv3', compressed); }catch(e){}
+      try{ Android.dbSave('srv3', compressed); Android.showToast('RoomDB saved'); }catch(e){ Android.showToast('RoomDB save ERR:'+e.message); }
+    } else {
+      if(typeof Android !== 'undefined') Android.showToast('dbSave missing!');
     }
     // 2. IDB — secondary
     idbSet('srv3', compressed).catch(e=>console.warn('IDB save failed',e));
@@ -1364,12 +1366,18 @@ async function loadState(){
     // Try Room DB first
     let raw = null;
     if(typeof Android !== 'undefined' && Android.dbLoadSync){
-      try{ raw = Android.dbLoadSync('srv3') || null; }catch(e){}
+      try{
+        raw = Android.dbLoadSync('srv3') || null;
+        Android.showToast('RoomDB load: ' + (raw ? 'FOUND '+raw.length+'chars' : 'NULL'));
+      }catch(e){ Android.showToast('RoomDB load ERROR: '+e.message); }
+    } else {
+      if(typeof Android !== 'undefined') Android.showToast('dbLoadSync missing!');
     }
     // Fallback to IDB
     if(!raw) raw = await idbGet('srv3');
     // Fallback to localStorage mirror
     if(!raw) raw = localStorage.getItem('srv3_mirror');
+    if(typeof Android !== 'undefined') Android.showToast('Final raw: '+(raw?'FOUND':'NULL'));
 
     if(raw){
       const p = JSON.parse(LZString.decompressFromBase64(raw));
