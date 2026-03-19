@@ -13,6 +13,9 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.studyrival.omega.db.AppDatabase;
+import com.studyrival.omega.db.StateEntry;
+
 import java.io.*;
 
 public class MainActivity extends AppCompatActivity {
@@ -20,6 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private String pendingPhotoTargetIds = null;
     private boolean pendingFileImport = false;
+    private AppDatabase db;
     private volatile String lastCompressedState = null;
 
     private final ActivityResultLauncher<String> imagePickerLauncher =
@@ -66,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_FULLSCREEN |
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         setContentView(R.layout.activity_main);
+        db = AppDatabase.getInstance(this);
         webView = findViewById(R.id.webview);
         setupWebView();
     }
@@ -99,66 +104,38 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStop() {
         super.onStop();
+        // Flush last known state to Room DB synchronously on stop/force-stop
         String state = lastCompressedState;
-        if (state != null) {
-            try {
-                File dir = getExternalFilesDir(null);
-                if (dir == null) dir = getFilesDir();
-                File file = new File(dir, "omega_state.txt");
-                FileWriter fw = new FileWriter(file, false);
-                fw.write(state);
-                fw.close();
-            } catch (Exception e) { }
+        if (state != null && db != null) {
+            try { db.stateDao().upsert(new StateEntry("srv3", state)); } catch (Exception e) {}
         }
     }
 
     private class AndroidBridge {
 
-        private File stateDir() {
-            File dir = getExternalFilesDir(null);
-            return dir != null ? dir : getFilesDir();
+        // ── ROOM DB — synchronous, survives force stop + cache clear ──────
+        @JavascriptInterface
+        public void dbSave(String key, String value) {
+            lastCompressedState = "srv3".equals(key) ? value : lastCompressedState;
+            try { db.stateDao().upsert(new StateEntry(key, value)); } catch (Exception e) {}
         }
 
         @JavascriptInterface
-        public void writeFileSilent(String filename, String content) {
-            if ("omega_state.txt".equals(filename)) lastCompressedState = content;
-            try {
-                File file = new File(stateDir(), filename);
-                FileWriter fw = new FileWriter(file, false);
-                fw.write(content);
-                fw.close();
-                final String path = file.getAbsolutePath();
-                final int len = content.length();
-                runOnUiThread(() -> webView.evaluateJavascript("if(typeof dbgLog==='function') dbgLog('SAVED " + len + "b -> " + path.replace("'", "\\'") + "')", null));
-            } catch (Exception e) {
-                final String err = e.getMessage() != null ? e.getMessage() : "unknown";
-                runOnUiThread(() -> webView.evaluateJavascript("if(typeof dbgLog==='function') dbgLog('SAVE FAILED: " + err + "')", null));
-            }
+        public String dbLoadSync(String key) {
+            try { return db.stateDao().get(key); } catch (Exception e) { return null; }
         }
 
         @JavascriptInterface
-        public String readFile(String filename) {
-            try {
-                File file = new File(stateDir(), filename);
-                final String path = file.getAbsolutePath();
-                final boolean exists = file.exists();
-                runOnUiThread(() -> webView.evaluateJavascript("if(typeof dbgLog==='function') dbgLog('READ " + path.replace("'", "\\'") + " exists=" + exists + "')", null));
-                if (!exists) return null;
-                BufferedReader br = new BufferedReader(new FileReader(file));
-                StringBuilder sb = new StringBuilder();
-                String line;
-                while ((line = br.readLine()) != null) sb.append(line);
-                br.close();
-                String result = sb.toString();
-                runOnUiThread(() -> webView.evaluateJavascript("if(typeof dbgLog==='function') dbgLog('LOADED " + result.length() + "b')", null));
-                return result;
-            } catch (Exception e) {
-                final String err = e.getMessage() != null ? e.getMessage() : "unknown";
-                runOnUiThread(() -> webView.evaluateJavascript("if(typeof dbgLog==='function') dbgLog('READ FAILED: " + err + "')", null));
-                return null;
-            }
+        public void dbDelete(String key) {
+            try { db.stateDao().delete(key); } catch (Exception e) {}
         }
 
+        @JavascriptInterface
+        public void dbClear() {
+            try { db.stateDao().clear(); } catch (Exception e) {}
+        }
+
+        // ── FILE BRIDGE ───────────────────────────────────────────────────
         @JavascriptInterface
         public void writeFile(String filename, String content) {
             try {
@@ -179,6 +156,18 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
+        // ── QR SYNC ───────────────────────────────────────────────────────
+        @JavascriptInterface
+        public void showQR(String data) {
+            runOnUiThread(() -> Toast.makeText(MainActivity.this, "QR: use Kernel Sync string export instead", Toast.LENGTH_LONG).show());
+        }
+
+        @JavascriptInterface
+        public void startQRScan() {
+            runOnUiThread(() -> Toast.makeText(MainActivity.this, "QR: use Kernel Sync string import instead", Toast.LENGTH_LONG).show());
+        }
+
+        // ── OTHER ─────────────────────────────────────────────────────────
         @JavascriptInterface
         public void openImagePicker(String targetIdsJson) {
             pendingPhotoTargetIds = targetIdsJson;
