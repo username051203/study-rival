@@ -93,6 +93,18 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 0x0ba7 && resultCode == RESULT_OK && data != null) {
+            String contents = data.getStringExtra("SCAN_RESULT");
+            if (contents != null) {
+                final String escaped = contents.replace("\", "\\").replace("'", "\'");
+                runOnUiThread(() -> webView.evaluateJavascript("onQRScanned('" + escaped + "');", null));
+            }
+        }
+    }
+
+    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             webView.evaluateJavascript("onAndroidBack();", null);
@@ -156,15 +168,33 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // ── QR SYNC ───────────────────────────────────────────────────────
+        // ── QR SYNC — ZXing bridge ───────────────────────────────────────
         @JavascriptInterface
         public void showQR(String data) {
-            runOnUiThread(() -> Toast.makeText(MainActivity.this, "QR: use Kernel Sync string export instead", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent("com.google.zxing.client.android.ENCODE");
+                    intent.putExtra("ENCODE_TYPE", "TEXT_TYPE");
+                    intent.putExtra("ENCODE_DATA", data);
+                    intent.putExtra("ENCODE_FORMAT", "QR_CODE");
+                    startActivity(intent);
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Install ZXing Barcode Scanner to use QR sync", Toast.LENGTH_LONG).show();
+                }
+            });
         }
 
         @JavascriptInterface
         public void startQRScan() {
-            runOnUiThread(() -> Toast.makeText(MainActivity.this, "QR: use Kernel Sync string import instead", Toast.LENGTH_LONG).show());
+            runOnUiThread(() -> {
+                try {
+                    Intent intent = new Intent("com.google.zxing.client.android.SCAN");
+                    intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
+                    startActivityForResult(intent, 0x0ba7);
+                } catch (Exception e) {
+                    Toast.makeText(MainActivity.this, "Install ZXing Barcode Scanner to use QR sync", Toast.LENGTH_LONG).show();
+                }
+            });
         }
 
         // ── OTHER ─────────────────────────────────────────────────────────
