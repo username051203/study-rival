@@ -179,8 +179,9 @@ public class MainActivity extends AppCompatActivity {
                 FileWriter fw = new FileWriter(file, false);
                 fw.write(content);
                 fw.close();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "WROTE " + filename + " " + content.length() + "b", Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
-                // silently ignore
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "WRITE FAILED: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }
 
