@@ -71,6 +71,25 @@ public class MainActivity extends AppCompatActivity {
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         setContentView(R.layout.activity_main);
         db = AppDatabase.getInstance(this);
+        // Persistence diagnostic
+        try {
+            File testFile = new File(getFilesDir(), "persist_test.txt");
+            if (!testFile.exists()) {
+                // First run — write marker
+                FileWriter fw = new FileWriter(testFile);
+                fw.write("alive");
+                fw.close();
+                Toast.makeText(this, "FIRST RUN - wrote test file to: " + testFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            } else {
+                // Subsequent run — read marker
+                BufferedReader br = new BufferedReader(new FileReader(testFile));
+                String val = br.readLine();
+                br.close();
+                Toast.makeText(this, "PERSISTED: " + val + " | path: " + testFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "FILE TEST FAILED: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        }
         webView = findViewById(R.id.webview);
         setupWebView();
     }
