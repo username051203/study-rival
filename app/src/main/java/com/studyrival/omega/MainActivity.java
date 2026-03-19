@@ -13,8 +13,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-import com.studyrival.omega.db.AppDatabase;
-import com.studyrival.omega.db.StateEntry;
 
 import android.os.Build;
 import android.net.Uri;
@@ -25,8 +23,7 @@ public class MainActivity extends AppCompatActivity {
     private WebView webView;
     private String pendingPhotoTargetIds = null;
     private boolean pendingFileImport = false;
-    private AppDatabase db;
-    private volatile String lastCompressedState = null; // always holds latest state for onStop flush
+    private volatile String lastCompressedState = null;
 
     private final ActivityResultLauncher<String> imagePickerLauncher =
         registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -73,7 +70,6 @@ public class MainActivity extends AppCompatActivity {
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_FULLSCREEN |
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         setContentView(R.layout.activity_main);
-        db = AppDatabase.getInstance(this);
         // Request storage permission for Downloads access (needed for persistent save)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             if (!android.os.Environment.isExternalStorageManager()) {
@@ -168,37 +164,47 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> filePickerLauncher.launch(mimeType));
         }
 
-        // Silent write to Downloads — survives cache clear, clear data, even uninstall
+        // Write to app-specific external dir — consistent path, no permission needed,
+        // survives force stop and cache clear, only wiped by Clear Data or uninstall
         @JavascriptInterface
         public void writeFileSilent(String filename, String content) {
-            // Cache in memory so onStop can flush synchronously even if process is dying
             if ("omega_state.txt".equals(filename)) lastCompressedState = content;
             try {
-                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File dir = getExternalFilesDir(null);
+                if (dir == null) dir = getFilesDir();
                 File file = new File(dir, filename);
                 FileWriter fw = new FileWriter(file, false);
                 fw.write(content);
                 fw.close();
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "WROTE " + filename + " " + content.length() + "b", Toast.LENGTH_SHORT).show());
+                final String path = file.getAbsolutePath();
+                final int len = content.length();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "SAVED " + len + "b -> " + path, Toast.LENGTH_SHORT).show());
             } catch (Exception e) {
-                runOnUiThread(() -> Toast.makeText(MainActivity.this, "WRITE FAILED: " + e.getMessage(), Toast.LENGTH_LONG).show());
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "SAVE FAILED: " + e.getMessage(), Toast.LENGTH_LONG).show());
             }
         }
 
-        // Read file from Downloads — used to restore state on boot
+        // Read from same app-specific external dir
         @JavascriptInterface
         public String readFile(String filename) {
             try {
-                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File dir = getExternalFilesDir(null);
+                if (dir == null) dir = getFilesDir();
                 File file = new File(dir, filename);
-                if (!file.exists()) return null;
+                final String path = file.getAbsolutePath();
+                final boolean exists = file.exists();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "READ " + path + " exists=" + exists, Toast.LENGTH_LONG).show());
+                if (!exists) return null;
                 BufferedReader br = new BufferedReader(new FileReader(file));
                 StringBuilder sb = new StringBuilder();
                 String line;
                 while ((line = br.readLine()) != null) sb.append(line);
                 br.close();
-                return sb.toString();
+                String result = sb.toString();
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "LOADED " + result.length() + "b", Toast.LENGTH_SHORT).show());
+                return result;
             } catch (Exception e) {
+                runOnUiThread(() -> Toast.makeText(MainActivity.this, "READ FAILED: " + e.getMessage(), Toast.LENGTH_LONG).show());
                 return null;
             }
         }
