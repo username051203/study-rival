@@ -1266,6 +1266,7 @@ function mkDefault(){
   };
 }
 let S = mkDefault();
+let _initDone = false; // block saves until loadState completes
 
 // ══════════════════════════════════════════════════════════════════════
 // PERSISTENCE
@@ -1336,6 +1337,7 @@ function dbgLog(msg){
   if(el){ el.textContent += new Date().toLocaleTimeString() + ' ' + msg + '\n'; }
 }
 function save(){
+  if(!_initDone) return; // never save before loadState completes
   try{
     const d = JSON.parse(JSON.stringify(S));
     delete d.subjects;
@@ -1456,7 +1458,8 @@ async function loadState(){
       if(doneToday){ todaySlot.push(item.id); todaySet.add(item.id); recovered=true; }
     }
   }
-  if(recovered){ S.generatedSchedule[today] = todaySlot; save(); }
+  if(recovered){ S.generatedSchedule[today] = todaySlot; }
+  _initDone = true; // now safe to save
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -4498,3 +4501,4 @@ init().catch(e=>{ console.error('Fatal init error:', e); notify('Startup error �
 </script>
 </body>
 </html>
+
