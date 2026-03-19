@@ -26,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private String pendingPhotoTargetIds = null;
     private boolean pendingFileImport = false;
     private AppDatabase db;
+    private volatile String lastCompressedState = null; // always holds latest state for onStop flush
 
     private final ActivityResultLauncher<String> imagePickerLauncher =
         registerForActivityResult(new ActivityResultContracts.GetContent(), uri -> {
@@ -170,6 +171,8 @@ public class MainActivity extends AppCompatActivity {
         // Silent write to Downloads — survives cache clear, clear data, even uninstall
         @JavascriptInterface
         public void writeFileSilent(String filename, String content) {
+            // Cache in memory so onStop can flush synchronously even if process is dying
+            if ("omega_state.txt".equals(filename)) lastCompressedState = content;
             try {
                 File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
                 File file = new File(dir, filename);
@@ -233,6 +236,24 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void showToast(String message) {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        // Synchronously flush last known state to Downloads on every stop/force-stop
+        String state = lastCompressedState;
+        if (state != null) {
+            try {
+                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File file = new File(dir, "omega_state.txt");
+                FileWriter fw = new FileWriter(file, false);
+                fw.write(state);
+                fw.close();
+            } catch (Exception e) {
+                // ignore
+            }
         }
     }
 
