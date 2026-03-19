@@ -1,8 +1,10 @@
 package com.studyrival.omega;
 
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.net.Uri;
 import android.webkit.*;
 import android.view.KeyEvent;
 import android.view.View;
@@ -13,9 +15,6 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
 
-
-import android.os.Build;
-import android.net.Uri;
 import java.io.*;
 
 public class MainActivity extends AppCompatActivity {
@@ -55,8 +54,7 @@ public class MainActivity extends AppCompatActivity {
                 String line;
                 while ((line = reader.readLine()) != null) sb.append(line);
                 final String content = sb.toString().replace("\\", "\\\\").replace("'", "\\'");
-                runOnUiThread(() -> webView.evaluateJavascript(
-                    "onFileImported('" + content + "');", null));
+                runOnUiThread(() -> webView.evaluateJavascript("onFileImported('" + content + "');", null));
             } catch (Exception e) {
                 runOnUiThread(() -> Toast.makeText(this, "Could not read file", Toast.LENGTH_SHORT).show());
             }
@@ -70,19 +68,6 @@ public class MainActivity extends AppCompatActivity {
             View.SYSTEM_UI_FLAG_LAYOUT_STABLE | View.SYSTEM_UI_FLAG_FULLSCREEN |
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         setContentView(R.layout.activity_main);
-        // Request storage permission for Downloads access (needed for persistent save)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!android.os.Environment.isExternalStorageManager()) {
-                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                intent.setData(Uri.parse("package:" + getPackageName()));
-                startActivity(intent);
-            }
-        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            requestPermissions(new String[]{
-                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                android.Manifest.permission.READ_EXTERNAL_STORAGE
-            }, 1);
-        }
         webView = findViewById(R.id.webview);
         setupWebView();
     }
@@ -113,66 +98,34 @@ public class MainActivity extends AppCompatActivity {
         return super.onKeyDown(keyCode, event);
     }
 
+    @Override
+    protected void onStop() {
+        super.onStop();
+        String state = lastCompressedState;
+        if (state != null) {
+            try {
+                File dir = getExternalFilesDir(null);
+                if (dir == null) dir = getFilesDir();
+                File file = new File(dir, "omega_state.txt");
+                FileWriter fw = new FileWriter(file, false);
+                fw.write(state);
+                fw.close();
+            } catch (Exception e) { /* ignore */ }
+        }
+    }
+
     private class AndroidBridge {
 
-        // ── ROOM DB BRIDGE ────────────────────────────────────────────────
-        // Both save and load are fully synchronous.
-        // JavascriptInterface methods run on a background thread (never main thread),
-        // so synchronous Room access is safe and guaranteed to complete before
-        // the JS call returns — no race conditions on force-stop.
-
-        @JavascriptInterface
-        public void dbSave(String key, String value) {
-            // Synchronous write — completes before JS continues
-            try {
-                db.stateDao().upsert(new StateEntry(key, value));
-            } catch (Exception e) {
-                // silently ignore — IDB/localStorage are fallbacks
-            }
+        private File stateDir() {
+            File dir = getExternalFilesDir(null);
+            return dir != null ? dir : getFilesDir();
         }
 
-        @JavascriptInterface
-        public String dbLoadSync(String key) {
-            try {
-                return db.stateDao().get(key);
-            } catch (Exception e) {
-                return null;
-            }
-        }
-
-        @JavascriptInterface
-        public void dbDelete(String key) {
-            try { db.stateDao().delete(key); } catch (Exception e) {}
-        }
-
-        @JavascriptInterface
-        public void dbClear() {
-            try { db.stateDao().clear(); } catch (Exception e) {}
-        }
-
-        // ── EXISTING BRIDGE METHODS (unchanged) ──────────────────────────
-
-        @JavascriptInterface
-        public void openImagePicker(String targetIdsJson) {
-            pendingPhotoTargetIds = targetIdsJson;
-            runOnUiThread(() -> imagePickerLauncher.launch("image/*"));
-        }
-
-        @JavascriptInterface
-        public void openFilePicker(String mimeType) {
-            pendingFileImport = true;
-            runOnUiThread(() -> filePickerLauncher.launch(mimeType));
-        }
-
-        // Write to app-specific external dir — consistent path, no permission needed,
-        // survives force stop and cache clear, only wiped by Clear Data or uninstall
         @JavascriptInterface
         public void writeFileSilent(String filename, String content) {
             if ("omega_state.txt".equals(filename)) lastCompressedState = content;
             try {
-                File dir = getExternalFilesDir(null);
-                if (dir == null) dir = getFilesDir();
-                File file = new File(dir, filename);
+                File file = new File(stateDir(), filename);
                 FileWriter fw = new FileWriter(file, false);
                 fw.write(content);
                 fw.close();
@@ -184,13 +137,10 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Read from same app-specific external dir
         @JavascriptInterface
         public String readFile(String filename) {
             try {
-                File dir = getExternalFilesDir(null);
-                if (dir == null) dir = getFilesDir();
-                File file = new File(dir, filename);
+                File file = new File(stateDir(), filename);
                 final String path = file.getAbsolutePath();
                 final boolean exists = file.exists();
                 runOnUiThread(() -> Toast.makeText(MainActivity.this, "READ " + path + " exists=" + exists, Toast.LENGTH_LONG).show());
@@ -230,6 +180,18 @@ public class MainActivity extends AppCompatActivity {
         }
 
         @JavascriptInterface
+        public void openImagePicker(String targetIdsJson) {
+            pendingPhotoTargetIds = targetIdsJson;
+            runOnUiThread(() -> imagePickerLauncher.launch("image/*"));
+        }
+
+        @JavascriptInterface
+        public void openFilePicker(String mimeType) {
+            pendingFileImport = true;
+            runOnUiThread(() -> filePickerLauncher.launch(mimeType));
+        }
+
+        @JavascriptInterface
         public void shareText(String text, String filename) {
             runOnUiThread(() -> {
                 Intent intent = new Intent(Intent.ACTION_SEND);
@@ -243,24 +205,6 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void showToast(String message) {
             runOnUiThread(() -> Toast.makeText(MainActivity.this, message, Toast.LENGTH_SHORT).show());
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        // Synchronously flush last known state to Downloads on every stop/force-stop
-        String state = lastCompressedState;
-        if (state != null) {
-            try {
-                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                File file = new File(dir, "omega_state.txt");
-                FileWriter fw = new FileWriter(file, false);
-                fw.write(state);
-                fw.close();
-            } catch (Exception e) {
-                // ignore
-            }
         }
     }
 
