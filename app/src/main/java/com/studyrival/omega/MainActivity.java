@@ -98,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 0x0ba7 && resultCode == RESULT_OK && data != null) {
             String contents = data.getStringExtra("SCAN_RESULT");
             if (contents != null) {
-                final String escaped = contents.replace("\", "\\").replace("'", "\'");
+                final String escaped = contents.replace("\\", "\\\\").replace("\'", "\\\\'");
                 runOnUiThread(() -> webView.evaluateJavascript("onQRScanned('" + escaped + "');", null));
             }
         }
