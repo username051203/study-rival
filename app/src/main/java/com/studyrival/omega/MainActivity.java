@@ -16,6 +16,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.studyrival.omega.db.AppDatabase;
 import com.studyrival.omega.db.StateEntry;
 
+import android.os.Build;
+import android.net.Uri;
 import java.io.*;
 
 public class MainActivity extends AppCompatActivity {
@@ -71,24 +73,18 @@ public class MainActivity extends AppCompatActivity {
             View.SYSTEM_UI_FLAG_HIDE_NAVIGATION | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
         setContentView(R.layout.activity_main);
         db = AppDatabase.getInstance(this);
-        // Persistence diagnostic
-        try {
-            File testFile = new File(getFilesDir(), "persist_test.txt");
-            if (!testFile.exists()) {
-                // First run — write marker
-                FileWriter fw = new FileWriter(testFile);
-                fw.write("alive");
-                fw.close();
-                Toast.makeText(this, "FIRST RUN - wrote test file to: " + testFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
-            } else {
-                // Subsequent run — read marker
-                BufferedReader br = new BufferedReader(new FileReader(testFile));
-                String val = br.readLine();
-                br.close();
-                Toast.makeText(this, "PERSISTED: " + val + " | path: " + testFile.getAbsolutePath(), Toast.LENGTH_LONG).show();
+        // Request storage permission for Downloads access (needed for persistent save)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            if (!android.os.Environment.isExternalStorageManager()) {
+                Intent intent = new Intent(android.provider.Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
+                intent.setData(Uri.parse("package:" + getPackageName()));
+                startActivity(intent);
             }
-        } catch (Exception e) {
-            Toast.makeText(this, "FILE TEST FAILED: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            requestPermissions(new String[]{
+                android.Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                android.Manifest.permission.READ_EXTERNAL_STORAGE
+            }, 1);
         }
         webView = findViewById(R.id.webview);
         setupWebView();
@@ -171,11 +167,12 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> filePickerLauncher.launch(mimeType));
         }
 
-        // Silent write — no toast, used for auto-save on every change
+        // Silent write to Downloads — survives cache clear, clear data, even uninstall
         @JavascriptInterface
         public void writeFileSilent(String filename, String content) {
             try {
-                File file = new File(getFilesDir(), filename);
+                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File file = new File(dir, filename);
                 FileWriter fw = new FileWriter(file, false);
                 fw.write(content);
                 fw.close();
@@ -184,11 +181,12 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // Read file from internal storage — used to restore state on boot
+        // Read file from Downloads — used to restore state on boot
         @JavascriptInterface
         public String readFile(String filename) {
             try {
-                File file = new File(getFilesDir(), filename);
+                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                File file = new File(dir, filename);
                 if (!file.exists()) return null;
                 BufferedReader br = new BufferedReader(new FileReader(file));
                 StringBuilder sb = new StringBuilder();
