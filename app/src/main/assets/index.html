@@ -1161,6 +1161,7 @@ Virology, DNA Virus Pt 1;"></textarea>
   <div class="card">
     <h2 style="margin:0 0 16px;font-size:1rem;text-transform:uppercase;">💾 Kernel Sync</h2>
     <div id="autoSaveStatus" style="font-size:0.7rem;padding:8px 12px;border-radius:8px;margin-bottom:14px;background:rgba(57,255,160,0.08);border:1px solid rgba(57,255,160,0.3);color:var(--good);font-weight:700;">✅ Auto-save active — every change is written to file</div>
+    <div id="storageDebugLog" style="font-size:0.65rem;font-family:monospace;background:var(--log-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px;color:var(--accent3);min-height:40px;white-space:pre-wrap;word-break:break-all;"></div>
     <div id="exportStatus" style="font-size:0.75rem;color:var(--muted);margin-bottom:14px;min-height:20px;"></div>
     <button onclick="exportBackup()" style="background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;width:100%;margin-top:0;">💾 Save Backup to Downloads</button>
     <label for="importFilePick" style="display:block;width:100%;margin-top:10px;padding:14px;border-radius:8px;border:1px solid #3a5a9a;background:linear-gradient(135deg,#1a2a4d,#0f1a35);color:#90b8ff;font-size:0.8rem;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📂 Pick Backup File</label>
@@ -1330,6 +1331,10 @@ function idbClear(){
   }));
 }
 
+function dbgLog(msg){
+  const el = document.getElementById('storageDebugLog');
+  if(el){ el.textContent += new Date().toLocaleTimeString() + ' ' + msg + '\n'; }
+}
 function save(){
   try{
     const d = JSON.parse(JSON.stringify(S));
