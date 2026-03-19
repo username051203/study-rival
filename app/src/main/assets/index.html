@@ -1336,17 +1336,16 @@ function save(){
     delete d.subjects;
     const compressed = LZString.compressToBase64(JSON.stringify(d));
 
-    // 1. Room DB via Android bridge — primary, survives all WebView wipes
-    if(typeof Android !== 'undefined' && Android.dbSave){
-      try{ Android.dbSave('srv3', compressed); Android.showToast('RoomDB saved'); }catch(e){ Android.showToast('RoomDB save ERR:'+e.message); }
-    } else {
-      if(typeof Android !== 'undefined') Android.showToast('dbSave missing!');
+    // 1. Write to persistent txt file via Android bridge — survives cache clear
+    if(typeof Android !== 'undefined' && Android.writeFileSilent){
+      try{ Android.writeFileSilent('omega_state.txt', compressed); }catch(e){}
+    } else if(typeof Android !== 'undefined' && Android.writeFile){
+      try{ Android.writeFile('omega_state.txt', compressed); }catch(e){}
     }
     // 2. IDB — secondary
     idbSet('srv3', compressed).catch(e=>console.warn('IDB save failed',e));
     // 3. localStorage mirror — tertiary
     try{ localStorage.setItem('srv3_mirror', compressed); }catch(e){}
-    // Note: writeFile (Downloads) is only for manual backup via the Sync page
   }catch(e){ console.warn('save() error',e); }
 }
 async function loadState(){
@@ -1363,21 +1362,16 @@ async function loadState(){
       localStorage.removeItem('srv3');
     }
 
-    // Try Room DB first
+    // Try txt file first via Android bridge — most persistent
     let raw = null;
-    if(typeof Android !== 'undefined' && Android.dbLoadSync){
-      try{
-        raw = Android.dbLoadSync('srv3') || null;
-        Android.showToast('RoomDB load: ' + (raw ? 'FOUND '+raw.length+'chars' : 'NULL'));
-      }catch(e){ Android.showToast('RoomDB load ERROR: '+e.message); }
-    } else {
-      if(typeof Android !== 'undefined') Android.showToast('dbLoadSync missing!');
+    if(typeof Android !== 'undefined' && Android.readFile){
+      try{ raw = Android.readFile('omega_state.txt') || null; }catch(e){}
     }
     // Fallback to IDB
     if(!raw) raw = await idbGet('srv3');
     // Fallback to localStorage mirror
     if(!raw) raw = localStorage.getItem('srv3_mirror');
-    if(typeof Android !== 'undefined') Android.showToast('Final raw: '+(raw?'FOUND':'NULL'));
+
 
     if(raw){
       const p = JSON.parse(LZString.decompressFromBase64(raw));
@@ -1401,6 +1395,7 @@ async function loadState(){
       } : mkDefault().rt;
       S.customSyllabi = p.customSyllabi || {};
     }
+
   }catch(e){
     // All storage failed — try localStorage mirror one last time
     try{

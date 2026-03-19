@@ -152,6 +152,36 @@ public class MainActivity extends AppCompatActivity {
             runOnUiThread(() -> filePickerLauncher.launch(mimeType));
         }
 
+        // Silent write — no toast, used for auto-save on every change
+        @JavascriptInterface
+        public void writeFileSilent(String filename, String content) {
+            try {
+                File file = new File(getFilesDir(), filename);
+                FileWriter fw = new FileWriter(file, false);
+                fw.write(content);
+                fw.close();
+            } catch (Exception e) {
+                // silently ignore
+            }
+        }
+
+        // Read file from internal storage — used to restore state on boot
+        @JavascriptInterface
+        public String readFile(String filename) {
+            try {
+                File file = new File(getFilesDir(), filename);
+                if (!file.exists()) return null;
+                BufferedReader br = new BufferedReader(new FileReader(file));
+                StringBuilder sb = new StringBuilder();
+                String line;
+                while ((line = br.readLine()) != null) sb.append(line);
+                br.close();
+                return sb.toString();
+            } catch (Exception e) {
+                return null;
+            }
+        }
+
         @JavascriptInterface
         public void writeFile(String filename, String content) {
             try {
