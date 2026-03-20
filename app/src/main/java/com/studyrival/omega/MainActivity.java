@@ -93,18 +93,6 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == 0x0ba7 && resultCode == RESULT_OK && data != null) {
-            String contents = data.getStringExtra("SCAN_RESULT");
-            if (contents != null) {
-                final String escaped = contents.replace("\\", "\\\\").replace("\'", "\\\\'");
-                runOnUiThread(() -> webView.evaluateJavascript("onQRScanned('" + escaped + "');", null));
-            }
-        }
-    }
-
-    @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
         if (keyCode == KeyEvent.KEYCODE_BACK) {
             webView.evaluateJavascript("onAndroidBack();", null);
@@ -168,34 +156,7 @@ public class MainActivity extends AppCompatActivity {
             }
         }
 
-        // ── QR SYNC — ZXing bridge ───────────────────────────────────────
-        @JavascriptInterface
-        public void showQR(String data) {
-            runOnUiThread(() -> {
-                try {
-                    Intent intent = new Intent("com.google.zxing.client.android.ENCODE");
-                    intent.putExtra("ENCODE_TYPE", "TEXT_TYPE");
-                    intent.putExtra("ENCODE_DATA", data);
-                    intent.putExtra("ENCODE_FORMAT", "QR_CODE");
-                    startActivity(intent);
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Install ZXing Barcode Scanner to use QR sync", Toast.LENGTH_LONG).show();
-                }
-            });
-        }
-
-        @JavascriptInterface
-        public void startQRScan() {
-            runOnUiThread(() -> {
-                try {
-                    Intent intent = new Intent("com.google.zxing.client.android.SCAN");
-                    intent.putExtra("SCAN_MODE", "QR_CODE_MODE");
-                    startActivityForResult(intent, 0x0ba7);
-                } catch (Exception e) {
-                    Toast.makeText(MainActivity.this, "Install ZXing Barcode Scanner to use QR sync", Toast.LENGTH_LONG).show();
-                }
-            });
-        }
+        // QR is handled entirely in JS (jsQR + qrcode.js) — no native bridge needed
 
         // ── OTHER ─────────────────────────────────────────────────────────
         @JavascriptInterface

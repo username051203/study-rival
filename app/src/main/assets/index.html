@@ -393,7 +393,10 @@ body.theme-forest-dew{
 .cd-opt .cd-sub{font-size:0.6rem;color:var(--muted);font-weight:600;display:block;margin-top:1px;}
 
 </style>
-<script>var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length;n++)t[o][o.charAt(n)]=n}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},i={compressToBase64:function(o){if(null==o)return"";var r=i._compress(o,6,function(o){return n.charAt(o)});switch(r.length%4){default:case 0:return r;case 1:return r+"===";case 2:return r+"==";case 3:return r+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(e){return o(n,r.charAt(e))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(o){return null==o?"":""==o?null:i._decompress(o.length,16384,function(r){return o.charCodeAt(r)-32})},compressToUint8Array:function(o){for(var r=i.compress(o),n=new Uint8Array(2*r.length),e=0,t=r.length;t>e;e++){var s=r.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null===o||void 0===o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;t>e;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(o){return null==o?"":i._compress(o,6,function(o){return e.charAt(o)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(n){return o(e,r.charAt(n))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(o,r,n){if(null==o)return"";var e,t,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else{if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u)}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==r-1){d.push(n(m));break}v++}return d.join("")},decompress:function(o){return null==o?"":""==o?null:i._decompress(o.length,32768,function(r){return o.charCodeAt(r)})},_decompress:function(o,n,e){var t,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:e(0),position:n,index:1};for(i=0;3>i;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(t=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return"";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else{if(l!==d)return null;v=s+s.charAt(0)}w.push(v),f[d++]=s+v.charAt(0),h--,s=v,0==h&&(h=Math.pow(2,m),m++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module&&(module.exports=LZString);</script></head>
+<script>var LZString=function(){function o(o,r){if(!t[o]){t[o]={};for(var n=0;n<o.length;n++)t[o][o.charAt(n)]=n}return t[o][r]}var r=String.fromCharCode,n="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",e="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$",t={},i={compressToBase64:function(o){if(null==o)return"";var r=i._compress(o,6,function(o){return n.charAt(o)});switch(r.length%4){default:case 0:return r;case 1:return r+"===";case 2:return r+"==";case 3:return r+"="}},decompressFromBase64:function(r){return null==r?"":""==r?null:i._decompress(r.length,32,function(e){return o(n,r.charAt(e))})},compressToUTF16:function(o){return null==o?"":i._compress(o,15,function(o){return r(o+32)})+" "},decompressFromUTF16:function(o){return null==o?"":""==o?null:i._decompress(o.length,16384,function(r){return o.charCodeAt(r)-32})},compressToUint8Array:function(o){for(var r=i.compress(o),n=new Uint8Array(2*r.length),e=0,t=r.length;t>e;e++){var s=r.charCodeAt(e);n[2*e]=s>>>8,n[2*e+1]=s%256}return n},decompressFromUint8Array:function(o){if(null===o||void 0===o)return i.decompress(o);for(var n=new Array(o.length/2),e=0,t=n.length;t>e;e++)n[e]=256*o[2*e]+o[2*e+1];var s=[];return n.forEach(function(o){s.push(r(o))}),i.decompress(s.join(""))},compressToEncodedURIComponent:function(o){return null==o?"":i._compress(o,6,function(o){return e.charAt(o)})},decompressFromEncodedURIComponent:function(r){return null==r?"":""==r?null:(r=r.replace(/ /g,"+"),i._decompress(r.length,32,function(n){return o(e,r.charAt(n))}))},compress:function(o){return i._compress(o,16,function(o){return r(o)})},_compress:function(o,r,n){if(null==o)return"";var e,t,i,s={},p={},u="",c="",a="",l=2,f=3,h=2,d=[],m=0,v=0;for(i=0;i<o.length;i+=1)if(u=o.charAt(i),Object.prototype.hasOwnProperty.call(s,u)||(s[u]=f++,p[u]=!0),c=a+u,Object.prototype.hasOwnProperty.call(s,c))a=c;else{if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++),s[c]=f++,a=String(u)}if(""!==a){if(Object.prototype.hasOwnProperty.call(p,a)){if(a.charCodeAt(0)<256){for(e=0;h>e;e++)m<<=1,v==r-1?(v=0,d.push(n(m)),m=0):v++;for(t=a.charCodeAt(0),e=0;8>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}else{for(t=1,e=0;h>e;e++)m=m<<1|t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t=0;for(t=a.charCodeAt(0),e=0;16>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1}l--,0==l&&(l=Math.pow(2,h),h++),delete p[a]}else for(t=s[a],e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;l--,0==l&&(l=Math.pow(2,h),h++)}for(t=2,e=0;h>e;e++)m=m<<1|1&t,v==r-1?(v=0,d.push(n(m)),m=0):v++,t>>=1;for(;;){if(m<<=1,v==r-1){d.push(n(m));break}v++}return d.join("")},decompress:function(o){return null==o?"":""==o?null:i._decompress(o.length,32768,function(r){return o.charCodeAt(r)})},_decompress:function(o,n,e){var t,i,s,p,u,c,a,l,f=[],h=4,d=4,m=3,v="",w=[],A={val:e(0),position:n,index:1};for(i=0;3>i;i+=1)f[i]=i;for(p=0,c=Math.pow(2,2),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(t=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;l=r(p);break;case 2:return""}for(f[3]=l,s=l,w.push(l);;){if(A.index>o)return"";for(p=0,c=Math.pow(2,m),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;switch(l=p){case 0:for(p=0,c=Math.pow(2,8),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 1:for(p=0,c=Math.pow(2,16),a=1;a!=c;)u=A.val&A.position,A.position>>=1,0==A.position&&(A.position=n,A.val=e(A.index++)),p|=(u>0?1:0)*a,a<<=1;f[d++]=r(p),l=d-1,h--;break;case 2:return w.join("")}if(0==h&&(h=Math.pow(2,m),m++),f[l])v=f[l];else{if(l!==d)return null;v=s+s.charAt(0)}w.push(v),f[d++]=s+v.charAt(0),h--,s=v,0==h&&(h=Math.pow(2,m),m++)}}};return i}();"function"==typeof define&&define.amd?define(function(){return LZString}):"undefined"!=typeof module&&null!=module&&(module.exports=LZString);</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsQR/1.4.0/jsQR.min.js"></script>
+</head>
 <body>
 
 <!-- ░░ SAKURA PETAL LAYER ░░ -->
@@ -615,6 +618,13 @@ body.theme-forest-dew{
       </div>
     </div>
     <div id="heatAlert" style="color:var(--bad);text-align:center;font-size:0.65rem;font-weight:900;margin-top:10px;opacity:0;text-transform:uppercase;">🔥 Alicia is ahead — push harder</div>
+    <!-- Alicia live breakdown -->
+    <details id="aliciaBreakdownWrap" style="margin-top:12px;">
+      <summary style="font-size:0.65rem;font-weight:900;color:var(--accent);text-transform:uppercase;letter-spacing:1px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
+        <span>📋 Alicia's Progress Breakdown</span><span style="font-size:0.6rem;color:var(--muted);">▼</span>
+      </summary>
+      <div id="aliciaBreakdown" style="margin-top:8px;font-size:0.72rem;max-height:220px;overflow-y:auto;"></div>
+    </details>
     <!-- Alicia speech bubble -->
     <div id="aliciaQuipWrap" style="display:none;margin-top:14px;">
       <div style="position:relative;background:linear-gradient(135deg,rgba(124,111,255,0.12),rgba(255,111,216,0.08));border:1px solid rgba(124,111,255,0.3);border-radius:14px;padding:10px 14px;">
@@ -1736,6 +1746,11 @@ function generateSchedule(skipSplitCheck, startDay){
   }
 
   S.generatedSchedule = schedule;
+  // Reset rival start hour when today's schedule changes — rival starts fresh from now
+  const _todayKey = todayStr();
+  if(schedule[_todayKey] && schedule[_todayKey].length > 0){
+    S.rival._startHr = null;
+  }
   save();
   logSys('Schedule regenerated — '+incomplete.length+' items packed');
 
@@ -1891,56 +1906,60 @@ function tickRival(){
     S.rival.cur = 0;
     S.rival._hrsWorked = 0;
     S.rival._boost = 1.0;
+    S.rival._startHr = null; // reset start hour — will be set when schedule is assigned
     logSys('NEW DAY → '+today);
     save();
   }
   const now = simDate();
   const rt = S.rt || {slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
 
-  // The "day" starts at the anchor hour (e.g. 03:30 = 3.5).
-  // We measure elapsed study time from the anchor, not from midnight,
-  // so Alicia never gets credit for the pre-anchor sleep window.
-  const anchor = anchorHr(); // e.g. 3.5
-  const nowHr  = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
-  // Hours elapsed since anchor (wrapping around midnight correctly)
-  // anchor is typically in the very early morning (e.g. 03:30)
-  // nowHr can be anywhere from 0–24; since the day resets at anchor,
-  // elapsed = (nowHr - anchor + 24) % 24, capped at 24.
-  const elapsedSinceAnchor = ((nowHr - anchor + 24) % 24);
+  // Rival starts from the moment today's schedule was first generated,
+  // NOT from the anchor hour. This prevents rival from getting a head start.
+  const nowHr = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
 
-  // For each blocked range, compute how much of it falls within
-  // [anchor, anchor+elapsedSinceAnchor] on the 24-hr clock.
-  // We convert all times to "hours since anchor" for clean arithmetic.
-  function hrsSinceAnchor(h){ return (h - anchor + 24) % 24; }
+  // If no start hour recorded yet, set it now (first tick of the day)
+  if(S.rival._startHr == null || S.rival._startHr === undefined){
+    const todayIds = S.generatedSchedule[today] || [];
+    if(todayIds.length === 0){ S.rival.cur = 0; return; } // nothing scheduled
+    S.rival._startHr = nowHr;
+    save();
+  }
 
-  function blockedSoFar(s, e){
-    // Duration of this blocked range
+  const startHr = S.rival._startHr;
+  // Hours elapsed since schedule was assigned today (simple wall clock diff)
+  // Handle midnight wrap: if nowHr < startHr, a midnight has passed
+  const elapsedRaw = nowHr >= startHr
+    ? nowHr - startHr
+    : (24 - startHr + nowHr);
+
+  // Subtract blocked periods (sleep, meals, personal) that fall within elapsed window
+  function blockedInWindow(s, e){
+    // Normalise to "hours since startHr" coords
     const dur = e < s ? (24 - s + e) : (e - s);
-    // Start of blocked range in "since anchor" coordinates
-    const sA = hrsSinceAnchor(s);
-    const eA = sA + dur; // end in same coords (never wraps, max 24)
-    // How much of [sA, eA] has elapsed so far (i.e. within [0, elapsedSinceAnchor])?
-    return Math.max(0, Math.min(eA, elapsedSinceAnchor) - sA);
+    const sR = (s - startHr + 24) % 24;
+    const eR = sR + dur;
+    return Math.max(0, Math.min(eR, elapsedRaw) - Math.max(sR, 0));
   }
 
   let blocked = 0;
-  for(const r of rt.slp.concat(rt.bf)) blocked += blockedSoFar(r.s, r.e);
-  for(const m of rt.ml) blocked += blockedSoFar(m, m+0.75);
+  for(const r of rt.slp.concat(rt.bf)) blocked += blockedInWindow(r.s, r.e);
+  for(const m of rt.ml) blocked += blockedInWindow(m, m+0.75);
 
-  const aliciaHrs = Math.max(0, elapsedSinceAnchor - blocked);
+  const aliciaHrs = Math.max(0, elapsedRaw - blocked);
   S.rival._hrsWorked = aliciaHrs;
 
-  // Elastic boost: if YOU are ahead, Alicia speeds up
-  // Lead = your passes - her current passes (use last known value to avoid circular)
+  // Elastic boost: if YOU are far ahead, Alicia gets a mild speed-up
+  // Boost applies to pass rate, not hours — so it's genuinely mild
   const uc = userChaptersTodayCount();
   const prevAc = S.rival.cur || 0;
   const lead = uc - prevAc;
   let boost = 1.0;
-  if(lead >= 2.5)      boost = 1.30;
-  else if(lead >= 1.0) boost = 1.15;
+  if(lead >= 4)      boost = 1.20;
+  else if(lead >= 2) boost = 1.10;
   S.rival._boost = boost;
 
-  S.rival.cur = aliciaChapterCount(aliciaHrs * boost);
+  // aliciaHrs is real study hours; boost only slightly inflates pass rate
+  S.rival.cur = aliciaChapterCount(aliciaHrs) * boost;
 }
 
 function aliciaChapterCount(hrsWorked){
@@ -1953,16 +1972,63 @@ function aliciaChapterCount(hrsWorked){
     const itemPasses = itemTotalCount(item);
     if(itemHrs === 0) continue;
     if(remaining >= itemHrs){
-      // fully done with this item
       remaining -= itemHrs;
       passes += itemPasses;
     } else {
-      // partway through this item — fractional sub-passes
       passes += (remaining / itemHrs) * itemPasses;
       break;
     }
   }
   return passes;
+}
+
+function renderAliciaBreakdown(){
+  const el = document.getElementById('aliciaBreakdown');
+  if(!el) return;
+  const items = todayItems();
+  if(!items.length){ el.innerHTML='<div style="color:var(--muted);padding:6px;">No items scheduled today.</div>'; return; }
+  const hrsWorked = S.rival._hrsWorked || 0;
+  let remaining = hrsWorked;
+  let html = '';
+  for(const item of items){
+    const itemHrs = itemTotalHrs(item);
+    const itemPasses = itemTotalCount(item);
+    if(itemHrs === 0) continue;
+    const subj = item.subjectId || '';
+    const topic = item.topicId ? (S.subjects[subj]?.chapters?.flatMap(ch=>ch.topics)?.find(t=>t.id===item.topicId)?.name || item.topicId) : '';
+    const chapter = item.chapterId ? (S.subjects[subj]?.chapters?.find(ch=>ch.id===item.chapterId)?.name || item.chapterId) : '';
+    const label = topic || chapter || item.id;
+
+    if(remaining <= 0){
+      // not started
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:4px;background:var(--log-bg);border:1px solid var(--border);opacity:0.45;">
+        <span style="color:var(--muted);">${subj} · ${label}</span>
+        <span style="color:var(--muted);font-size:0.65rem;">not started</span>
+      </div>`;
+    } else if(remaining >= itemHrs){
+      // fully done
+      remaining -= itemHrs;
+      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:4px;background:rgba(57,255,160,0.08);border:1px solid rgba(57,255,160,0.3);">
+        <span style="color:var(--good);">✓ ${subj} · ${label}</span>
+        <span style="color:var(--good);font-size:0.65rem;">${itemPasses} passes</span>
+      </div>`;
+    } else {
+      // in progress
+      const pct = Math.round(remaining / itemHrs * 100);
+      const donePasses = (remaining / itemHrs * itemPasses).toFixed(1);
+      remaining = 0;
+      html += `<div style="padding:5px 8px;border-radius:8px;margin-bottom:4px;background:rgba(124,111,255,0.08);border:1px solid rgba(124,111,255,0.35);">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
+          <span style="color:var(--accent);">⟳ ${subj} · ${label}</span>
+          <span style="color:var(--accent);font-size:0.65rem;">${pct}% · ${donePasses}/${itemPasses} passes</span>
+        </div>
+        <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px;transition:width 0.4s;"></div>
+        </div>
+      </div>`;
+    }
+  }
+  el.innerHTML = html;
 }
 
 function archiveDay(dateStr){
@@ -1994,7 +2060,34 @@ let _lastEod='';
 function checkEndOfDay(){
   const now=simDate(); const h=now.getHours()+now.getMinutes()/60;
   const today=todayStr();
-  if(Math.abs(h-anchorHr())<(1/60) && _lastEod!==today){ _lastEod=today; showDayReport(); }
+  const anchor = anchorHr();
+  // Fire if within 5 minutes of anchor (wider window catches missed ticks)
+  const diff = Math.abs(h - anchor);
+  const nearAnchor = diff < (5/60) || diff > (24 - 5/60);
+  if(nearAnchor && _lastEod !== today){
+    _lastEod = today;
+    S.engine._lastEod = today; // persist so force-stop doesn't lose it
+    save();
+    showDayReport();
+  }
+}
+
+function checkMissedEod(){
+  // On startup, check if we missed yesterday's report
+  const today = todayStr();
+  const yesterday = addDays(today, -1);
+  const lastEod = S.engine._lastEod || '';
+  _lastEod = lastEod; // sync in-memory from persisted
+  // If we never fired for yesterday, show report now
+  if(lastEod !== yesterday && lastEod !== today){
+    const h = Object.keys(S.history||{});
+    // Only show if there's actual history data for yesterday
+    if(S.history && S.history[yesterday]){
+      _lastEod = yesterday;
+      S.engine._lastEod = yesterday;
+      showDayReport();
+    }
+  }
 }
 function showDayReport(){
   const dateStr = todayStr();
@@ -2350,6 +2443,7 @@ function renderDash(){
   animNum(document.getElementById('aliciaTodayTotal'), ac.toFixed(1));
   animNum(document.getElementById('aliciaHrsWorked'),  fmtMins(S.rival._hrsWorked||0));
   document.getElementById('heatAlert').style.opacity = ac>uc && todayItemList.length ? '1':'0';
+  renderAliciaBreakdown();
   // Only refresh quip if none showing yet (don't overwrite tick/startup quips mid-session)
   const quipWrap = document.getElementById('aliciaQuipWrap');
   if(quipWrap && quipWrap.style.display==='none') updateAliciaQuipOnDash();
@@ -4418,31 +4512,123 @@ function qrApplyPayload(jsonStr){
   save(); renderActive();
 }
 
+// ── PURE JS QR — no ZXing, no external app needed ──────────────────
+let _qrScanStream = null;
+let _qrScanAnimFrame = null;
+
 function qrShowExport(){
-  if(typeof Android !== 'undefined'){
-    try{
-      const compressed = LZString.compressToEncodedURIComponent(qrBuildPayload());
-      Android.showQR(compressed);
-    }catch(e){ notify('QR export failed: '+e.message,'bad'); }
-  } else {
-    notify('QR sync only works in the Android app.','warn');
-  }
+  const compressed = LZString.compressToEncodedURIComponent(qrBuildPayload());
+  const panel = document.getElementById('qrExportPanel');
+  const canvas = document.getElementById('qrCanvas');
+  panel.style.display = 'block';
+  // Clear canvas
+  canvas.width = 300; canvas.height = 300;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0,0,300,300);
+  try{
+    // Use QRCode lib to draw onto a temp div then copy to canvas
+    const tmp = document.createElement('div');
+    tmp.style.display = 'none';
+    document.body.appendChild(tmp);
+    new QRCode(tmp, {
+      text: compressed,
+      width: 300, height: 300,
+      colorDark: '#000000', colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
+    // QRCode lib creates an img — copy it to canvas
+    setTimeout(()=>{
+      const img = tmp.querySelector('img');
+      if(img){ const i=new Image(); i.onload=()=>ctx.drawImage(i,0,0,300,300); i.src=img.src; }
+      document.body.removeChild(tmp);
+    }, 100);
+  }catch(e){ notify('QR generate failed: '+e.message,'bad'); }
 }
 
 function qrStartScan(){
-  if(typeof Android !== 'undefined'){
-    Android.startQRScan();
+  const panel = document.getElementById('qrScanPanel');
+  const video = document.getElementById('qrVideo');
+  const status = document.getElementById('qrScanStatus');
+  const fileBtn = document.getElementById('qrFileBtn');
+  panel.style.display = 'block';
+  status.textContent = 'Starting camera...';
+
+  if(navigator.mediaDevices && navigator.mediaDevices.getUserMedia){
+    navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}})
+      .then(stream=>{
+        _qrScanStream = stream;
+        video.srcObject = stream;
+        video.style.display = 'block';
+        video.play();
+        status.textContent = 'Point at QR code...';
+        _qrScanTick();
+      })
+      .catch(()=>{
+        status.textContent = 'Camera unavailable — use photo instead';
+        fileBtn.style.display = 'block';
+      });
   } else {
-    notify('QR scan only works in the Android app.','warn');
+    status.textContent = 'Camera not supported — use photo instead';
+    fileBtn.style.display = 'block';
   }
 }
 
-// Called by Android native after a successful scan
+function _qrScanTick(){
+  const video = document.getElementById('qrVideo');
+  const canvas = document.getElementById('qrScanCanvas');
+  if(!video || video.readyState < 2){ _qrScanAnimFrame = requestAnimationFrame(_qrScanTick); return; }
+  canvas.width = video.videoWidth;
+  canvas.height = video.videoHeight;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video,0,0,canvas.width,canvas.height);
+  const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+  const code = jsQR(imageData.data, imageData.width, imageData.height);
+  if(code){
+    qrStopScan();
+    onQRScanned(code.data);
+  } else {
+    _qrScanAnimFrame = requestAnimationFrame(_qrScanTick);
+  }
+}
+
+function qrScanFromFile(input){
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e=>{
+    const img = new Image();
+    img.onload = ()=>{
+      const canvas = document.createElement('canvas');
+      canvas.width = img.width; canvas.height = img.height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0);
+      const imageData = ctx.getImageData(0,0,canvas.width,canvas.height);
+      const code = jsQR(imageData.data, imageData.width, imageData.height);
+      if(code){ qrStopScan(); onQRScanned(code.data); }
+      else { notify('No QR code found in image','bad'); }
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function qrStopScan(){
+  if(_qrScanStream){ _qrScanStream.getTracks().forEach(t=>t.stop()); _qrScanStream=null; }
+  if(_qrScanAnimFrame){ cancelAnimationFrame(_qrScanAnimFrame); _qrScanAnimFrame=null; }
+  const panel = document.getElementById('qrScanPanel');
+  const video = document.getElementById('qrVideo');
+  const fileBtn = document.getElementById('qrFileBtn');
+  if(panel) panel.style.display='none';
+  if(video){ video.style.display='none'; video.srcObject=null; }
+  if(fileBtn) fileBtn.style.display='none';
+}
+
 function onQRScanned(compressed){
   try{
     const jsonStr = LZString.decompressFromEncodedURIComponent(compressed);
     qrApplyPayload(jsonStr);
-    notify('✅ QR Sync complete — data imported from other device.','good');
+    notify('✅ QR Sync complete — data imported!','good');
   }catch(e){
     notify('QR decode failed: '+e.message,'bad');
   }
@@ -4494,6 +4680,7 @@ async function init(){
     asEl.style.color = hasRoomDb ? 'var(--good)' : 'var(--warn)';
   }
 
+  checkMissedEod();
   setInterval(()=>{ tickRival(); checkEndOfDay(); save(); if(document.getElementById('dash').classList.contains('active')) renderDash(); updateStreakDisplay(); }, 60000);
   logSys('OMEGA v2 ONLINE · IDB active');
   const today = todayStr();
