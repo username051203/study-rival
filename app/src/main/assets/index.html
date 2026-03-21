@@ -1349,6 +1349,17 @@ function dbgLog(msg){
 function save(){
   if(!_initDone) return; // never save before loadState completes
   try{
+    // Prune generatedSchedule older than 90 days — keeps storage bounded
+    const _cutoff = addDays(todayStr(), -90);
+    for(const day of Object.keys(S.generatedSchedule)){
+      if(day < _cutoff) delete S.generatedSchedule[day];
+    }
+    // Prune _snapshots older than 90 days
+    if(S._snapshots){
+      for(const day of Object.keys(S._snapshots)){
+        if(day < _cutoff) delete S._snapshots[day];
+      }
+    }
     const d = JSON.parse(JSON.stringify(S));
     delete d.subjects;
     const compressed = LZString.compressToBase64(JSON.stringify(d));
@@ -1963,6 +1974,16 @@ function tickRival(){
 
   // aliciaHrs is real study hours; boost only slightly inflates pass rate
   S.rival.cur = aliciaChapterCount(aliciaHrs) * boost;
+
+  // Always keep a live snapshot so archiveDay never sees stale/zeroed values
+  const _tickDay = anchorDayStr();
+  if(!S._snapshots) S._snapshots = {};
+  S._snapshots[_tickDay] = {
+    aliciaCh:  S.rival.cur,
+    totalPasses: todayItems().reduce((s,it)=>s+itemTotalCount(it),0),
+    boost:     S.rival._boost || 1.0,
+    hrsUsed:   S.rival._hrsWorked || 0
+  };
 }
 
 function aliciaChapterCount(hrsWorked){
@@ -2093,10 +2114,14 @@ function checkMissedEod(){
   }
 }
 function showDayReport(){
-  const dateStr = todayStr();
-  // userCh = done ticks logged today
+  const dateStr = anchorDayStr(); // use anchor-aware date, not calendar date
+  // userCh = done ticks logged today (use calendar date for log matching)
+  const calToday = todayStr();
   const uc = (S.logs||[]).filter(l=>{
-    try{ return l.done && new Date(l.iso).toISOString().slice(0,10)===dateStr; }catch(e){ return false; }
+    try{
+      const d = new Date(l.iso).toISOString().slice(0,10);
+      return l.done && (d===dateStr || d===calToday);
+    }catch(e){ return false; }
   }).length;
   const ac = S.rival.cur;
   const totalPasses = todayItems().reduce((s,it)=>s+itemTotalCount(it),0);
@@ -2143,7 +2168,16 @@ function showDayReport(){
   // Always bring user to dash so the report is visible
   show('dash');
   notify('📊 End of Day Report ready — check your dashboard.', 'info');
-  archiveDay(todayStr()); save();
+  // Force-write snapshot with current values before archiving
+  if(!S._snapshots) S._snapshots={};
+  const _eodDate = anchorDayStr();
+  S._snapshots[_eodDate] = {
+    aliciaCh: S.rival.cur,
+    totalPasses: todayItems().reduce((s,it)=>s+itemTotalCount(it),0),
+    boost: S.rival._boost||1.0,
+    hrsUsed: S.rival._hrsWorked||0
+  };
+  archiveDay(_eodDate); save();
   setTimeout(()=>{ const c=document.getElementById('dayReportCard'); if(c.style.display!=='none') c.style.opacity='0.5'; },25000);
 }
 function closeDayReport(){
