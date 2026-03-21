@@ -472,6 +472,7 @@ body.theme-forest-dew{
   <button class="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode" style="margin-left:10px;"></button>
 </header>
 
+<img id="floatImg" src="" alt="" style="position:fixed;top:70px;right:15px;width:72px;height:72px;object-fit:contain;z-index:997;border-radius:12px;pointer-events:none;image-rendering:pixelated;filter:drop-shadow(0 2px 12px rgba(124,111,255,0.5));display:none;">
 <div class="menu-overlay" id="menuOverlay" onclick="closeMenu()"></div>
 <div class="mobile-menu" id="mobileMenu">
   <div class="menu-header">
@@ -480,13 +481,13 @@ body.theme-forest-dew{
   </div>
   <div class="menu-profile">
     <div class="pfp-wrap">
-      <img id="menuUserPfp" src="https://iili.io/q7kMZ6N.md.jpg" class="pfp">
+      <img id="menuUserPfp" src="https://iili.io/qWoe8fn.md.jpg" class="pfp">
       <div id="menuUserLabel" style="font-size:0.6rem;margin-top:6px;color:var(--muted);font-weight:900">YOU</div>
     </div>
     <div class="vs-divider">VS</div>
     <div class="pfp-wrap">
-      <img id="menuAliciaPfp" src="https://iili.io/qR0vySS.md.jpg" class="pfp">
-      <div id="menuAliciaLabel" style="font-size:0.6rem;margin-top:6px;color:var(--muted);font-weight:900">ALEXANDRIUS</div>
+      <img id="menuAliciaPfp" src="https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg" class="pfp">
+      <div id="menuAliciaLabel" style="font-size:0.6rem;margin-top:6px;color:var(--muted);font-weight:900">ALICIA</div>
     </div>
   </div>
   <div class="nav-list">
@@ -517,7 +518,7 @@ body.theme-forest-dew{
         <div class="report-label">completed</div>
       </div>
       <div class="report-stat">
-        <div class="report-label">ALEXANDRIUS Passes</div>
+        <div class="report-label">ALICIA Passes</div>
         <div id="repAliciaCh" class="report-value" style="color:var(--accent)">0.0</div>
         <div class="report-label">simulated</div>
       </div>
@@ -533,7 +534,7 @@ body.theme-forest-dew{
         <span id="repGap" class="detail-value">--</span>
       </div>
       <div class="detail-row">
-        <span class="detail-label">ALEXANDRIUS Boost Active</span>
+        <span class="detail-label">ALICIA Boost Active</span>
         <span id="repBoost" class="detail-value">--</span>
       </div>
       <div class="detail-row">
@@ -557,9 +558,9 @@ body.theme-forest-dew{
         <div id="aStatus" style="font-size:0.62rem;color:var(--muted);font-weight:900;text-transform:uppercase;margin-top:2px;">System Standby</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
-        <img id="chibiImg" src="https://iili.io/q1KELog.md.png" alt="chibi"
+        <img id="chibiImg" src="https://iili.io/qWo4LKB.md.png" alt="chibi"
           style="width:64px;height:64px;object-fit:contain;image-rendering:pixelated;filter:drop-shadow(0 2px 8px rgba(124,111,255,0.5));transition:all 0.4s ease;margin-bottom:2px;">
-        <div id="intensityBadge" style="padding:6px 14px;border-radius:8px;font-weight:900;font-size:0.68rem;letter-spacing:1px;">ALEXANDRIUS: STUDYING</div>
+        <div id="intensityBadge" style="padding:6px 14px;border-radius:8px;font-weight:900;font-size:0.68rem;letter-spacing:1px;">ALICIA: STUDYING</div>
         <div id="anchorLabel" style="font-size:0.55rem;color:var(--muted);font-weight:900;text-transform:uppercase;">Anchor: --:--</div>
       </div>
     </div>
@@ -572,7 +573,7 @@ body.theme-forest-dew{
   <div class="card">
     <!-- You row -->
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:10px;">
-      <img id="dashUserPfp" src="https://iili.io/q7kMZ6N.md.jpg" class="avatar-mini">
+      <img id="dashUserPfp" src="https://iili.io/qWoe8fn.md.jpg" class="avatar-mini">
       <div style="flex:1;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
           <span id="dashUserName" style="font-weight:900;font-size:0.85rem;">YOU</span>
@@ -589,10 +590,10 @@ body.theme-forest-dew{
     </div>
     <!-- Alicia row -->
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:14px;">
-      <img id="dashAliciaPfp" src="https://iili.io/qR0vySS.md.jpg" class="avatar-mini">
+      <img id="dashAliciaPfp" src="https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg" class="avatar-mini">
       <div style="flex:1;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;">
-          <span id="dashAliciaName" style="font-weight:900;font-size:0.85rem;">ALEXANDRIUS</span>
+          <span id="dashAliciaName" style="font-weight:900;font-size:0.85rem;">ALICIA</span>
           <span id="aChNum" style="color:var(--accent);font-weight:900;font-family:'Courier New',monospace;font-size:0.85rem;">0.0 / 0</span>
         </div>
         <div class="rail" style="height:14px;"><div id="aChBar" class="fill" style="background:var(--accent);"></div></div>
@@ -601,12 +602,12 @@ body.theme-forest-dew{
     <!-- Mini stats row -->
     <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
       <div style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
-        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">ALEXANDRIUS mins</div>
+        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">ALICIA mins</div>
         <div id="aliciaHrsWorked" style="font-size:1.1rem;font-weight:900;color:var(--warn);">0.0</div>
         <div style="font-size:0.55rem;color:var(--muted);">of <span id="aliciaDailyHrs">--</span>h</div>
       </div>
       <div style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
-        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">ALEXANDRIUS passes</div>
+        <div style="font-size:0.55rem;color:var(--muted);text-transform:uppercase;margin-bottom:3px;">ALICIA passes</div>
         <div id="aliciaTodayTotal" style="font-size:1.1rem;font-weight:900;color:var(--accent);">0.0</div>
         <div style="font-size:0.55rem;color:var(--muted);">today</div>
       </div>
@@ -617,12 +618,7 @@ body.theme-forest-dew{
       </div>
     </div>
     <div id="heatAlert" style="color:var(--bad);text-align:center;font-size:0.65rem;font-weight:900;margin-top:10px;opacity:0;text-transform:uppercase;">🔥 Alicia is ahead — push harder</div>
-    <details id="aliciaBreakdownWrap" style="margin-top:12px;">
-      <summary style="font-size:0.65rem;font-weight:900;color:var(--accent);text-transform:uppercase;letter-spacing:1px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
-        <span>📋 Alicia's Progress Breakdown</span><span style="font-size:0.6rem;color:var(--muted);">▼</span>
-      </summary>
-      <div id="aliciaBreakdown" style="margin-top:8px;font-size:0.72rem;max-height:220px;overflow-y:auto;"></div>
-    </details>
+    <!-- Alicia live breakdown -->
     <details id="aliciaBreakdownWrap" style="margin-top:12px;">
       <summary style="font-size:0.65rem;font-weight:900;color:var(--accent);text-transform:uppercase;letter-spacing:1px;cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;padding:6px 0;">
         <span>📋 Alicia's Progress Breakdown</span><span style="font-size:0.6rem;color:var(--muted);">▼</span>
@@ -899,7 +895,7 @@ Virology, DNA Virus Pt 1;"></textarea>
     <div id="drillUser" style="margin-top:10px;"></div>
   </div>
   <div class="card">
-    <label>ALEXANDRIUS Logic Path</label>
+    <label>ALICIA Logic Path</label>
     <div id="drillAlicia" style="font-size:0.75rem;margin-top:10px;"></div>
   </div>
 </div>
@@ -909,7 +905,7 @@ Virology, DNA Virus Pt 1;"></textarea>
   <!-- Your profile -->
   <div class="card">
     <div class="profile-section-header">
-      <img id="profileUserIcon" src="https://iili.io/q7kMZ6N.md.jpg" class="profile-section-icon" style="border-color:var(--good);">
+      <img id="profileUserIcon" src="https://iili.io/qWoe8fn.md.jpg" class="profile-section-icon" style="border-color:var(--good);">
       <div>
         <div style="font-size:1rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--good);" id="profileUserNameDisplay">YOU</div>
         <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;" id="profileUserTaglineDisplay">The Operator</div>
@@ -926,20 +922,20 @@ Virology, DNA Virus Pt 1;"></textarea>
       <div class="photo-grid" style="margin-top:10px;">
         <div class="photo-slot">
           <div style="font-size:0.6rem;color:#4ade80;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Win</div>
-          <img id="prevUserWin" src="https://iili.io/q7venWX.md.jpg">
-          <input id="urlUserWin" type="url" value="https://iili.io/q7venWX.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Win')">
+          <img id="prevUserWin" src="https://iili.io/qWoe8fn.md.jpg">
+          <input id="urlUserWin" type="url" value="https://iili.io/qWoe8fn.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Win')">
           <button class="reset-photo-btn" onclick="resetPhoto('User','Win')">Reset</button>
         </div>
         <div class="photo-slot">
           <div style="font-size:0.6rem;color:#f87171;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Loss</div>
-          <img id="prevUserLoss" src="https://iili.io/q7v3cDQ.md.jpg">
-          <input id="urlUserLoss" type="url" value="https://iili.io/q7v3cDQ.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Loss')">
+          <img id="prevUserLoss" src="https://iili.io/qWoe8fn.md.jpg">
+          <input id="urlUserLoss" type="url" value="https://iili.io/qWoe8fn.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Loss')">
           <button class="reset-photo-btn" onclick="resetPhoto('User','Loss')">Reset</button>
         </div>
         <div class="photo-slot">
           <div style="font-size:0.6rem;color:var(--muted);font-weight:900;text-transform:uppercase;margin-bottom:6px;">Default</div>
-          <img id="prevUserDefault" src="https://iili.io/q7kMZ6N.md.jpg">
-          <input id="urlUserDefault" type="url" value="https://iili.io/q7kMZ6N.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Default')">
+          <img id="prevUserDefault" src="https://iili.io/qWoe8fn.md.jpg">
+          <input id="urlUserDefault" type="url" value="https://iili.io/qWoe8fn.md.jpg" placeholder="Image URL..." oninput="previewPhoto('User','Default')">
           <button class="reset-photo-btn" onclick="resetPhoto('User','Default')">Reset</button>
         </div>
       </div>
@@ -950,15 +946,15 @@ Virology, DNA Virus Pt 1;"></textarea>
   <!-- Rival profile -->
   <div class="card">
     <div class="profile-section-header">
-      <img id="profileAliciaIcon" src="https://iili.io/qR0vySS.md.jpg" class="profile-section-icon" style="border-color:var(--accent);">
+      <img id="profileAliciaIcon" src="https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg" class="profile-section-icon" style="border-color:var(--accent);">
       <div>
-        <div style="font-size:1rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--accent);" id="profileAliciaNameDisplay">ALEXANDRIUS</div>
+        <div style="font-size:1rem;font-weight:900;letter-spacing:2px;text-transform:uppercase;color:var(--accent);" id="profileAliciaNameDisplay">ALICIA</div>
         <div style="font-size:0.65rem;color:var(--muted);margin-top:2px;" id="profileAliciaTaglineDisplay">The Rival</div>
         <span style="display:inline-block;padding:2px 8px;border-radius:10px;font-size:0.6rem;font-weight:900;text-transform:uppercase;background:#1a1f4d;color:#818cf8;border:1px solid #4f57cc;margin-top:4px;">RIVAL PROFILE</span>
       </div>
     </div>
     <label>Display Name</label>
-    <input id="inputAliciaName" type="text" maxlength="20" placeholder="ALEXANDRIUS" oninput="livePreviewAlicia()">
+    <input id="inputAliciaName" type="text" maxlength="20" placeholder="ALICIA" oninput="livePreviewAlicia()">
     <label>Tagline</label>
     <input id="inputAliciaTagline" type="text" maxlength="40" oninput="livePreviewAlicia()">
     <!-- Photo states — collapsed -->
@@ -967,38 +963,38 @@ Virology, DNA Virus Pt 1;"></textarea>
       <div class="photo-grid" style="margin-top:10px;">
         <div class="photo-slot">
           <div style="font-size:0.6rem;color:#f87171;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Loss (she wins)</div>
-          <img id="prevAliciaLoss" src="https://iili.io/qR08IOF.md.jpg">
-          <input id="urlAliciaLoss" type="url" value="https://iili.io/qR08IOF.md.jpg" oninput="previewPhoto('Alicia','Loss')">
+          <img id="prevAliciaLoss" src="https://i.postimg.cc/NF6VqZL3/20260203-000212.jpg">
+          <input id="urlAliciaLoss" type="url" value="https://i.postimg.cc/NF6VqZL3/20260203-000212.jpg" oninput="previewPhoto('Alicia','Loss')">
           <button class="reset-photo-btn" onclick="resetPhoto('Alicia','Loss')">Reset</button>
         </div>
         <div class="photo-slot">
           <div style="font-size:0.6rem;color:var(--muted);font-weight:900;text-transform:uppercase;margin-bottom:6px;">Default</div>
-          <img id="prevAliciaDefault" src="https://iili.io/qR0vySS.md.jpg">
-          <input id="urlAliciaDefault" type="url" value="https://iili.io/qR0vySS.md.jpg" oninput="previewPhoto('Alicia','Default')">
+          <img id="prevAliciaDefault" src="https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg">
+          <input id="urlAliciaDefault" type="url" value="https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg" oninput="previewPhoto('Alicia','Default')">
           <button class="reset-photo-btn" onclick="resetPhoto('Alicia','Default')">Reset</button>
         </div>
         <div class="photo-slot">
           <div style="font-size:0.6rem;color:#4ade80;font-weight:900;text-transform:uppercase;margin-bottom:6px;">Win (she loses)</div>
-          <img id="prevAliciaWin" src="https://iili.io/qR0kSY7.md.jpg">
-          <input id="urlAliciaWin" type="url" value="https://iili.io/qR0kSY7.md.jpg" oninput="previewPhoto('Alicia','Win')">
+          <img id="prevAliciaWin" src="https://i.postimg.cc/yxm542Ww/20260203-000234.jpg">
+          <input id="urlAliciaWin" type="url" value="https://i.postimg.cc/yxm542Ww/20260203-000234.jpg" oninput="previewPhoto('Alicia','Win')">
           <button class="reset-photo-btn" onclick="resetPhoto('Alicia','Win')">Reset</button>
         </div>
       </div>
     </details>
-    <button onclick="saveProfile('alicia')" style="background:linear-gradient(135deg,#1a1f4d,#252a6d);border:1px solid #4f57cc;color:#818cf8;width:100%;margin-top:16px;">💾 Save ALEXANDRIUS Profile</button>
+    <button onclick="saveProfile('alicia')" style="background:linear-gradient(135deg,#1a1f4d,#252a6d);border:1px solid #4f57cc;color:#818cf8;width:100%;margin-top:16px;">💾 Save ALICIA Profile</button>
   </div>
 
   <!-- Engine + Bio Constraints — merged into one card -->
   <div class="card">
     <h3 style="margin:0 0 14px;font-size:0.9rem;text-transform:uppercase;color:var(--accent);">⚙️ Engine &amp; Constraints</h3>
 
+    <label>🖼️ Floating Image / GIF URL</label>
+    <input id="urlFloatImg" type="url" placeholder="https://... (image or gif shown top-right everywhere)" oninput="applyFloatImg(this.value)">
     <label>Exam Date</label>
     <input id="cfgExamDate" type="date">
     <label>Anchor Hour (end-of-day contest)</label>
     <input id="cfgAnchor" type="number" step="0.5" min="0" max="23.5" value="3.5" oninput="updateAnchorPreview()">
     <div id="anchorPreview" style="font-size:0.72rem;color:var(--warn);margin-top:4px;font-weight:900;"></div>
-    <button onclick="saveEngineConfig()" class="good-btn" style="width:100%;margin-top:14px;">💾 Save Config</button>
-
     <div style="border-top:1px solid var(--border);margin:20px 0 14px;"></div>
 
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -1014,7 +1010,7 @@ Virology, DNA Virus Pt 1;"></textarea>
     <label>🧘 Buffer / Personal — HH:MM-HH:MM, comma-separate for multiple</label>
     <input id="rtPers" type="text" placeholder="e.g. 17:00-18:30, 21:00-21:30">
     <div id="rtAvailPreview" style="margin-top:8px;font-size:0.7rem;color:var(--good);font-weight:900;min-height:18px;"></div>
-    <button onclick="saveRoutine()" class="good-btn" style="width:100%;margin-top:12px;">💾 Save Constraints</button>
+    <button onclick="saveEngineConfig()" class="good-btn" style="width:100%;margin-top:12px;">💾 Save Config &amp; Constraints</button>
   </div>
 </div>
 
@@ -1146,7 +1142,7 @@ Virology, DNA Virus Pt 1;"></textarea>
         <div id="simUserCh" style="font-size:1.5rem;font-weight:900;color:var(--good);">0</div>
       </div>
       <div style="background:var(--log-bg);border-radius:8px;padding:10px;border:1px solid var(--border);text-align:center;">
-        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">ALEXANDRIUS (chapters)</div>
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;margin-bottom:4px;">ALICIA (chapters)</div>
         <div id="simAliciaCh" style="font-size:1.5rem;font-weight:900;color:var(--accent);">0.0</div>
       </div>
     </div>
@@ -1166,8 +1162,16 @@ Virology, DNA Virus Pt 1;"></textarea>
 
 <!-- ══════════════════════════════════════════════════════ SYNC -->
 <div id="sync" class="page">
+  <div class="card" id="storageStatusCard" style="border-color:var(--warn);display:none;">
+    <div style="font-size:0.8rem;font-weight:900;color:var(--warn);margin-bottom:8px;">⚠️ Storage Wiped — Data Not Found</div>
+    <div style="font-size:0.72rem;color:var(--muted);margin-bottom:12px;">WebView cleared local storage. If you have a backup file, import it below to restore your data.</div>
+    <label for="importFilePick2" style="display:block;width:100%;padding:14px;border-radius:8px;border:2px solid var(--warn);background:rgba(255,203,71,0.08);color:var(--warn);font-size:0.8rem;font-weight:900;text-align:center;text-transform:uppercase;letter-spacing:1px;cursor:pointer;">📂 Restore from Backup File</label>
+    <input id="importFilePick2" type="file" accept=".txt" style="display:none;" onchange="importFromFile(event)">
+  </div>
   <div class="card">
     <h2 style="margin:0 0 16px;font-size:1rem;text-transform:uppercase;">💾 Kernel Sync</h2>
+    <div id="autoSaveStatus" style="font-size:0.7rem;padding:8px 12px;border-radius:8px;margin-bottom:14px;background:rgba(57,255,160,0.08);border:1px solid rgba(57,255,160,0.3);color:var(--good);font-weight:700;">✅ Auto-save active — every change is written to file</div>
+    <div id="storageDebugLog" style="font-size:0.65rem;font-family:monospace;background:var(--log-bg);border:1px solid var(--border);border-radius:8px;padding:10px;margin-bottom:14px;color:var(--accent3);min-height:40px;white-space:pre-wrap;word-break:break-all;"></div>
     <div id="exportStatus" style="font-size:0.75rem;color:var(--muted);margin-bottom:14px;min-height:20px;"></div>
     <button onclick="exportBackup()" style="background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;width:100%;margin-top:0;">💾 Save Backup to Downloads</button>
     <label for="importFilePick" style="display:block;width:100%;margin-top:10px;padding:14px;border-radius:8px;border:1px solid #3a5a9a;background:linear-gradient(135deg,#1a2a4d,#0f1a35);color:#90b8ff;font-size:0.8rem;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📂 Pick Backup File</label>
@@ -1225,8 +1229,8 @@ const PASS_TYPES = ['Lecture','Reading','Question Bank','Revision','Notes'];
 const PASS_ICON  = {Lecture:'📹',Reading:'📖','Question Bank':'❓',Revision:'🔁',Notes:'✍️'};
 const PASS_SHORT = {Lecture:'L',Reading:'R','Question Bank':'Q',Revision:'Rv',Notes:'N'};
 const PASS_COLOR = {Lecture:'#1e3a5f:#60a5fa',Reading:'#3b2a1a:#fb923c','Question Bank':'#14532d:#4ade80',Revision:'#2d1b69:#a78bfa',Notes:'#1f2937:#9ca3af'};
-const D_USER_PFP   = 'https://iili.io/q7kMZ6N.md.jpg';
-const D_ALICIA_PFP = 'https://iili.io/qR0vySS.md.jpg';
+const D_USER_PFP   = 'https://iili.io/qWoe8fn.md.jpg';
+const D_ALICIA_PFP = 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
 
 // ══════════════════════════════════════════════════════════════════════
 // MICROBIOLOGY SYLLABUS (always re-injected, never saved)
@@ -1234,25 +1238,9 @@ const D_ALICIA_PFP = 'https://iili.io/qR0vySS.md.jpg';
 // ALL SUBJECTS SYLLABI (19 subjects, 542 topics — never saved to localStorage)
 // ══════════════════════════════════════════════════════════════════════
 const ALL_SYLLABI = {
-  "ANATOMY": {"chapters":[{"id":"anat_c1","name":"Anatomy","topics":[{"id":"anat_c1_t1","name":"Embryology"},{"id":"anat_c1_t2","name":"Histology"},{"id":"anat_c1_t3","name":"Neuroanatomy"},{"id":"anat_c1_t4","name":"Head and Neck"},{"id":"anat_c1_t5","name":"Upper Limb"},{"id":"anat_c1_t6","name":"Thorax"},{"id":"anat_c1_t7","name":"Abdomen"},{"id":"anat_c1_t8","name":"Lower Limb"},{"id":"anat_c1_t9","name":"General Anatomy"}]}]},
-  "PHYSIOLOGY": {"chapters":[{"id":"physio_c1","name":"Physiology","topics":[{"id":"physio_c1_t1","name":"General Physiology"},{"id":"physio_c1_t2","name":"Nerve Muscle Physiology"},{"id":"physio_c1_t3","name":"Central Nervous System"},{"id":"physio_c1_t4","name":"The Respiratory System"},{"id":"physio_c1_t5","name":"The Cardiovascular System"},{"id":"physio_c1_t6","name":"Gastrointestinal System"},{"id":"physio_c1_t7","name":"Renal Physiology"},{"id":"physio_c1_t8","name":"Endocrine Physiology"},{"id":"physio_c1_t9","name":"Reproductive Physiology"},{"id":"physio_c1_t10","name":"Exercise Physiology"}]}]},
-  "BIOCHEMISTRY": {"chapters":[{"id":"biochem_c1","name":"Biochemistry","topics":[{"id":"biochem_c1_t1","name":"Enzymology"},{"id":"biochem_c1_t2","name":"Carbohydrates"},{"id":"biochem_c1_t3","name":"Lipids"},{"id":"biochem_c1_t4","name":"Proteins & Amino Acids"},{"id":"biochem_c1_t5","name":"Bioenergetics"},{"id":"biochem_c1_t6","name":"Molecular Biology"},{"id":"biochem_c1_t7","name":"Vitamins"}]}]},
-  "MICROBIOLOGY": {"chapters":[{"id":"micro_c1","name":"General Microbiology","topics":[{"id":"micro_c1_t1","name":"Scientists & Stains"},{"id":"micro_c1_t2","name":"Microscopes"},{"id":"micro_c1_t3","name":"Bacterial Anatomy"},{"id":"micro_c1_t4","name":"Bacterial Shapes & Physiology"},{"id":"micro_c1_t5","name":"Bacterial Genetics"},{"id":"micro_c1_t6","name":"Culture Media"},{"id":"micro_c1_t7","name":"Sterilization & Disinfection"}]},{"id":"micro_c2","name":"Gram Positive Bacteria","topics":[{"id":"micro_c2_t1","name":"Staphylococcus"},{"id":"micro_c2_t2","name":"Streptococcus & Enterococci"}]},{"id":"micro_c3","name":"Gram Negative Bacteria","topics":[{"id":"micro_c3_t1","name":"Neisseria & Moraxella"},{"id":"micro_c3_t2","name":"Corynebacterium, Nocardia, Actinomyces, Listeria"},{"id":"micro_c3_t3","name":"Bacillus & Clostridium"},{"id":"micro_c3_t4","name":"Mycobacteria"},{"id":"micro_c3_t5","name":"Gram Negative Bacilli – Part 1"},{"id":"micro_c3_t6","name":"Gram Negative Bacilli – Part 2"},{"id":"micro_c3_t7","name":"Vibrio, Pseudomonas, Burkholderia"},{"id":"micro_c3_t8","name":"HBB (Haemophilus, Bordetella, Brucella)"},{"id":"micro_c3_t9","name":"Spirochetes"}]},{"id":"micro_c4","name":"Atypical Bacteria","topics":[{"id":"micro_c4_t1","name":"Chlamydia"},{"id":"micro_c4_t2","name":"Rickettsiae"},{"id":"micro_c4_t3","name":"Miscellaneous Bacteria"}]},{"id":"micro_c5","name":"Virology","topics":[{"id":"micro_c5_t1","name":"Virus – General Properties"},{"id":"micro_c5_t2","name":"DNA Virus – Part 1"},{"id":"micro_c5_t3","name":"DNA Virus – Part 2"},{"id":"micro_c5_t4","name":"DNA Virus – Part 3"},{"id":"micro_c5_t5","name":"RNA Myxo Virus"},{"id":"micro_c5_t6","name":"Picornaviridae"},{"id":"micro_c5_t7","name":"Rhabdo Virus"},{"id":"micro_c5_t8","name":"Arbo Virus"},{"id":"micro_c5_t9","name":"Retro Virus"},{"id":"micro_c5_t10","name":"Other RNA Virus"},{"id":"micro_c5_t11","name":"Covid"}]},{"id":"micro_c6","name":"Mycology","topics":[{"id":"micro_c6_t1","name":"Mycology – Introduction & Classification"},{"id":"micro_c6_t2","name":"Superficial Mycosis & Subcutaneous Mycosis"},{"id":"micro_c6_t3","name":"Dimorphic Fungus"},{"id":"micro_c6_t4","name":"Mycology – Part 2"}]},{"id":"micro_c7","name":"Parasitology","topics":[{"id":"micro_c7_t1","name":"Classification of Amoeba"},{"id":"micro_c7_t2","name":"Giardia & Trichomonas"},{"id":"micro_c7_t3","name":"Trypanosoma & Leishmania"},{"id":"micro_c7_t4","name":"Coccidian Parasites"},{"id":"micro_c7_t5","name":"Hematozoa – Plasmodium"},{"id":"micro_c7_t6","name":"Cestodes"},{"id":"micro_c7_t7","name":"Trematodes"},{"id":"micro_c7_t8","name":"Nematodes"}]},{"id":"micro_c8","name":"Immunology","topics":[{"id":"micro_c8_t1","name":"Immunity Introduction"},{"id":"micro_c8_t2","name":"Immunity – Hypersensitivity Reactions"},{"id":"micro_c8_t3","name":"Immunity – Tolerance & Autoimmune Disorders"},{"id":"micro_c8_t4","name":"Immune Deficiency Disorders"},{"id":"micro_c8_t5","name":"Transplant Immunology"},{"id":"micro_c8_t6","name":"Antigen & Antibody"},{"id":"micro_c8_t7","name":"Antigen-Antibody Reactions"}]}]},
-  "GENERAL PATHOLOGY": {"chapters":[{"id":"path_c1","name":"General Pathology","topics":[{"id":"path_c1_t1","name":"Cell Injury Introduction"},{"id":"path_c1_t2","name":"Newer Cell Deaths"},{"id":"path_c1_t3","name":"Intracellular Accumulations"},{"id":"path_c1_t4","name":"Autophagy & Free Radical Injury"},{"id":"path_c1_t5","name":"Acute Inflammation"},{"id":"path_c1_t6","name":"Inflammatory Mediators"},{"id":"path_c1_t7","name":"Chronic Inflammation – Granuloma & Wound Healing"}]},{"id":"path_c2","name":"Genetics","topics":[{"id":"path_c2_t1","name":"Genetics Intro & Mendelian Disorders"},{"id":"path_c2_t2","name":"Non-Mendelian & Chromosomal Disorders"},{"id":"path_c2_t3","name":"Diagnosis of Genetic Disorders"},{"id":"path_c2_t4","name":"Miscellaneous Concepts in Genetics"}]},{"id":"path_c3","name":"Neoplasia","topics":[{"id":"path_c3_t1","name":"Classification of Neoplasia"},{"id":"path_c3_t2","name":"Features of Neoplasia"},{"id":"path_c3_t3","name":"Fundamentals of Neoplasia Part 1"},{"id":"path_c3_t4","name":"Fundamentals of Neoplasia Part 2"},{"id":"path_c3_t5","name":"Etiology of Neoplasia"},{"id":"path_c3_t6","name":"Diagnosis of Tumors & Paraneoplastic Syndromes"},{"id":"path_c3_t7","name":"Amyloidosis"}]},{"id":"path_c4","name":"Cardiovascular System","topics":[{"id":"path_c4_t1","name":"Vasculitis"},{"id":"path_c4_t2","name":"Sclerosis & Vascular Tumors"},{"id":"path_c4_t3","name":"Ischaemic Heart Diseases"},{"id":"path_c4_t4","name":"Infective Endocarditis & RHD"},{"id":"path_c4_t5","name":"Cardiac Myopathy & Cardiac Tumors"}]},{"id":"path_c5","name":"Respiratory System","topics":[{"id":"path_c5_t1","name":"Obstructive Lung Diseases"},{"id":"path_c5_t2","name":"Restrictive Lung Diseases"},{"id":"path_c5_t3","name":"Pulmonary Infections"},{"id":"path_c5_t4","name":"Pulmonary HTN & Lung Tumors"}]},{"id":"path_c6","name":"GIT","topics":[{"id":"path_c6_t1","name":"Esophagus"},{"id":"path_c6_t2","name":"PUD & Gastric Polyps & Tumors"},{"id":"path_c6_t3","name":"Intestinal Polyps & Carcinoma"},{"id":"path_c6_t4","name":"Malabsorption & IBD"},{"id":"path_c6_t5","name":"Hepatobiliary Pathology"},{"id":"path_c6_t6","name":"Liver Cirrhosis & Tumors"},{"id":"path_c6_t7","name":"Salivary Gland Pathology"}]},{"id":"path_c7","name":"Genitourinary System","topics":[{"id":"path_c7_t1","name":"Renal Pathology – Introduction"},{"id":"path_c7_t2","name":"Crystals & Casts"},{"id":"path_c7_t3","name":"Nephritic Syndrome"},{"id":"path_c7_t4","name":"Nephrotic Syndrome"},{"id":"path_c7_t5","name":"Renal Tumors"},{"id":"path_c7_t6","name":"FGT – Vulva, Vagina & Cervix"},{"id":"path_c7_t7","name":"Female Genital Tract – Endometrium & Ovary"},{"id":"path_c7_t8","name":"Male Genital Tract"}]},{"id":"path_c8","name":"Endocrinology","topics":[{"id":"path_c8_t1","name":"Thyroid"},{"id":"path_c8_t2","name":"Parathyroid, Adrenal & Pituitary Gland"},{"id":"path_c8_t3","name":"Breast Pathology"},{"id":"path_c8_t4","name":"Breast Tumors"}]},{"id":"path_c9","name":"Central Nervous System","topics":[{"id":"path_c9_t1","name":"Basics of CNS"},{"id":"path_c9_t2","name":"CNS Tumors"}]},{"id":"path_c10","name":"Skin & Musculoskeletal System","topics":[{"id":"path_c10_t1","name":"Bone and Soft Tissue Pathology"},{"id":"path_c10_t2","name":"Skin Pathology"}]},{"id":"path_c11","name":"Haematology","topics":[{"id":"path_c11_t1","name":"Haematology Introduction"},{"id":"path_c11_t2","name":"Microcytic Hypochromic Anaemia"},{"id":"path_c11_t3","name":"Macrocytic Anaemia"},{"id":"path_c11_t4","name":"Haemolytic Anaemia"},{"id":"path_c11_t5","name":"SCA & Thalassemia"},{"id":"path_c11_t6","name":"Haemoglobinopathies"},{"id":"path_c11_t7","name":"Autoimmune Haemolytic Anaemia"},{"id":"path_c11_t8","name":"RBC Inclusions"},{"id":"path_c11_t9","name":"WBC"},{"id":"path_c11_t10","name":"ALL & AML"},{"id":"path_c11_t11","name":"CML & CLL"},{"id":"path_c11_t12","name":"Lymphoma – HL & NHL"},{"id":"path_c11_t13","name":"MDS & Myeloproliferative Neoplasms"},{"id":"path_c11_t14","name":"Plasma Cell Dyscrasia"},{"id":"path_c11_t15","name":"Platelets & Coagulation Pathway"},{"id":"path_c11_t16","name":"Platelets – Disorders"},{"id":"path_c11_t17","name":"Blood Banking"},{"id":"path_c11_t18","name":"Transfusion Medicine"}]}]},
-  "PHARMACOLOGY": {"chapters":[{"id":"pharma_c1","name":"Pharmacology","topics":[{"id":"pharma_c1_t1","name":"General Pharmacology"},{"id":"pharma_c1_t2","name":"Autonomic Nervous System"},{"id":"pharma_c1_t3","name":"Cardiovascular System"},{"id":"pharma_c1_t4","name":"Renal System"},{"id":"pharma_c1_t5","name":"Central and Peripheral Nervous System"},{"id":"pharma_c1_t6","name":"Antimicrobials"},{"id":"pharma_c1_t7","name":"Endocrine System"},{"id":"pharma_c1_t8","name":"Autacoids"},{"id":"pharma_c1_t9","name":"Haematology"},{"id":"pharma_c1_t10","name":"Respiratory System"},{"id":"pharma_c1_t11","name":"Gastrointestinal Drugs"},{"id":"pharma_c1_t12","name":"Immunomodulators"},{"id":"pharma_c1_t13","name":"Anti-Neoplastic Agents"}]}]},
-  "FORENSIC MEDICINE": {"chapters":[{"id":"foren_c1","name":"Forensic Traumatology","topics":[{"id":"foren_c1_t1","name":"Regional Injuries"},{"id":"foren_c1_t2","name":"Thermal Injuries"},{"id":"foren_c1_t3","name":"Forensic Ballistics"},{"id":"foren_c1_t4","name":"Electrical Injuries and Explosion Injuries"},{"id":"foren_c1_t5","name":"Torture Methods"},{"id":"foren_c1_t6","name":"Transportation Injuries"}]},{"id":"foren_c2","name":"Medical Jurisprudence","topics":[{"id":"foren_c2_t1","name":"Indian Legal System"},{"id":"foren_c2_t2","name":"Medical Ethics and Negligence"}]},{"id":"foren_c3","name":"Forensic Pathology","topics":[{"id":"foren_c3_t1","name":"Autopsy Procedures"},{"id":"foren_c3_t2","name":"Thanatology & Postmortem Changes"},{"id":"foren_c3_t3","name":"Human Identification"},{"id":"foren_c3_t4","name":"Asphyxial Deaths"}]},{"id":"foren_c4","name":"Sexual Jurisprudence","topics":[{"id":"foren_c4_t1","name":"Sexual Offences"},{"id":"foren_c4_t2","name":"Infant Deaths and Child Abuse"},{"id":"foren_c4_t3","name":"Impotence & Criminal Abortion"}]},{"id":"foren_c5","name":"Toxicology","topics":[{"id":"foren_c5_t1","name":"General Toxicology"},{"id":"foren_c5_t2","name":"Corrosive Poisons"},{"id":"foren_c5_t3","name":"Metallic Irritants"},{"id":"foren_c5_t4","name":"Non-Metallic Irritants"},{"id":"foren_c5_t5","name":"Organic Irritants"},{"id":"foren_c5_t6","name":"Neurotoxic Poisons"},{"id":"foren_c5_t7","name":"Asphyxiants and Cardiac Poisons"},{"id":"foren_c5_t8","name":"Agricultural Poisons"}]},{"id":"foren_c6","name":"Forensic Psychiatry and Miscellaneous","topics":[{"id":"foren_c6_t1","name":"Forensic Psychiatry"},{"id":"foren_c6_t2","name":"Trace Evidence"},{"id":"foren_c6_t3","name":"Legal Sections of Importance"}]}]},
-  "COMMUNITY MEDICINE": {"chapters":[{"id":"comm_c1","name":"Demography & Family Planning","topics":[{"id":"comm_c1_t1","name":"Demography"},{"id":"comm_c1_t2","name":"Family Planning & Contraception"}]},{"id":"comm_c2","name":"Maternal & Child Health","topics":[{"id":"comm_c2_t1","name":"MCH Indicators"},{"id":"comm_c2_t2","name":"RMNCAH+N"},{"id":"comm_c2_t3","name":"Immunization"}]},{"id":"comm_c3","name":"National Health Programmes","topics":[{"id":"comm_c3_t1","name":"NTEP"},{"id":"comm_c3_t2","name":"NACP"},{"id":"comm_c3_t3","name":"NVBDCP"},{"id":"comm_c3_t4","name":"Other National Health Programmes"}]},{"id":"comm_c4","name":"Epidemiology","topics":[{"id":"comm_c4_t1","name":"Descriptive Epidemiology"},{"id":"comm_c4_t2","name":"Analytical Epidemiology"},{"id":"comm_c4_t3","name":"Experimental Epidemiology"},{"id":"comm_c4_t4","name":"Epidemiology of Communicable Diseases"},{"id":"comm_c4_t5","name":"Epidemiology of Non-communicable Diseases"},{"id":"comm_c4_t6","name":"Screening of Disease"}]},{"id":"comm_c5","name":"Biostatistics","topics":[{"id":"comm_c5_t1","name":"Measures of Central Tendency & Normal Distribution Curve"},{"id":"comm_c5_t2","name":"Biostatistics – Graph"},{"id":"comm_c5_t3","name":"P-value, Errors & Tests of Significance"},{"id":"comm_c5_t4","name":"Sampling Methods & Skews"}]},{"id":"comm_c6","name":"Environment and Health","topics":[{"id":"comm_c6_t1","name":"Air Pollution"},{"id":"comm_c6_t2","name":"Water Quality"},{"id":"comm_c6_t3","name":"Biomedical Waste Management"}]},{"id":"comm_c7","name":"Occupational Health","topics":[{"id":"comm_c7_t1","name":"Occupational Health Diseases"},{"id":"comm_c7_t2","name":"ESI"}]},{"id":"comm_c8","name":"Miscellaneous","topics":[{"id":"comm_c8_t1","name":"Disaster Management"},{"id":"comm_c8_t2","name":"Health & Disability Indicators"}]}]},
-  "OPHTHALMOLOGY": {"chapters":[{"id":"ophthal_c1","name":"Basic Anatomy of Eye","topics":[{"id":"ophthal_c1_t1","name":"Layers and Structure of Eyeball"},{"id":"ophthal_c1_t2","name":"Anatomy of Cornea & Sclera"},{"id":"ophthal_c1_t3","name":"Anatomy of Uvea & Accommodation"},{"id":"ophthal_c1_t4","name":"Anatomy of Retina"},{"id":"ophthal_c1_t5","name":"Ocular Routes of Drug Administration"},{"id":"ophthal_c1_t6","name":"Blood Supply and Embryology of Eye"}]},{"id":"ophthal_c2","name":"Neuro-Ophthalmology","topics":[{"id":"ophthal_c2_t1","name":"Visual Pathway and Visual Field Defects"},{"id":"ophthal_c2_t2","name":"Pupillary Reflexes & Light Reflex"},{"id":"ophthal_c2_t3","name":"Optic Atrophy"},{"id":"ophthal_c2_t4","name":"Optic Neuritis, Papilledema & Miscellaneous"}]},{"id":"ophthal_c3","name":"Squint","topics":[{"id":"ophthal_c3_t1","name":"Extraocular Muscles and Binocular Single Vision"},{"id":"ophthal_c3_t2","name":"Classifications and Directions"},{"id":"ophthal_c3_t3","name":"Squint Investigations"},{"id":"ophthal_c3_t4","name":"Paralytic Squint"},{"id":"ophthal_c3_t5","name":"Gaze Defects"},{"id":"ophthal_c3_t6","name":"Restrictive & Comitant Squint"},{"id":"ophthal_c3_t7","name":"Pseudo-strabismus and Ocular Myopathies"}]},{"id":"ophthal_c4","name":"Lens","topics":[{"id":"ophthal_c4_t1","name":"Anatomy and Metabolism"},{"id":"ophthal_c4_t2","name":"Acquired Cataract: Types"},{"id":"ophthal_c4_t3","name":"Acquired Cataract: Senile Cataract"},{"id":"ophthal_c4_t4","name":"Cataract Surgery"},{"id":"ophthal_c4_t5","name":"Complications of Cataract Surgery"},{"id":"ophthal_c4_t6","name":"Congenital Cataract & Miscellaneous"}]},{"id":"ophthal_c5","name":"Glaucoma","topics":[{"id":"ophthal_c5_t1","name":"Glaucoma: Introduction"},{"id":"ophthal_c5_t2","name":"Investigations for Glaucoma"},{"id":"ophthal_c5_t3","name":"Primary Open Angle Glaucoma"},{"id":"ophthal_c5_t4","name":"Primary Angle Closure Glaucoma"},{"id":"ophthal_c5_t5","name":"Secondary & Congenital Glaucoma"}]},{"id":"ophthal_c6","name":"Optics","topics":[{"id":"ophthal_c6_t1","name":"Tests for Vision and Normal Optics"},{"id":"ophthal_c6_t2","name":"Myopia"},{"id":"ophthal_c6_t3","name":"Hypermetropia"},{"id":"ophthal_c6_t4","name":"Astigmatism"},{"id":"ophthal_c6_t5","name":"Reading Spectacle Prescription and Binocular Errors"},{"id":"ophthal_c6_t6","name":"Prescribing Glasses and Aphakia"}]},{"id":"ophthal_c7","name":"Retina","topics":[{"id":"ophthal_c7_t1","name":"Anatomy and Investigations of Retina"},{"id":"ophthal_c7_t2","name":"Retinoblastoma and Macular Disorders"},{"id":"ophthal_c7_t3","name":"Dystrophies of Fundus"},{"id":"ophthal_c7_t4","name":"Retinal Vascular Disorders: Part 1"},{"id":"ophthal_c7_t5","name":"Retinal Vascular Disorders: Part 2"},{"id":"ophthal_c7_t6","name":"Retinal Detachment"}]},{"id":"ophthal_c8","name":"Cornea","topics":[{"id":"ophthal_c8_t1","name":"Special Investigations for Cornea"},{"id":"ophthal_c8_t2","name":"Corneal Ulcer and Keratitis"},{"id":"ophthal_c8_t3","name":"Corneal Dystrophies & Miscellaneous"}]},{"id":"ophthal_c9","name":"Uvea","topics":[{"id":"ophthal_c9_t1","name":"Anterior Uveitis"},{"id":"ophthal_c9_t2","name":"Intermediate, Posterior & Pan-uveitis"}]},{"id":"ophthal_c10","name":"Conjunctiva","topics":[{"id":"ophthal_c10_t1","name":"Anatomy of Conjunctiva"},{"id":"ophthal_c10_t2","name":"Types of Conjunctivitis and Pterygium"}]},{"id":"ophthal_c11","name":"Adnexa","topics":[{"id":"ophthal_c11_t1","name":"Eyelids: Anatomy and Pathologies"},{"id":"ophthal_c11_t2","name":"Anatomy of Orbit and Proptosis"},{"id":"ophthal_c11_t3","name":"Lacrimal Apparatus: Anatomy, Watering Eye and Dry Eye"}]},{"id":"ophthal_c12","name":"Miscellaneous","topics":[{"id":"ophthal_c12_t1","name":"Ocular Trauma"},{"id":"ophthal_c12_t2","name":"Community Ophthalmology"},{"id":"ophthal_c12_t3","name":"Lasers in Ophthalmology"},{"id":"ophthal_c12_t4","name":"Physiology of Vision"}]}]},
-  "ENT": {"chapters":[{"id":"ent_c1","name":"Ear","topics":[{"id":"ent_c1_t1","name":"Ear Part 1"},{"id":"ent_c1_t2","name":"Ear Part 2"},{"id":"ent_c1_t3","name":"Ear Part 3"},{"id":"ent_c1_t4","name":"Ear Part 4"},{"id":"ent_c1_t5","name":"Ear Part 5"},{"id":"ent_c1_t6","name":"Ear Part 6"},{"id":"ent_c1_t7","name":"Ear Part 7"},{"id":"ent_c1_t8","name":"Ear Part 8"}]},{"id":"ent_c2","name":"Nose","topics":[{"id":"ent_c2_t1","name":"Nose Part 1"},{"id":"ent_c2_t2","name":"Nose Part 2"}]},{"id":"ent_c3","name":"Pharynx","topics":[{"id":"ent_c3_t1","name":"Pharynx Part 1"},{"id":"ent_c3_t2","name":"Pharynx Part 2"}]},{"id":"ent_c4","name":"Larynx","topics":[{"id":"ent_c4_t1","name":"Larynx Part 1"},{"id":"ent_c4_t2","name":"Larynx Part 2"}]}]},
-  "GENERAL MEDICINE": {"chapters":[{"id":"med_c1","name":"General Medicine","topics":[{"id":"med_c1_t1","name":"Haematology"},{"id":"med_c1_t2","name":"Endocrinology"},{"id":"med_c1_t3","name":"Rheumatology and Immunology"},{"id":"med_c1_t4","name":"Neurology"},{"id":"med_c1_t5","name":"Cardiology"},{"id":"med_c1_t6","name":"Pulmonology"},{"id":"med_c1_t7","name":"Nephrology"},{"id":"med_c1_t8","name":"Acid-Base Regulation"},{"id":"med_c1_t9","name":"Gastroenterology"},{"id":"med_c1_t10","name":"Hepatology"},{"id":"med_c1_t11","name":"Infectious Diseases"}]}]},
-  "GENERAL SURGERY": {"chapters":[{"id":"surg_c1","name":"General Surgery","topics":[{"id":"surg_c1_t1","name":"Patient Safety, OT Zones and Surgery Positions"},{"id":"surg_c1_t2","name":"Surgical Blades and Energy Sources"},{"id":"surg_c1_t3","name":"Surgical Drains, Knots and Sutures"},{"id":"surg_c1_t4","name":"Post-operative Fever and Wound Infection"},{"id":"surg_c1_t5","name":"Day Care Surgery"},{"id":"surg_c1_t6","name":"Surgical Nutrition"},{"id":"surg_c1_t7","name":"Shock: Part 1"},{"id":"surg_c1_t8","name":"Shock: Part 2"}]},{"id":"surg_c2","name":"Breast","topics":[{"id":"surg_c2_t1","name":"Breast: Part 1"},{"id":"surg_c2_t2","name":"Breast: Part 2"},{"id":"surg_c2_t3","name":"Breast: Part 3"},{"id":"surg_c2_t4","name":"Breast: Part 4"},{"id":"surg_c2_t5","name":"Breast: Part 5"}]},{"id":"surg_c3","name":"Endocrine System","topics":[{"id":"surg_c3_t1","name":"Thyroid: Part 1"},{"id":"surg_c3_t2","name":"Thyroid: Part 2"},{"id":"surg_c3_t3","name":"Thyroid: Part 3"},{"id":"surg_c3_t4","name":"Parathyroid"},{"id":"surg_c3_t5","name":"Adrenal Glands and Neuroendocrine Tumors"}]},{"id":"surg_c4","name":"Gastrointestinal & Abdominal Surgery","topics":[{"id":"surg_c4_t1","name":"Esophagus: Part 1"},{"id":"surg_c4_t2","name":"Esophagus: Part 2"},{"id":"surg_c4_t3","name":"Esophagus: Part 3"},{"id":"surg_c4_t4","name":"Stomach: Part 1"},{"id":"surg_c4_t5","name":"Stomach: Part 2"},{"id":"surg_c4_t6","name":"Stomach: Part 3"},{"id":"surg_c4_t7","name":"Upper GI Hemorrhage"},{"id":"surg_c4_t8","name":"Bariatric Surgery"},{"id":"surg_c4_t9","name":"Bowel Obstruction: Part 1"},{"id":"surg_c4_t10","name":"Bowel Obstruction: Part 2"},{"id":"surg_c4_t11","name":"Benign Conditions of Small and Large Bowel"},{"id":"surg_c4_t12","name":"Appendix"},{"id":"surg_c4_t13","name":"Colorectal Polyps and Cancer: Part 1"},{"id":"surg_c4_t14","name":"Colorectal Polyps and Cancer: Part 2"},{"id":"surg_c4_t15","name":"Rectum and Anal Canal"},{"id":"surg_c4_t16","name":"Liver: Part 1"},{"id":"surg_c4_t17","name":"Liver: Part 2"},{"id":"surg_c4_t18","name":"Spleen"},{"id":"surg_c4_t19","name":"Gall Bladder and Bile Ducts: Part 1"},{"id":"surg_c4_t20","name":"Gall Bladder and Bile Ducts: Part 2"},{"id":"surg_c4_t21","name":"Benign Pancreatic Conditions"},{"id":"surg_c4_t22","name":"Pancreatic Tumors"}]},{"id":"surg_c5","name":"Urology","topics":[{"id":"surg_c5_t1","name":"Testicular Disorders: Part 1"},{"id":"surg_c5_t2","name":"Testicular Disorders: Part 2"},{"id":"surg_c5_t3","name":"Urethral and Penile Disorders"},{"id":"surg_c5_t4","name":"Kidney: Part 1"},{"id":"surg_c5_t5","name":"Kidney: Part 2"},{"id":"surg_c5_t6","name":"Bladder"},{"id":"surg_c5_t7","name":"Prostate: Part 1"},{"id":"surg_c5_t8","name":"Prostate: Part 2"}]},{"id":"surg_c6","name":"Speciality Surgery","topics":[{"id":"surg_c6_t1","name":"Minimally Invasive Surgery"},{"id":"surg_c6_t2","name":"Transplant Surgery"},{"id":"surg_c6_t3","name":"Plastic Surgery: Part 1"},{"id":"surg_c6_t4","name":"Plastic Surgery: Part 2"},{"id":"surg_c6_t5","name":"Neurosurgery"}]},{"id":"surg_c7","name":"Trauma","topics":[{"id":"surg_c7_t1","name":"Basics of Trauma Management"},{"id":"surg_c7_t2","name":"Abdominal Trauma"},{"id":"surg_c7_t3","name":"Thoracic Trauma"},{"id":"surg_c7_t4","name":"Head Trauma"},{"id":"surg_c7_t5","name":"Thermal Injuries"}]},{"id":"surg_c8","name":"Hernia","topics":[{"id":"surg_c8_t1","name":"Hernia: Part 1"},{"id":"surg_c8_t2","name":"Hernia: Part 2"}]},{"id":"surg_c9","name":"Vascular Surgery","topics":[{"id":"surg_c9_t1","name":"Venous Thrombosis"},{"id":"surg_c9_t2","name":"Varicose Veins"},{"id":"surg_c9_t3","name":"Arterial System: Part 1"},{"id":"surg_c9_t4","name":"Arterial System: Part 2"},{"id":"surg_c9_t5","name":"Lymphatic System"}]},{"id":"surg_c10","name":"Faciomaxillary Surgery","topics":[{"id":"surg_c10_t1","name":"Oral Cancers"},{"id":"surg_c10_t2","name":"Salivary Glands"}]},{"id":"surg_c11","name":"Miscellaneous","topics":[{"id":"surg_c11_t1","name":"Skin Tumors and Soft Tissue Sarcomas"},{"id":"surg_c11_t2","name":"Thorax and Mediastinum"},{"id":"surg_c11_t3","name":"Common Surgical Swellings"},{"id":"surg_c11_t4","name":"Common Ulcers"},{"id":"surg_c11_t5","name":"Surgical Instruments"}]}]},
-  "OBG": {"chapters":[{"id":"obg_c1","name":"Gynaecology","topics":[{"id":"obg_c1_t1","name":"Gynaecology: Part 1"},{"id":"obg_c1_t2","name":"Gynaecology: Part 2"},{"id":"obg_c1_t3","name":"Gynaecology: Part 3"},{"id":"obg_c1_t4","name":"Gynaecology: Part 4"},{"id":"obg_c1_t5","name":"Gynaecology: Part 5"},{"id":"obg_c1_t6","name":"Gynaecology: Part 6"},{"id":"obg_c1_t7","name":"Gynaecology: Part 7"},{"id":"obg_c1_t8","name":"Gynaecology: Part 8"},{"id":"obg_c1_t9","name":"Gynaecology: Part 9"},{"id":"obg_c1_t10","name":"Gynaecology: Part 10"}]},{"id":"obg_c2","name":"Obstetrics","topics":[{"id":"obg_c2_t1","name":"Obstetrics: Part 1"},{"id":"obg_c2_t2","name":"Obstetrics: Part 2"},{"id":"obg_c2_t3","name":"Obstetrics: Part 3"},{"id":"obg_c2_t4","name":"Obstetrics: Part 4"},{"id":"obg_c2_t5","name":"Obstetrics: Part 5"},{"id":"obg_c2_t6","name":"Obstetrics: Part 6"},{"id":"obg_c2_t7","name":"Obstetrics: Part 7"},{"id":"obg_c2_t8","name":"Obstetrics: Part 8"}]}]},
-  "PAEDIATRICS": {"chapters":[{"id":"paeds_c1","name":"Neonatology","topics":[{"id":"paeds_c1_t1","name":"Normal Newborn"},{"id":"paeds_c1_t2","name":"Neonatal Resuscitation"},{"id":"paeds_c1_t3","name":"Necrotizing Enterocolitis and Neonatal Sepsis"},{"id":"paeds_c1_t4","name":"Respiratory Distress in Newborn"},{"id":"paeds_c1_t5","name":"Neonatal Jaundice"},{"id":"paeds_c1_t6","name":"Neonatal Hypothermia and Neonatal Hypoglycemia"},{"id":"paeds_c1_t7","name":"Neonatal Reflexes, HIE and Neonatal Seizures"}]},{"id":"paeds_c2","name":"Growth and Development","topics":[{"id":"paeds_c2_t1","name":"Normal Growth"},{"id":"paeds_c2_t2","name":"Abnormalities of Head Size and Shape"},{"id":"paeds_c2_t3","name":"Abnormalities of Stature"},{"id":"paeds_c2_t4","name":"Normal Development"},{"id":"paeds_c2_t5","name":"Disorders of Development"},{"id":"paeds_c2_t6","name":"Behavioural Disorders in Children"}]},{"id":"paeds_c3","name":"Nutrition","topics":[{"id":"paeds_c3_t1","name":"Breastfeeding"},{"id":"paeds_c3_t2","name":"Malnutrition"},{"id":"paeds_c3_t3","name":"Obesity"},{"id":"paeds_c3_t4","name":"Rickets and Scurvy"}]},{"id":"paeds_c4","name":"Genetic Disorders","topics":[{"id":"paeds_c4_t1","name":"Genetic Disorders"}]},{"id":"paeds_c5","name":"Infectious Disorders","topics":[{"id":"paeds_c5_t1","name":"Childhood Infections"},{"id":"paeds_c5_t2","name":"TORCH Infections"},{"id":"paeds_c5_t3","name":"COVID-19 in Children"}]},{"id":"paeds_c6","name":"Gastrointestinal System","topics":[{"id":"paeds_c6_t1","name":"Disorders of Esophagus in Children"},{"id":"paeds_c6_t2","name":"Diarrheal Disorders in Children"},{"id":"paeds_c6_t3","name":"Disorders of Liver in Children"},{"id":"paeds_c6_t4","name":"Surgical GI Disorders in Children"}]},{"id":"paeds_c7","name":"Respiratory System","topics":[{"id":"paeds_c7_t1","name":"Airway Malformations and Foreign Bodies"},{"id":"paeds_c7_t2","name":"Asthma"},{"id":"paeds_c7_t3","name":"Respiratory Infections"}]},{"id":"paeds_c8","name":"Cardiovascular System","topics":[{"id":"paeds_c8_t1","name":"Fetal Circulation and Introduction to Congenital Heart Diseases"},{"id":"paeds_c8_t2","name":"Acyanotic Congenital Heart Defects"},{"id":"paeds_c8_t3","name":"Cyanotic Congenital Heart Defects"},{"id":"paeds_c8_t4","name":"Acute Rheumatic Fever"}]},{"id":"paeds_c9","name":"Genito-Urinary System","topics":[{"id":"paeds_c9_t1","name":"Congenital Anomalies of Kidney and Urinary Tract"},{"id":"paeds_c9_t2","name":"Nephrotic and Nephritic Syndrome"},{"id":"paeds_c9_t3","name":"Inherited Tubular Disorders"},{"id":"paeds_c9_t4","name":"Acute Kidney Injury and Chronic Kidney Disease"},{"id":"paeds_c9_t5","name":"VUR and UTI Management Guidelines"}]},{"id":"paeds_c10","name":"Nervous System","topics":[{"id":"paeds_c10_t1","name":"Congenital Anomalies and Hydrocephalus"},{"id":"paeds_c10_t2","name":"Seizure Disorders"},{"id":"paeds_c10_t3","name":"Cerebral Palsy and CNS Infections"},{"id":"paeds_c10_t4","name":"Neuromuscular Disorders"}]},{"id":"paeds_c11","name":"Endocrine System","topics":[{"id":"paeds_c11_t1","name":"Growth Hormone Deficiency and Hypothyroidism"},{"id":"paeds_c11_t2","name":"Adrenal Disorders in Children"},{"id":"paeds_c11_t3","name":"Pubertal Disorders"},{"id":"paeds_c11_t4","name":"Diabetic Ketoacidosis"}]},{"id":"paeds_c12","name":"Childhood Malignancies","topics":[{"id":"paeds_c12_t1","name":"Haematological Malignancies"},{"id":"paeds_c12_t2","name":"Solid Tumors in Children"}]},{"id":"paeds_c13","name":"Paediatric Rheumatology","topics":[{"id":"paeds_c13_t1","name":"Rheumatic Diseases of Childhood"}]},{"id":"paeds_c14","name":"Haematology","topics":[{"id":"paeds_c14_t1","name":"Approach to Anaemia in Children and Nutritional Anaemia"},{"id":"paeds_c14_t2","name":"Congenital Haemolytic Anaemia"},{"id":"paeds_c14_t3","name":"Bleeding Disorders"}]},{"id":"paeds_c15","name":"Miscellaneous","topics":[{"id":"paeds_c15_t1","name":"Paediatric Resuscitation"},{"id":"paeds_c15_t2","name":"Shock"}]}]},
-  "DERMATOLOGY": {"chapters":[{"id":"derm_c1","name":"Dermatology Part 1","topics":[{"id":"derm_c1_t1","name":"Basics in Dermatology"},{"id":"derm_c1_t2","name":"Appendages & Disorders"},{"id":"derm_c1_t3","name":"Disorders of Skin Pigmentation"}]},{"id":"derm_c2","name":"Dermatology Part 2","topics":[{"id":"derm_c2_t1","name":"Papulosquamous Disorders"},{"id":"derm_c2_t2","name":"Vesiculobullous Diseases"}]},{"id":"derm_c3","name":"Dermatology Part 3","topics":[{"id":"derm_c3_t1","name":"Mycobacterial Infections – Leprosy"},{"id":"derm_c3_t2","name":"Mycobacterial Infections – TB"},{"id":"derm_c3_t3","name":"Other Bacterial Infections of Skin"}]},{"id":"derm_c4","name":"Dermatology Part 4","topics":[{"id":"derm_c4_t1","name":"Viral Infections"},{"id":"derm_c4_t2","name":"Fungal Infections"},{"id":"derm_c4_t3","name":"Protozoal Infections"},{"id":"derm_c4_t4","name":"Parasitic Infections"}]},{"id":"derm_c5","name":"Dermatology Part 5","topics":[{"id":"derm_c5_t1","name":"Sexually Transmitted Infections"},{"id":"derm_c5_t2","name":"Syndromic Management of STDs"},{"id":"derm_c5_t3","name":"Allergic Disorders & Dermatitis"}]},{"id":"derm_c6","name":"Dermatology Part 6","topics":[{"id":"derm_c6_t1","name":"Genodermatoses"},{"id":"derm_c6_t2","name":"Nutritional Dermatoses"},{"id":"derm_c6_t3","name":"Skin and Systemic Diseases"},{"id":"derm_c6_t4","name":"Skin in CTD"},{"id":"derm_c6_t5","name":"Skin Malignancies"}]}]},
-  "PSYCHIATRY": {"chapters":[{"id":"psych_c1","name":"Clinical Psychiatry","topics":[{"id":"psych_c1_t1","name":"Psychopathology"},{"id":"psych_c1_t2","name":"Psychopharmacology"},{"id":"psych_c1_t3","name":"Psychological Therapies"},{"id":"psych_c1_t4","name":"Assessment in Psychiatry"}]},{"id":"psych_c2","name":"Psychotic Disorders","topics":[{"id":"psych_c2_t1","name":"Schizophrenia"},{"id":"psych_c2_t2","name":"Other Psychotic Disorders"}]},{"id":"psych_c3","name":"Mood Disorders","topics":[{"id":"psych_c3_t1","name":"Depression"},{"id":"psych_c3_t2","name":"Bipolar Disorder"}]},{"id":"psych_c4","name":"Substance Related Disorders","topics":[{"id":"psych_c4_t1","name":"Alcohol Related Disorders"},{"id":"psych_c4_t2","name":"Other Substance Use Disorders"}]},{"id":"psych_c5","name":"Neurosis","topics":[{"id":"psych_c5_t1","name":"Anxiety Disorders"},{"id":"psych_c5_t2","name":"Obsessive Compulsive and Related Disorders"},{"id":"psych_c5_t3","name":"Trauma and Stress Related Disorders"}]},{"id":"psych_c6","name":"Specific Psychiatric Conditions","topics":[{"id":"psych_c6_t1","name":"Personality Disorders"},{"id":"psych_c6_t2","name":"Somatoform Disorders"},{"id":"psych_c6_t3","name":"Factitious Disorders & Malingering"},{"id":"psych_c6_t4","name":"Dissociative Disorders"},{"id":"psych_c6_t5","name":"Sleep Disorders"},{"id":"psych_c6_t6","name":"Eating Disorders"},{"id":"psych_c6_t7","name":"Impulse-Control Disorders"}]},{"id":"psych_c7","name":"Child Psychiatry","topics":[{"id":"psych_c7_t1","name":"Intellectual Disability & Learning Disorders"},{"id":"psych_c7_t2","name":"Autism Spectrum Disorders"},{"id":"psych_c7_t3","name":"ADHD"},{"id":"psych_c7_t4","name":"Conduct Disorder"}]},{"id":"psych_c8","name":"Neurocognitive Disorders","topics":[{"id":"psych_c8_t1","name":"Delirium"},{"id":"psych_c8_t2","name":"Dementia"}]},{"id":"psych_c9","name":"Miscellaneous","topics":[{"id":"psych_c9_t1","name":"Forensic Psychiatry"},{"id":"psych_c9_t2","name":"Psychiatric Emergencies"},{"id":"psych_c9_t3","name":"Psychology"},{"id":"psych_c9_t4","name":"Public Health, Legal Aspects"}]}]},
-  "ORTHOPAEDICS": {"chapters":[{"id":"ortho_c1","name":"Basics of Orthopaedics and Trauma","topics":[{"id":"ortho_c1_t1","name":"Basic Anatomy and Physiology of Bone"},{"id":"ortho_c1_t2","name":"Basic Terminology of Fracture and Healing"}]},{"id":"ortho_c2","name":"Upper Limb Trauma","topics":[{"id":"ortho_c2_t1","name":"Clavicle & Shoulder"},{"id":"ortho_c2_t2","name":"Arm & Elbow"},{"id":"ortho_c2_t3","name":"Forearm, Wrist & Hand"}]},{"id":"ortho_c3","name":"Lower Limb Trauma","topics":[{"id":"ortho_c3_t1","name":"Pelvis & Hip"},{"id":"ortho_c3_t2","name":"Femur, Knee, Leg & Foot"}]},{"id":"ortho_c4","name":"Metabolic Disorders of Bone","topics":[{"id":"ortho_c4_t1","name":"Calcium Homeostasis, Rickets & Osteomalacia"},{"id":"ortho_c4_t2","name":"Osteoporosis and Other Metabolic Disorders"}]},{"id":"ortho_c5","name":"Orthopaedic Oncology","topics":[{"id":"ortho_c5_t1","name":"Orthopaedic Oncology Part 1"},{"id":"ortho_c5_t2","name":"Orthopaedic Oncology Part 2"}]},{"id":"ortho_c6","name":"Nerve Injuries","topics":[{"id":"ortho_c6_t1","name":"Median Nerve"},{"id":"ortho_c6_t2","name":"Radial Nerve"},{"id":"ortho_c6_t3","name":"Ulnar Nerve"},{"id":"ortho_c6_t4","name":"Other Nerve Injuries"}]},{"id":"ortho_c7","name":"Joint Disorders","topics":[{"id":"ortho_c7_t1","name":"Osteoarthritis & Rheumatoid Arthritis"},{"id":"ortho_c7_t2","name":"Spondyloarthropathies and Other Arthropathies"}]},{"id":"ortho_c8","name":"Spine: Injuries and Disorders","topics":[{"id":"ortho_c8_t1","name":"Spine: General and Trauma"},{"id":"ortho_c8_t2","name":"Spinal Cord Injuries"},{"id":"ortho_c8_t3","name":"Spine Disorders"}]},{"id":"ortho_c9","name":"Infections of Bone and Joint","topics":[{"id":"ortho_c9_t1","name":"Acute Osteomyelitis & Chronic Osteomyelitis"},{"id":"ortho_c9_t2","name":"Septic Arthritis and Others"},{"id":"ortho_c9_t3","name":"Tuberculosis of Bone and Joints"}]},{"id":"ortho_c10","name":"Paediatric Orthopaedics","topics":[{"id":"ortho_c10_t1","name":"Trauma, Neck & Upper Limb"},{"id":"ortho_c10_t2","name":"Hip"},{"id":"ortho_c10_t3","name":"Knee and Foot"}]},{"id":"ortho_c11","name":"Cumulative Trauma and Sports Injuries","topics":[{"id":"ortho_c11_t1","name":"Painful Regional Conditions"},{"id":"ortho_c11_t2","name":"Avascular Necrosis"},{"id":"ortho_c11_t3","name":"Sports Injuries"}]}]},
-  "ANAESTHESIA": {"chapters":[{"id":"anaes_c1","name":"Preoperative Evaluation & Monitoring","topics":[{"id":"anaes_c1_t1","name":"PAC"},{"id":"anaes_c1_t2","name":"Monitoring Under Anaesthesia"}]},{"id":"anaes_c2","name":"Airway Management & Resuscitation","topics":[{"id":"anaes_c2_t1","name":"Airway Management"},{"id":"anaes_c2_t2","name":"Mechanical Ventilation"},{"id":"anaes_c2_t3","name":"BLS & ACLS"}]},{"id":"anaes_c3","name":"General Anaesthesia","topics":[{"id":"anaes_c3_t1","name":"Intravenous Induction Agents"},{"id":"anaes_c3_t2","name":"Inhalational Induction Agents"},{"id":"anaes_c3_t3","name":"Depolarising Muscle Relaxant"},{"id":"anaes_c3_t4","name":"Non-Depolarising Muscle Relaxant"}]},{"id":"anaes_c4","name":"Local & Regional Anaesthesia","topics":[{"id":"anaes_c4_t1","name":"Local Anaesthesia"},{"id":"anaes_c4_t2","name":"Regional Anaesthesia"},{"id":"anaes_c4_t3","name":"Peripheral Nerve Blocks"}]},{"id":"anaes_c5","name":"Miscellaneous","topics":[{"id":"anaes_c5_t1","name":"Anaesthesia Work Station & Equipment"},{"id":"anaes_c5_t2","name":"Breathing Systems"},{"id":"anaes_c5_t3","name":"Anaesthesia in Specific Conditions"},{"id":"anaes_c5_t4","name":"Daycare Surgery"},{"id":"anaes_c5_t5","name":"Malignant Hypothermia"}]}]},
-  "RADIOLOGY": {"chapters":[{"id":"radio_c1","name":"Fundamentals of Radiology","topics":[{"id":"radio_c1_t1","name":"X-Ray Basics"},{"id":"radio_c1_t2","name":"CT Basics"},{"id":"radio_c1_t3","name":"MRI Basics"},{"id":"radio_c1_t4","name":"USG Basics"},{"id":"radio_c1_t5","name":"Contrast Media"}]},{"id":"radio_c2","name":"Radiotherapy and Nuclear Medicine","topics":[{"id":"radio_c2_t1","name":"Radionuclide Imaging"},{"id":"radio_c2_t2","name":"PET Scan"},{"id":"radio_c2_t3","name":"Radiotherapy"}]},{"id":"radio_c3","name":"Systemic Radiology","topics":[{"id":"radio_c3_t1","name":"Neurological Imaging"},{"id":"radio_c3_t2","name":"Respiratory Imaging"},{"id":"radio_c3_t3","name":"Cardiovascular Imaging"},{"id":"radio_c3_t4","name":"Gastrointestinal Tract Imaging"},{"id":"radio_c3_t5","name":"Genitourinary Tract Imaging"},{"id":"radio_c3_t6","name":"Women & Musculoskeletal Imaging"}]}]}
+  "PHYSICS": {"chapters":[{"id":"phy_c1","name":"Mechanics","topics":[{"id":"phy_c1_t1","name":"Kinematics"},{"id":"phy_c1_t2","name":"NLM"},{"id":"phy_c1_t3","name":"Work, Power, Energy"},{"id":"phy_c1_t4","name":"Rotation Motion"},{"id":"phy_c1_t5","name":"Gravitation"},{"id":"phy_c1_t6","name":"COM"}]},{"id":"phy_c2","name":"Waves & Oscillations","topics":[{"id":"phy_c2_t1","name":"Oscillation"},{"id":"phy_c2_t2","name":"Waves"}]},{"id":"phy_c3","name":"Thermodynamics & Properties","topics":[{"id":"phy_c3_t1","name":"Thermodynamics"},{"id":"phy_c3_t2","name":"KTG"},{"id":"phy_c3_t3","name":"Properties of Matter"}]},{"id":"phy_c4","name":"Electrostatics","topics":[{"id":"phy_c4_t1","name":"Electric Charges & Fields"},{"id":"phy_c4_t2","name":"Potential & Capacitance"},{"id":"phy_c4_t3","name":"Current Electricity"}]},{"id":"phy_c5","name":"Magnetism & EM","topics":[{"id":"phy_c5_t1","name":"Magnetism"},{"id":"phy_c5_t2","name":"EMI"}]},{"id":"phy_c6","name":"Optics","topics":[{"id":"phy_c6_t1","name":"Ray Optics"},{"id":"phy_c6_t2","name":"Wave Optics"}]},{"id":"phy_c7","name":"Modern & Misc","topics":[{"id":"phy_c7_t1","name":"Modern Physics"},{"id":"phy_c7_t2","name":"Communication Systems"},{"id":"phy_c7_t3","name":"Experiments & Instruments"},{"id":"phy_c7_t4","name":"Semiconductor"}]}]},
+    "CHEMISTRY": {"chapters":[{"id":"chem_c1","name":"Physical Chemistry","topics":[{"id":"chem_c1_t1","name":"Purification"},{"id":"chem_c1_t2","name":"Mole Concept"},{"id":"chem_c1_t3","name":"Atomic Structure"},{"id":"chem_c1_t4","name":"Chemical Bonding"},{"id":"chem_c1_t5","name":"States of Matter"},{"id":"chem_c1_t6","name":"Thermodynamics"},{"id":"chem_c1_t7","name":"Equilibrium"},{"id":"chem_c1_t8","name":"Electrochemistry"},{"id":"chem_c1_t9","name":"Chemical Kinetics"},{"id":"chem_c1_t10","name":"Surface Chemistry"},{"id":"chem_c1_t11","name":"Solutions"},{"id":"chem_c1_t12","name":"Redox"},{"id":"chem_c1_t13","name":"Nuclear Chemistry"}]},{"id":"chem_c2","name":"Organic Chemistry","topics":[{"id":"chem_c2_t1","name":"GOC"},{"id":"chem_c2_t2","name":"Hydrocarbons"},{"id":"chem_c2_t3","name":"Haloalkanes & Arenes"},{"id":"chem_c2_t4","name":"Alcohols, Phenols, Ethers"},{"id":"chem_c2_t5","name":"Aldehyde, Ketone, Carb Acids"},{"id":"chem_c2_t6","name":"Amines"},{"id":"chem_c2_t7","name":"Biomolecules"},{"id":"chem_c2_t8","name":"Practical Chemistry"},{"id":"chem_c2_t9","name":"Environmental Chemistry"}]},{"id":"chem_c3","name":"Inorganic Chemistry","topics":[{"id":"chem_c3_t1","name":"Periodic Table"},{"id":"chem_c3_t2","name":"S Block"},{"id":"chem_c3_t3","name":"P Block"},{"id":"chem_c3_t4","name":"D & F Block"},{"id":"chem_c3_t5","name":"Coordination Compounds"},{"id":"chem_c3_t6","name":"Metallurgy"},{"id":"chem_c3_t7","name":"Hydrogen"}]}]},
+  "MATHS": {"chapters":[{"id":"math_c1","name":"Algebra","topics":[{"id":"math_c1_t1","name":"Sets & Relations"},{"id":"math_c1_t2","name":"Functions"},{"id":"math_c1_t3","name":"Complex Numbers"},{"id":"math_c1_t4","name":"Matrices"},{"id":"math_c1_t5","name":"Determinants"},{"id":"math_c1_t6","name":"Sequence & Series"},{"id":"math_c1_t7","name":"PnC"},{"id":"math_c1_t8","name":"Binomial Theorem"},{"id":"math_c1_t9","name":"Quadratic Equations"}]},{"id":"math_c2","name":"Calculus","topics":[{"id":"math_c2_t1","name":"Limits, Continuity & Derivatives"},{"id":"math_c2_t2","name":"Indefinite Integration"},{"id":"math_c2_t3","name":"Differential Equations"}]},{"id":"math_c3","name":"Vectors & 3D","topics":[{"id":"math_c3_t1","name":"Vectors & 3D Geometry"}]},{"id":"math_c4","name":"Trigonometry","topics":[{"id":"math_c4_t1","name":"Trigonometry & Inverse Trigo"}]},{"id":"math_c5","name":"Statistics & Probability","topics":[{"id":"math_c5_t1","name":"Statistics"}]},{"id":"math_c6","name":"Coordinate Geometry","topics":[{"id":"math_c6_t1","name":"Straight Lines"},{"id":"math_c6_t2","name":"Circle"},{"id":"math_c6_t3","name":"Conic Sections"}]}]}
 };
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1278,16 +1266,17 @@ function mkDefault(){
       dailyHrs: 8,
       examDate: '',
       lastResetDay: '',
-      passDurations: {Lecture:1.5, Reading:1.0, 'Question Bank':1.0, Revision:0.5, Notes:0.5}
+      passDurations: {Lecture:1.5, Reading:1.0, 'Question Bank':1.0, Revision:0.5, Notes:0.5},
+      floatImgUrl: ''
     },
     profiles: {
-      user:  {name:'YOU',   tagline:'The Operator', photoDefault:'https://iili.io/q7kMZ6N.md.jpg', photoWin:'https://iili.io/q7venWX.md.jpg', photoLoss:'https://iili.io/q7v3cDQ.md.jpg'},
-      alicia:{name:'ALEXANDRIUS',tagline:'The Rival',    photoDefault:'https://iili.io/qR0vySS.md.jpg', photoWin:'https://iili.io/qR0kSY7.md.jpg', photoLoss:'https://iili.io/qR08IOF.md.jpg'}
+      user:  {name:'YOU',   tagline:'The Operator', photoDefault:'https://iili.io/qWoe8fn.md.jpg', photoWin:'https://iili.io/qWoe8fn.md.jpg', photoLoss:'https://iili.io/qWoe8fn.md.jpg'},
+      alicia:{name:'ALICIA',tagline:'The Rival',    photoDefault:'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg', photoWin:'https://i.postimg.cc/yxm542Ww/20260203-000234.jpg', photoLoss:'https://i.postimg.cc/NF6VqZL3/20260203-000212.jpg'}
     }
   };
 }
 let S = mkDefault();
-let _initDone = false;
+let _initDone = false; // block saves until loadState completes
 
 // ══════════════════════════════════════════════════════════════════════
 // PERSISTENCE
@@ -1353,13 +1342,18 @@ function idbClear(){
   }));
 }
 
+function dbgLog(msg){
+  const el = document.getElementById('storageDebugLog');
+  if(el){ el.textContent += new Date().toLocaleTimeString() + ' ' + msg + '\n'; }
+}
 function save(){
-  if(!_initDone) return;
+  if(!_initDone) return; // never save before loadState completes
   try{
     const d = JSON.parse(JSON.stringify(S));
     delete d.subjects;
     const compressed = LZString.compressToBase64(JSON.stringify(d));
-    // 1. Room DB via Android bridge — primary, survives all WebView wipes
+
+    // 1. Room DB — primary, survives force stop + cache clear
     if(typeof Android !== 'undefined' && Android.dbSave){
       try{ Android.dbSave('srv3', compressed); }catch(e){}
     }
@@ -1371,19 +1365,29 @@ function save(){
 }
 async function loadState(){
   try{
-    // One-time migration: copy srv3 from localStorage → IDB then delete
+    // SOURCE PRIORITY:
+    // 1. Room DB via Android.dbLoadSync  — survives all WebView wipes
+    // 2. IDB
+    // 3. localStorage mirror
+
+    // One-time migration: copy srv3 from localStorage to IDB then delete
     const lsRaw = localStorage.getItem('srv3');
     if(lsRaw){
       await idbSet('srv3', lsRaw);
       localStorage.removeItem('srv3');
     }
-    // SOURCE PRIORITY: Room DB > IDB > localStorage mirror
+
+    // Try Room DB first — primary persistent storage
     let raw = null;
     if(typeof Android !== 'undefined' && Android.dbLoadSync){
       try{ raw = Android.dbLoadSync('srv3') || null; }catch(e){}
     }
+    // Fallback to IDB
     if(!raw) raw = await idbGet('srv3');
+    // Fallback to localStorage mirror
     if(!raw) raw = localStorage.getItem('srv3_mirror');
+
+
     if(raw){
       const p = JSON.parse(LZString.decompressFromBase64(raw));
       S = {...mkDefault(), ...p};
@@ -1406,8 +1410,9 @@ async function loadState(){
       } : mkDefault().rt;
       S.customSyllabi = p.customSyllabi || {};
     }
+
   }catch(e){
-    // All storage failed — try localStorage mirror before resetting
+    // All storage failed — try localStorage mirror one last time
     try{
       const mirror = localStorage.getItem('srv3_mirror');
       if(mirror){
@@ -1427,6 +1432,7 @@ async function loadState(){
         S._snapshots        = p._snapshots        || {};
         S.rt = p.rt ? { slp:p.rt.slp||[{s:23,e:6.5}], ml:p.rt.ml||[8.5,13,20], bf:p.rt.bf||[{s:17,e:18.5}] } : mkDefault().rt;
         S.customSyllabi = p.customSyllabi || {};
+        console.warn('IDB failed — restored from localStorage mirror');
       } else { S = mkDefault(); }
     }catch(e2){ S = mkDefault(); }
   }
@@ -1461,7 +1467,7 @@ async function loadState(){
     }
   }
   if(recovered){ S.generatedSchedule[today] = todaySlot; }
-  _initDone = true;
+  _initDone = true; // now safe to save
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -1751,6 +1757,7 @@ function generateSchedule(skipSplitCheck, startDay){
   }
 
   S.generatedSchedule = schedule;
+  // Reset rival start hour when today's schedule changes — rival starts fresh from now
   const _todayKey = todayStr();
   if(schedule[_todayKey] && schedule[_todayKey].length > 0){
     S.rival._startHr = null;
@@ -1910,7 +1917,7 @@ function tickRival(){
     S.rival.cur = 0;
     S.rival._hrsWorked = 0;
     S.rival._boost = 1.0;
-    S.rival._startHr = null;
+    S.rival._startHr = null; // reset start hour — will be set when schedule is assigned
     logSys('NEW DAY → '+today);
     save();
   }
@@ -1968,11 +1975,9 @@ function aliciaChapterCount(hrsWorked){
     const itemPasses = itemTotalCount(item);
     if(itemHrs === 0) continue;
     if(remaining >= itemHrs){
-      // fully done with this item
       remaining -= itemHrs;
       passes += itemPasses;
     } else {
-      // partway through this item — fractional sub-passes
       passes += (remaining / itemHrs) * itemPasses;
       break;
     }
@@ -1996,63 +2001,22 @@ function renderAliciaBreakdown(){
     const topic = item.topicId ? (S.subjects[subj]?.chapters?.flatMap(ch=>ch.topics)?.find(t=>t.id===item.topicId)?.name || item.topicId) : '';
     const chapter = item.chapterId ? (S.subjects[subj]?.chapters?.find(ch=>ch.id===item.chapterId)?.name || item.chapterId) : '';
     const label = topic || chapter || item.id;
-    if(remaining <= 0){
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:4px;background:var(--log-bg);border:1px solid var(--border);opacity:0.45;">
-        <span style="color:var(--muted);">${subj} · ${label}</span>
-        <span style="color:var(--muted);font-size:0.65rem;">not started</span>
-      </div>`;
-    } else if(remaining >= itemHrs){
-      remaining -= itemHrs;
-      html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:4px;background:rgba(57,255,160,0.08);border:1px solid rgba(57,255,160,0.3);">
-        <span style="color:var(--good);">✓ ${subj} · ${label}</span>
-        <span style="color:var(--good);font-size:0.65rem;">${itemPasses} passes</span>
-      </div>`;
-    } else {
-      const pct = Math.round(remaining / itemHrs * 100);
-      const donePasses = (remaining / itemHrs * itemPasses).toFixed(1);
-      remaining = 0;
-      html += `<div style="padding:5px 8px;border-radius:8px;margin-bottom:4px;background:rgba(124,111,255,0.08);border:1px solid rgba(124,111,255,0.35);">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">
-          <span style="color:var(--accent);">⟳ ${subj} · ${label}</span>
-          <span style="color:var(--accent);font-size:0.65rem;">${pct}% · ${donePasses}/${itemPasses} passes</span>
-        </div>
-        <div style="height:4px;background:var(--border);border-radius:4px;overflow:hidden;">
-          <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:4px;transition:width 0.4s;"></div>
-        </div>
-      </div>`;
-    }
-  }
-  el.innerHTML = html;
-}
 
-function renderAliciaBreakdown(){
-  const el = document.getElementById('aliciaBreakdown');
-  if(!el) return;
-  const items = todayItems();
-  if(!items.length){ el.innerHTML='<div style="color:var(--muted);padding:6px;">No items scheduled today.</div>'; return; }
-  const hrsWorked = S.rival._hrsWorked || 0;
-  let remaining = hrsWorked;
-  let html = '';
-  for(const item of items){
-    const itemHrs = itemTotalHrs(item);
-    const itemPasses = itemTotalCount(item);
-    if(itemHrs === 0) continue;
-    const subj = item.subjectId || '';
-    const topic = item.topicId ? (S.subjects[subj]?.chapters?.flatMap(ch=>ch.topics)?.find(t=>t.id===item.topicId)?.name || item.topicId) : '';
-    const chapter = item.chapterId ? (S.subjects[subj]?.chapters?.find(ch=>ch.id===item.chapterId)?.name || item.chapterId) : '';
-    const label = topic || chapter || item.id;
     if(remaining <= 0){
+      // not started
       html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:4px;background:var(--log-bg);border:1px solid var(--border);opacity:0.45;">
         <span style="color:var(--muted);">${subj} · ${label}</span>
         <span style="color:var(--muted);font-size:0.65rem;">not started</span>
       </div>`;
     } else if(remaining >= itemHrs){
+      // fully done
       remaining -= itemHrs;
       html += `<div style="display:flex;justify-content:space-between;align-items:center;padding:5px 8px;border-radius:8px;margin-bottom:4px;background:rgba(57,255,160,0.08);border:1px solid rgba(57,255,160,0.3);">
         <span style="color:var(--good);">✓ ${subj} · ${label}</span>
         <span style="color:var(--good);font-size:0.65rem;">${itemPasses} passes</span>
       </div>`;
     } else {
+      // in progress
       const pct = Math.round(remaining / itemHrs * 100);
       const donePasses = (remaining / itemHrs * itemPasses).toFixed(1);
       remaining = 0;
@@ -2442,7 +2406,7 @@ function renderDash(){
   }
   if(!todayItemList.length){ aliciaStatus='NO SCHEDULE'; badgeBg='var(--border)'; badgeColor='var(--muted)'; badgeBorder='transparent'; }
   const badge = document.getElementById('intensityBadge');
-  badge.textContent = 'ALEXANDRIUS: ' + aliciaStatus;
+  badge.textContent = 'ALICIA: ' + aliciaStatus;
   badge.style.background = badgeBg;
   badge.style.color = badgeColor;
   badge.style.border = `1px solid ${badgeBorder}`;
@@ -2450,11 +2414,11 @@ function renderDash(){
   const chibi = document.getElementById('chibiImg');
   if(chibi){
     const chibiMap = {
-      'STUDYING':   'https://iili.io/q1KELog.md.png',
-      'SLEEPING':   'https://iili.io/q1KEnZg.md.png',
-      'EATING':     'https://iili.io/q1KE6AP.md.png',
-      'BUFFER':     'https://iili.io/q1KELog.md.png',
-      'NO SCHEDULE':'https://iili.io/q1KEnZg.md.png'
+      'STUDYING':   'https://iili.io/qWo4LKB.md.png',
+      'SLEEPING':   'https://iili.io/qWo4mNa.md.png',
+      'EATING':     'https://iili.io/qWo65J9.md.png',
+      'BUFFER':     'https://iili.io/qWo4LKB.md.png',
+      'NO SCHEDULE':'https://iili.io/qWo4mNa.md.png'
     };
     const newSrc = chibiMap[aliciaStatus] || chibiMap['STUDYING'];
     if(chibi.src !== newSrc) chibi.src = newSrc;
@@ -2482,7 +2446,6 @@ function renderDash(){
   animNum(document.getElementById('aliciaTodayTotal'), ac.toFixed(1));
   animNum(document.getElementById('aliciaHrsWorked'),  fmtMins(S.rival._hrsWorked||0));
   document.getElementById('heatAlert').style.opacity = ac>uc && todayItemList.length ? '1':'0';
-  renderAliciaBreakdown();
   renderAliciaBreakdown();
   // Only refresh quip if none showing yet (don't overwrite tick/startup quips mid-session)
   const quipWrap = document.getElementById('aliciaQuipWrap');
@@ -3347,7 +3310,7 @@ function drillSession(dayStr){
         <span style="font-weight:900;color:var(--good);">${h.userCh}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-        <span style="font-size:0.75rem;color:var(--muted);">ALEXANDRIUS passes</span>
+        <span style="font-size:0.75rem;color:var(--muted);">ALICIA passes</span>
         <span style="font-weight:900;color:var(--accent);">${(h.aliciaCh||0).toFixed?h.aliciaCh.toFixed(1):h.aliciaCh}</span>
       </div>
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
@@ -3427,7 +3390,7 @@ function drillSession(dayStr){
   // Sort by start hour, handle overnight by normalising to 0-24 window starting at 0
   events.sort((a,b)=>a.s-b.s);
   let schedHTML=`<div style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border);">
-    <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;letter-spacing:1px;">ALEXANDRIUS'S DAILY SCHEDULE</div>`;
+    <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;letter-spacing:1px;">ALICIA'S DAILY SCHEDULE</div>`;
   let cur=0;
   events.forEach(ev=>{
     const s=ev.s, e=ev.e<ev.s?ev.e+24:ev.e; // handle overnight
@@ -3473,6 +3436,8 @@ function renderProfile(){
 
   document.getElementById('cfgAnchor').value    = e.anchorHour??3.5;
   document.getElementById('cfgExamDate').value  = e.examDate||'';
+  document.getElementById('urlFloatImg').value   = e.floatImgUrl||'';
+  applyFloatImg(e.floatImgUrl||'');
   updateAnchorPreview();
   updateDailyHrsDisplay();
   // Populate biological constraints
@@ -3482,16 +3447,27 @@ function renderProfile(){
   document.getElementById('rtPers').value  = rt.bf.map(r=>d2t(r.s)+'-'+d2t(r.e)).join(', ');
   updateRtPreview();
 }
+function applyFloatImg(url){
+  const el = document.getElementById('floatImg');
+  if(!el) return;
+  if(url && url.trim()){
+    el.src = url.trim();
+    el.style.display = 'block';
+  } else {
+    el.style.display = 'none';
+    el.src = '';
+  }
+}
 function livePreviewUser(){
   document.getElementById('profileUserNameDisplay').textContent   = document.getElementById('inputUserName').value||'YOU';
   document.getElementById('profileUserTaglineDisplay').textContent= document.getElementById('inputUserTagline').value||'The Operator';
 }
 function livePreviewAlicia(){
-  document.getElementById('profileAliciaNameDisplay').textContent   = document.getElementById('inputAliciaName').value||'ALEXANDRIUS';
+  document.getElementById('profileAliciaNameDisplay').textContent   = document.getElementById('inputAliciaName').value||'ALICIA';
   document.getElementById('profileAliciaTaglineDisplay').textContent= document.getElementById('inputAliciaTagline').value||'The Rival';
 }
-const D_USER_PHOTOS   = {Default:'https://iili.io/q7kMZ6N.md.jpg', Win:'https://iili.io/q7venWX.md.jpg', Loss:'https://iili.io/q7v3cDQ.md.jpg'};
-const D_ALICIA_PHOTOS = {Default:'https://iili.io/qR0vySS.md.jpg', Win:'https://iili.io/qR0kSY7.md.jpg', Loss:'https://iili.io/qR08IOF.md.jpg'};
+const D_USER_PHOTOS   = {Default:'https://iili.io/qWoe8fn.md.jpg', Win:'https://iili.io/qWoe8fn.md.jpg', Loss:'https://iili.io/qWoe8fn.md.jpg'};
+const D_ALICIA_PHOTOS = {Default:'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg', Win:'https://i.postimg.cc/yxm542Ww/20260203-000234.jpg', Loss:'https://i.postimg.cc/NF6VqZL3/20260203-000212.jpg'};
 
 function previewPhoto(who,state){
   const url=document.getElementById(`url${who}${state}`).value.trim();
@@ -3511,7 +3487,7 @@ function saveProfile(who){
     S.profiles.user.photoWin     = document.getElementById('urlUserWin').value    ||D_USER_PHOTOS.Win;
     S.profiles.user.photoLoss    = document.getElementById('urlUserLoss').value   ||D_USER_PHOTOS.Loss;
   } else {
-    S.profiles.alicia.name         = document.getElementById('inputAliciaName').value||'ALEXANDRIUS';
+    S.profiles.alicia.name         = document.getElementById('inputAliciaName').value||'ALICIA';
     S.profiles.alicia.tagline      = document.getElementById('inputAliciaTagline').value||'The Rival';
     S.profiles.alicia.photoDefault = document.getElementById('urlAliciaDefault').value||D_ALICIA_PHOTOS.Default;
     S.profiles.alicia.photoWin     = document.getElementById('urlAliciaWin').value    ||D_ALICIA_PHOTOS.Win;
@@ -3522,10 +3498,23 @@ function saveProfile(who){
 function saveEngineConfig(){
   S.engine.anchorHour = parseFloat(document.getElementById('cfgAnchor').value)||3.5;
   S.engine.examDate   = document.getElementById('cfgExamDate').value||'';
-  // dailyHrs is always derived from bio constraints — never manually set
-  S.engine.dailyHrs   = rtAvailableHrs();
+  S.engine.floatImgUrl= document.getElementById('urlFloatImg').value.trim();
+  applyFloatImg(S.engine.floatImgUrl);
+  // Also save routine/bio constraints from the same card
+  if(!S.rt) S.rt={slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
+  const slpVal = document.getElementById('rtSleep').value;
+  const mlVal  = document.getElementById('rtMeal').value;
+  const pfVal  = document.getElementById('rtPers').value;
+  const slp = parseRange(slpVal);
+  const bf  = parseRange(pfVal);
+  const ml  = mlVal.split(',').map(m=>t2d(m.trim())).filter(n=>!isNaN(n));
+  if(!slp.length && slpVal.trim()){ notify('Sleep format error. Use HH:MM-HH:MM','bad'); return; }
+  S.rt = { slp: slp.length?slp:[{s:23,e:6.5}], ml, bf: bf.length?bf:[] };
+  // dailyHrs always derived from bio constraints
+  S.engine.dailyHrs = rtAvailableHrs();
   generateSchedule();
-  save(); notify('Config saved & schedule regenerated.','good'); updateAnchorPreview(); updateDailyHrsDisplay();
+  save(); notify('Config & constraints saved.','good');
+  updateAnchorPreview(); updateDailyHrsDisplay(); updateRtPreview();
 }
 function updateAnchorPreview(){
   const v=parseFloat(document.getElementById('cfgAnchor').value)||3.5;
@@ -3708,17 +3697,17 @@ function _aliciaNext(){
 function notifyAlicia(msg, photoState='default'){
   // photoState: 'win' | 'loss' | 'default' | 'auto'
   const p = S.profiles?.alicia || {};
-  let photo = p.photoDefault || 'https://iili.io/qR0vySS.md.jpg';
-  if(photoState === 'win')       photo = p.photoWin  || 'https://iili.io/qR0kSY7.md.jpg';
-  else if(photoState === 'loss') photo = p.photoLoss || 'https://iili.io/qR08IOF.md.jpg';
+  let photo = p.photoDefault || 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
+  if(photoState === 'win')       photo = p.photoWin  || 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
+  else if(photoState === 'loss') photo = p.photoLoss || 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
   else if(photoState === 'auto'){
     const uc = (S.logs||[]).filter(l=>{ try{ return l.done && new Date(l.iso).toISOString().slice(0,10)===todayStr(); }catch(e){ return false; }}).length;
     const ac = S.rival.cur;
-    if(ac > uc)       photo = p.photoWin  || 'https://iili.io/qR0kSY7.md.jpg';
-    else if(uc > ac)  photo = p.photoLoss || 'https://iili.io/qR08IOF.md.jpg';
-    else              photo = p.photoDefault || 'https://iili.io/qR0vySS.md.jpg';
+    if(ac > uc)       photo = p.photoWin  || 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
+    else if(uc > ac)  photo = p.photoLoss || 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
+    else              photo = p.photoDefault || 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
   }
-  const name = p.name || 'ALEXANDRIUS';
+  const name = p.name || 'ALICIA';
   _aliciaQueue.push({msg, photo, name});
   if(!_aliciaBusy) _aliciaNext();
 }
@@ -3751,12 +3740,19 @@ function closeMenu(){ document.getElementById('mobileMenu').classList.remove('sh
 function confirmPurge(){
   closeMenu();
   if(!confirm('PURGE ALL DATA? This cannot be undone.')) return;
-  localStorage.removeItem('srv3');
-  localStorage.removeItem('sr_cosmetics');
-  COSMETICS = {...COSMETIC_DEFAULTS};
-  S = mkDefault();
-  renderActive();
-  notify('All data purged.','bad');
+  idbClear().then(()=>{
+    localStorage.removeItem('srv3');
+    localStorage.removeItem('sr_cosmetics');
+    COSMETICS = {...COSMETIC_DEFAULTS};
+    S = mkDefault();
+    renderActive();
+    notify('All data purged.','bad');
+  }).catch(()=>{
+    localStorage.removeItem('srv3');
+    S = mkDefault();
+    renderActive();
+    notify('All data purged.','bad');
+  });
 }
 
 // ══════════════════════════════════════════════════════════════════════
@@ -4348,7 +4344,7 @@ function shareReportCard(){
     ctx.fillText(val, x, y+42);
   };
   drawStat('YOUR PASSES', userCh, '#39ffa0', 30, 130);
-  drawStat('ALEXANDRIUS', alCh, '#7c6fff', 220, 130);
+  drawStat('ALICIA', alCh, '#7c6fff', 220, 130);
   drawStat('GAP', gap, gap.includes('-')?'#ff6b6b':'#39ffa0', 420, 130);
 
   // Divider
@@ -4696,42 +4692,44 @@ tickClock();
 setInterval(tickClock, 15000);
 
 async function init(){
-  try{
-    await idbOpen();
-    await loadState();
-    await loadCosmetics();
-  }catch(e){
-    console.warn('IDB init failed, falling back to defaults:', e);
-    // Try Room DB / localStorage mirror before giving up
-    try{
-      let raw = null;
-      if(typeof Android !== 'undefined' && Android.dbLoadSync){
-        try{ raw = Android.dbLoadSync('srv3') || null; }catch(ex){}
-      }
-      if(!raw) raw = localStorage.getItem('srv3_mirror');
-      if(raw){
-        const p = JSON.parse(LZString.decompressFromBase64(raw));
-        S = {...mkDefault(), ...p};
-        S.engine = {...mkDefault().engine, ...(p.engine||{})};
-        S.rival  = {...mkDefault().rival,  ...(p.rival ||{})};
-        S.profiles = {
-          user:  {...mkDefault().profiles.user,   ...(p.profiles?.user  ||{})},
-          alicia:{...mkDefault().profiles.alicia, ...(p.profiles?.alicia||{})}
-        };
-        S.scheduleItems=p.scheduleItems||[]; S.generatedSchedule=p.generatedSchedule||{};
-        S.history=p.history||{}; S.logs=p.logs||[]; S._snapshots=p._snapshots||{};
-        S.rt=p.rt?{slp:p.rt.slp||[{s:23,e:6.5}],ml:p.rt.ml||[8.5,13,20],bf:p.rt.bf||[{s:17,e:18.5}]}:mkDefault().rt;
-      } else { S = mkDefault(); }
-    }catch(e2){ S = mkDefault(); }
-    COSMETICS = {...COSMETIC_DEFAULTS};
+  let storageWasEmpty = false;
+  // loadState is always called — never let a catch reset S after it succeeds
+  await loadState();
+  try{ await loadCosmetics(); }catch(e){ COSMETICS = {...COSMETIC_DEFAULTS}; }
+  try{ await idbOpen(); }catch(e){}
+  // Check if any data source had data
+  let hadData = S.scheduleItems && S.scheduleItems.length > 0;
+  if(!hadData && S.rt){
+    const def = mkDefault().rt;
+    // rt differs from default = data was loaded
+    hadData = JSON.stringify(S.rt) !== JSON.stringify(def);
   }
+  storageWasEmpty = !hadData;
   applyTheme(COSMETICS.theme, true);
   if(COSMETICS.customAccent) _applyAccentColor(COSMETICS.customAccent);
   if(COSMETICS.particles) initParticles();
   initSakura();
+  applyFloatImg(S.engine.floatImgUrl||'');
   updateStreakDisplay();
   syncCosmeticsUI();
   renderActive();
+
+  // Show storage warning if data was wiped
+  if(storageWasEmpty && document.getElementById('storageStatusCard')){
+    document.getElementById('storageStatusCard').style.display = 'block';
+  }
+  // Update auto-save status label
+  const asEl = document.getElementById('autoSaveStatus');
+  if(asEl){
+    const hasRoomDb = typeof Android !== 'undefined' && Android.dbSave;
+    asEl.textContent = hasRoomDb
+      ? '✅ Room DB active — state persists permanently in app database'
+      : '⚠️ No Room DB bridge — using IDB + localStorage only (may reset on app kill)';
+    asEl.style.background = hasRoomDb ? 'rgba(57,255,160,0.08)' : 'rgba(255,203,71,0.08)';
+    asEl.style.borderColor = hasRoomDb ? 'rgba(57,255,160,0.3)' : 'rgba(255,203,71,0.4)';
+    asEl.style.color = hasRoomDb ? 'var(--good)' : 'var(--warn)';
+  }
+
   checkMissedEod();
   setInterval(()=>{ tickRival(); checkEndOfDay(); save(); if(document.getElementById('dash').classList.contains('active')) renderDash(); updateStreakDisplay(); }, 60000);
   logSys('OMEGA v2 ONLINE · IDB active');
