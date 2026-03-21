@@ -1172,6 +1172,8 @@ Virology, DNA Virus Pt 1;"></textarea>
     <button onclick="exportBackup()" style="background:linear-gradient(135deg,#1a2a4d,#0f1a35);border:1px solid #3a5a9a;color:#90b8ff;font-size:0.8rem;width:100%;margin-top:0;">💾 Save Backup to Downloads</button>
     <label for="importFilePick" style="display:block;width:100%;margin-top:10px;padding:14px;border-radius:8px;border:1px solid #3a5a9a;background:linear-gradient(135deg,#1a2a4d,#0f1a35);color:#90b8ff;font-size:0.8rem;font-weight:800;text-align:center;text-transform:uppercase;letter-spacing:1px;cursor:pointer;box-shadow:0 4px 15px rgba(0,0,0,0.3);">📂 Pick Backup File</label>
     <input id="importFilePick" type="file" accept=".txt" style="display:none;" onchange="importFromFile(event)">
+    <button onclick="recalcHistory()" style="background:linear-gradient(135deg,#2a1a4d,#3a1a6d);border:1px solid #7c3aed;color:#c4b5fd;font-size:0.78rem;width:100%;margin-top:10px;">🔁 Recalculate Win/Loss from Logs</button>
+
     <details style="margin-top:16px;">
       <summary style="font-size:0.7rem;color:var(--muted);cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Manual String</summary>
       <textarea id="syncField" style="height:100px;font-size:0.65rem;font-family:monospace;margin-top:10px;" placeholder="Paste backup string here..."></textarea>
@@ -3265,6 +3267,24 @@ function renderSyllabus(){
   });
 }
 
+function recalcHistory(){
+  if(!confirm('Recalculate all win/loss results from your actual logged passes? This fixes scrambled results from old data.')) return;
+  let fixed = 0;
+  for(const [date, h] of Object.entries(S.history||{})){
+    if(h.userCh == null) continue;
+    const uc = (S.logs||[]).filter(l=>{
+      try{ return l.done && new Date(l.iso).toISOString().slice(0,10)===date; }catch(e){ return false; }
+    }).length;
+    const ac = h.aliciaCh || 0;
+    const noData = uc===0 && ac===0;
+    const newWin = noData ? null : uc >= ac;
+    if(newWin !== h.win){ h.win = newWin; h.userCh = uc; fixed++; }
+  }
+  save();
+  notify(`✅ Recalculated ${Object.keys(S.history).length} days — ${fixed} results corrected.`,'good');
+  renderArchive();
+}
+
 function renderArchive(){
   const box=document.getElementById('chronicleBox');
   const ys=[...new Set(Object.keys(S.history).map(d=>d.slice(0,4)))].sort().reverse();
@@ -3660,7 +3680,24 @@ function exportToField(){ document.getElementById('syncField').value=LZString.co
 function importFromField(){ impStr(document.getElementById('syncField').value); }
 function impStr(raw){
   try{
-    const p=JSON.parse(LZString.decompressFromBase64(raw.trim()));
+    raw = raw.trim();
+    // Try all LZString decode variants
+    let json = null;
+    const attempts = [
+      () => LZString.decompressFromBase64(raw),
+      () => LZString.decompressFromEncodedURIComponent(raw),
+      () => LZString.decompressFromBase64(raw + '='),
+      () => LZString.decompressFromBase64(raw + '=='),
+      () => { try{ return atob(raw); }catch(e){ return null; } },
+    ];
+    for(const fn of attempts){
+      try{
+        const r = fn();
+        if(r && r.startsWith('{')){ json = r; break; }
+      }catch(e){}
+    }
+    if(!json) throw new Error('Could not decompress — unrecognised format');
+    const p=JSON.parse(json);
     if(p.scheduleItems)     S.scheduleItems     = p.scheduleItems;
     if(p.generatedSchedule) S.generatedSchedule = p.generatedSchedule;
     if(p.history)   S.history   = p.history;
