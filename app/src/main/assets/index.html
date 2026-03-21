@@ -1483,6 +1483,17 @@ function fmtDate(s){ return new Date(s+'T12:00:00').toLocaleDateString(undefined
 function addDays(s,n){ const d=new Date(s+'T12:00:00'); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
 function anchorHr(){ return S.engine.anchorHour??3.5; }
 function anchorLabel(){ const h=anchorHr(); return String(Math.floor(h)).padStart(2,'0')+':'+(h%1?'30':'00'); }
+// Anchor-aware "contest day" string — before anchor hour counts as previous day's contest
+function anchorDayStr(){
+  const d = simDate();
+  const hr = d.getHours() + d.getMinutes()/60;
+  if(hr < anchorHr()){
+    // Before anchor — still previous calendar day's contest
+    const prev = new Date(d); prev.setDate(prev.getDate()-1);
+    return prev.toISOString().slice(0,10);
+  }
+  return d.toISOString().slice(0,10);
+}
 function daysToExam(){
   if(!S.engine.examDate) return null;
   const diff = new Date(S.engine.examDate+'T12:00:00') - new Date(todayStr()+'T12:00:00');
@@ -1881,7 +1892,7 @@ function userChaptersTodayCount(){
 // RIVAL ENGINE
 // ══════════════════════════════════════════════════════════════════════
 function tickRival(){
-  const today = todayStr();
+  const today = anchorDayStr(); // anchor-aware: before 3:30AM = still yesterday's contest
   if(S.engine.lastResetDay !== today){
     const prevDay = S.engine.lastResetDay;
     if(prevDay && prevDay < today){
@@ -1906,21 +1917,13 @@ function tickRival(){
   const now = simDate();
   const rt = S.rt || {slp:[{s:23,e:6.5}],ml:[8.5,13,20],bf:[{s:17,e:18.5}]};
 
-  // Rival starts from the moment today's schedule was first generated,
-  // NOT from the anchor hour. This prevents rival from getting a head start.
+  // Rival always starts from the anchor hour — consistent every day
   const nowHr = now.getHours() + now.getMinutes()/60 + now.getSeconds()/3600;
+  const todayIds = S.generatedSchedule[today] || [];
+  if(todayIds.length === 0){ S.rival.cur = 0; return; } // nothing scheduled
 
-  // If no start hour recorded yet, set it now (first tick of the day)
-  if(S.rival._startHr == null || S.rival._startHr === undefined){
-    const todayIds = S.generatedSchedule[today] || [];
-    if(todayIds.length === 0){ S.rival.cur = 0; return; } // nothing scheduled
-    S.rival._startHr = nowHr;
-    save();
-  }
-
-  const startHr = S.rival._startHr;
-  // Hours elapsed since schedule was assigned today (simple wall clock diff)
-  // Handle midnight wrap: if nowHr < startHr, a midnight has passed
+  const startHr = anchorHr(); // always start from anchor, not from when schedule was added
+  // Hours elapsed since anchor (handle midnight wrap)
   const elapsedRaw = nowHr >= startHr
     ? nowHr - startHr
     : (24 - startHr + nowHr);
@@ -3366,6 +3369,53 @@ function drillSession(dayStr){
     </div>`;
   } else {
     aB.innerHTML='<div style="color:var(--muted);text-align:center;padding:20px;">No end-of-day data recorded.</div>';
+  }
+
+  // Alicia's pass breakdown for the day
+  if(h && h.hrsUsed != null){
+    const dayScheduleIds = S.generatedSchedule[dayStr] || [];
+    const dayItems = dayScheduleIds.map(id=>getItem(id)).filter(Boolean);
+    if(dayItems.length){
+      let rem = h.hrsUsed;
+      let breakdownHtml = `<div style="margin-top:10px;padding-top:14px;border-top:1px solid var(--border);">
+        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;font-weight:900;margin-bottom:10px;letter-spacing:1px;">📋 ALICIA'S COMPLETED PASSES</div>`;
+      for(const item of dayItems){
+        const itemHrs = itemTotalHrs(item);
+        const itemPasses = itemTotalCount(item);
+        if(itemHrs === 0) continue;
+        const subj = item.subjectId || '';
+        const topic = item.topicId ? (S.subjects[subj]?.chapters?.flatMap(ch=>ch.topics)?.find(t=>t.id===item.topicId)?.name || item.topicId) : '';
+        const chapter = item.chapterId ? (S.subjects[subj]?.chapters?.find(ch=>ch.id===item.chapterId)?.name || item.chapterId) : '';
+        const label = topic || chapter || item.id;
+        if(rem <= 0){
+          breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);opacity:0.4;">
+            <span style="font-size:0.75rem;color:var(--muted);">${subj} · ${label}</span>
+            <span style="font-size:0.65rem;color:var(--muted);">not reached</span>
+          </div>`;
+        } else if(rem >= itemHrs){
+          rem -= itemHrs;
+          breakdownHtml += `<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);">
+            <span style="font-size:0.75rem;color:var(--good);">✓ ${subj} · ${label}</span>
+            <span style="font-size:0.65rem;color:var(--good);font-weight:900;">${itemPasses} passes</span>
+          </div>`;
+        } else {
+          const pct = Math.round(rem / itemHrs * 100);
+          const done = (rem / itemHrs * itemPasses).toFixed(1);
+          rem = 0;
+          breakdownHtml += `<div style="padding:5px 0;border-bottom:1px solid var(--border);">
+            <div style="display:flex;justify-content:space-between;margin-bottom:3px;">
+              <span style="font-size:0.75rem;color:var(--accent);">⟳ ${subj} · ${label}</span>
+              <span style="font-size:0.65rem;color:var(--accent);font-weight:900;">${done}/${itemPasses} passes (${pct}%)</span>
+            </div>
+            <div style="height:3px;background:var(--border);border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${pct}%;background:var(--accent);border-radius:3px;"></div>
+            </div>
+          </div>`;
+        }
+      }
+      breakdownHtml += '</div>';
+      aB.innerHTML += breakdownHtml;
+    }
   }
 
   // Alicia's schedule for the day
