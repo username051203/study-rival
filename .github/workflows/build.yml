@@ -37,6 +37,23 @@ jobs:
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASS: ${{ secrets.KEY_PASS }}
 
+      # Play Store requires an .aab, not an .apk. This doesn't touch the
+      # existing APK release flow below — it's a separate artifact for
+      # manual upload to Play Console.
+      - name: Build Release Bundle (for Play Store)
+        run: gradle bundleRelease --stacktrace
+        env:
+          KEYSTORE_PATH: studyrival.keystore
+          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.KEY_PASS }}
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: StudyRival-release-bundle
+          path: app/build/outputs/bundle/release/app-release.aab
+
       - name: Rename APK
         run: |
           mkdir -p out

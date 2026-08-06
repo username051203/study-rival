@@ -1,0 +1,872 @@
+From d5108a2c9153c18c00d2df4cd3f95c684abbc566 Mon Sep 17 00:00:00 2001
+From: Nic <nic@users.noreply.github.com>
+Date: Sat, 1 Aug 2026 16:40:55 +0000
+Subject: [PATCH 1/3] Add BYOK practice quiz feature, AdMob banner ads, Play
+ Store readiness fixes
+
+- quiz tab: Groq-powered similar-question generator with live countdown timer and auto-grading, BYOK (each user enters their own Groq key, stored locally)
+- AdMob banner ad scaffolding (native), using Google test IDs - swap for real AdMob account IDs before release
+- targetSdk 34 -> 36 (Play Store requires 35 now, 36 from Aug 31 2026 - 34 would have blocked submission)
+- removed hardcoded keystore password fallback from build.gradle (repo is public)
+- added bundleRelease (.aab) step to CI for Play Store upload alongside existing APK release
+---
+ .github/workflows/build.yml                   |  17 +
+ app/build.gradle                              |  16 +-
+ app/src/main/AndroidManifest.xml              |   5 +
+ app/src/main/assets/index.html                | 291 +++++++++++++++++-
+ .../com/studyrival/omega/MainActivity.java    |  49 +++
+ app/src/main/res/layout/activity_main.xml     |  20 +-
+ 6 files changed, 389 insertions(+), 9 deletions(-)
+
+diff --git a/.github/workflows/build.yml b/.github/workflows/build.yml
+index 08793bb..6a1355a 100644
+--- a/.github/workflows/build.yml
++++ b/.github/workflows/build.yml
+@@ -37,6 +37,23 @@ jobs:
+           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+           KEY_PASS: ${{ secrets.KEY_PASS }}
+ 
++      # Play Store requires an .aab, not an .apk. This doesn't touch the
++      # existing APK release flow below — it's a separate artifact for
++      # manual upload to Play Console.
++      - name: Build Release Bundle (for Play Store)
++        run: gradle bundleRelease --stacktrace
++        env:
++          KEYSTORE_PATH: studyrival.keystore
++          KEYSTORE_PASS: ${{ secrets.KEYSTORE_PASS }}
++          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
++          KEY_PASS: ${{ secrets.KEY_PASS }}
++
++      - name: Upload AAB artifact
++        uses: actions/upload-artifact@v4
++        with:
++          name: StudyRival-release-bundle
++          path: app/build/outputs/bundle/release/app-release.aab
++
+       - name: Rename APK
+         run: |
+           mkdir -p out
+diff --git a/app/build.gradle b/app/build.gradle
+index 7ebe3fa..a3ea9ce 100644
+--- a/app/build.gradle
++++ b/app/build.gradle
+@@ -3,23 +3,26 @@ plugins {
+ }
+ 
+ android {
+-    compileSdk 34
++    compileSdk 36
+     namespace 'com.studyrival.omega'
+ 
+     defaultConfig {
+         applicationId "com.studyrival.omega"
+         minSdk 24
+-        targetSdk 34
++        targetSdk 36
+         versionCode 1
+         versionName "1.0"
+     }
+ 
+     signingConfigs {
+         release {
++            // No fallback values here on purpose — this repo is public, so a hardcoded
++            // password would be visible to anyone. Local release builds must export
++            // these env vars themselves; CI supplies them from GitHub Secrets.
+             storeFile file(System.getenv("KEYSTORE_PATH") ?: "studyrival.keystore")
+-            storePassword System.getenv("KEYSTORE_PASS") ?: "studyrival123"
+-            keyAlias System.getenv("KEY_ALIAS") ?: "studyrival"
+-            keyPassword System.getenv("KEY_PASS") ?: "studyrival123"
++            storePassword System.getenv("KEYSTORE_PASS")
++            keyAlias System.getenv("KEY_ALIAS")
++            keyPassword System.getenv("KEY_PASS")
+         }
+     }
+ 
+@@ -43,6 +46,9 @@ android {
+ dependencies {
+     implementation 'androidx.appcompat:appcompat:1.6.1'
+ 
++    // Ads
++    implementation 'com.google.android.gms:play-services-ads:23.6.0'
++
+     // Room
+     def room_version = "2.6.1"
+     implementation "androidx.room:room-runtime:$room_version"
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 9298026..3f43875 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -13,6 +13,11 @@
+         android:theme="@style/AppTheme"
+         android:hardwareAccelerated="true"
+         android:usesCleartextTraffic="true">
++        <!-- TODO: replace with your own AdMob App ID from admob.google.com before release.
++             This is Google's shared TEST App ID — safe for development, will not earn revenue. -->
++        <meta-data
++            android:name="com.google.android.gms.ads.APPLICATION_ID"
++            android:value="ca-app-pub-3940256099942544~3347511713"/>
+         <activity
+             android:name=".MainActivity"
+             android:exported="true"
+diff --git a/app/src/main/assets/index.html b/app/src/main/assets/index.html
+index 6ff9215..73e2d3e 100644
+--- a/app/src/main/assets/index.html
++++ b/app/src/main/assets/index.html
+@@ -501,6 +501,7 @@ body.theme-forest-dew{
+     <div class="nav-item" onclick="nav('sync')" style="background:#222a4d;margin-top:5px">💾 Kernel Sync</div>
+     <div class="nav-item" onclick="nav('sim')" style="background:#1a2a1a;margin-top:5px;border-color:#2a4a2a;">⚡ Simulation Engine</div>
+     <div class="nav-item" onclick="nav('cosmetics')" style="background:#1a1a2e;margin-top:5px;border-color:#3a1a5a;">🎨 Cosmetics</div>
++    <div class="nav-item" onclick="nav('quiz')" style="background:#1a1a2e;margin-top:5px;border-color:#7a3a1a;">🎯 Practice Quiz</div>
+     <div class="nav-item" onclick="confirmPurge()" style="background:#451a1a;margin-top:10px;color:#ffbaba">⚠️ Purge All Data</div>
+   </div>
+ </div>
+@@ -1262,6 +1263,60 @@ Virology, DNA Virus Pt 1;"></textarea>
+   </div>
+ </div>
+ 
++<div id="quiz" class="page">
++  <div class="card">
++    <h2 style="margin:0 0 16px;font-size:1rem;text-transform:uppercase;">🎯 Practice Quiz</h2>
++    <p style="font-size:0.68rem;color:var(--muted);margin:0 0 14px;">Paste a question, get similar practice questions on a timer, graded automatically. Uses your own free Groq API key — nothing is sent anywhere without it.</p>
++
++    <details id="quizKeyDetails" style="margin-bottom:16px;">
++      <summary style="font-size:0.7rem;color:var(--accent);cursor:pointer;font-weight:900;text-transform:uppercase;letter-spacing:1px;">🔑 Groq API Key <span id="quizKeyStatus" style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0;"></span></summary>
++      <div style="margin-top:10px;">
++        <p style="font-size:0.62rem;color:var(--muted);margin:0 0 8px;">Free key, no card needed: <span style="color:var(--accent3);">console.groq.com/keys</span></p>
++        <input id="quizApiKeyInput" type="password" placeholder="gsk_..." style="font-family:monospace;font-size:0.75rem;" autocomplete="off">
++        <div style="display:flex;gap:8px;margin-top:8px;">
++          <button onclick="saveQuizApiKey()" class="sec" style="flex:1;margin:0;padding:10px;font-size:0.7rem;">Save Key</button>
++          <button onclick="clearQuizApiKey()" class="bad-btn" style="flex:1;margin:0;padding:10px;font-size:0.7rem;">Clear</button>
++        </div>
++      </div>
++    </details>
++
++    <div id="quizSetup">
++      <label style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Seed Question</label>
++      <textarea id="quizSeedInput" style="height:80px;font-size:0.75rem;margin-top:6px;" placeholder="Paste the question you want more practice on..."></textarea>
++      <div style="display:flex;gap:10px;margin-top:10px;">
++        <div style="flex:1;">
++          <label style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;">Timer (sec)</label>
++          <input id="quizTimerInput" type="number" min="10" max="600" style="font-size:0.75rem;">
++        </div>
++        <div style="flex:1;">
++          <label style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;">Batch Size</label>
++          <input id="quizBatchInput" type="number" min="1" max="10" style="font-size:0.75rem;">
++        </div>
++      </div>
++      <button onclick="startQuizSession()" style="width:100%;margin-top:14px;">▶ Start Session</button>
++      <div id="quizSetupError" style="font-size:0.7rem;color:var(--bad);margin-top:10px;"></div>
++    </div>
++
++    <div id="quizRunning" style="display:none;">
++      <div id="quizTimerBar" style="font-size:0.85rem;font-weight:900;text-align:center;padding:10px;border-radius:8px;background:var(--log-bg);border:1px solid var(--border);margin-bottom:12px;">⏳ 00:00</div>
++      <div id="quizQuestionCard" style="font-size:0.85rem;line-height:1.5;padding:14px;border-radius:10px;background:var(--log-bg);border:1px solid var(--border);margin-bottom:12px;"></div>
++      <textarea id="quizAnswerInput" style="height:70px;font-size:0.78rem;" placeholder="Type your answer..."></textarea>
++      <button onclick="submitQuizAnswer()" style="width:100%;margin-top:10px;">Submit Answer</button>
++      <div id="quizVerdict" style="font-size:0.75rem;margin-top:12px;padding:10px;border-radius:8px;display:none;"></div>
++      <div style="display:flex;gap:8px;margin-top:12px;">
++        <button id="quizNextBtn" onclick="quizNextQuestion()" class="sec" style="flex:1;margin:0;padding:10px;font-size:0.72rem;display:none;">Next Question →</button>
++        <button onclick="endQuizSession()" class="bad-btn" style="flex:1;margin:0;padding:10px;font-size:0.72rem;">End Session</button>
++      </div>
++      <div id="quizLoading" style="text-align:center;font-size:0.7rem;color:var(--muted);margin-top:10px;display:none;">Fetching questions...</div>
++    </div>
++
++    <details style="margin-top:18px;">
++      <summary style="font-size:0.7rem;color:var(--muted);cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Session History</summary>
++      <div id="quizHistoryList" style="margin-top:10px;font-size:0.68rem;color:var(--muted);"></div>
++    </details>
++  </div>
++</div>
++
+ <div id="toast-wrap"></div>
+ <div id="toast-wrap-bottom"></div>
+ <script>
+@@ -1315,7 +1370,8 @@ function mkDefault(){
+     profiles: {
+       user:  {name:'YOU',   tagline:'The Operator', photoDefault:'https://iili.io/qWoe8fn.md.jpg', photoWin:'https://iili.io/qWoe8fn.md.jpg', photoLoss:'https://iili.io/qWoe8fn.md.jpg'},
+       alicia:{name:'ALICIA',tagline:'The Rival',    photoDefault:'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg', photoWin:'https://i.postimg.cc/yxm542Ww/20260203-000234.jpg', photoLoss:'https://i.postimg.cc/NF6VqZL3/20260203-000212.jpg'}
+-    }
++    },
++    quiz: { groqApiKey: '', timerSec: 90, batchSize: 5 }
+   };
+ }
+ let S = mkDefault();
+@@ -1463,6 +1519,7 @@ async function loadState(){
+         bf:  p.rt.bf ||[{s:17,e:18.5}]
+       } : mkDefault().rt;
+       S.customSyllabi = p.customSyllabi || {};
++      S.quiz = {...mkDefault().quiz, ...(p.quiz||{})};
+     }
+ 
+   }catch(e){
+@@ -1486,6 +1543,7 @@ async function loadState(){
+         S._snapshots        = p._snapshots        || {};
+         S.rt = p.rt ? { slp:p.rt.slp||[{s:23,e:6.5}], ml:p.rt.ml||[8.5,13,20], bf:p.rt.bf||[{s:17,e:18.5}] } : mkDefault().rt;
+         S.customSyllabi = p.customSyllabi || {};
++        S.quiz = {...mkDefault().quiz, ...(p.quiz||{})};
+         console.warn('IDB failed — restored from localStorage mirror');
+       } else { S = mkDefault(); }
+     }catch(e2){ S = mkDefault(); }
+@@ -4189,6 +4247,7 @@ function show(id){
+   if(id==='archive')  renderArchive();
+   if(id==='profile')  renderProfile();
+   if(id==='sim')      { /* sim is self-contained */ }
++  if(id==='quiz')     renderQuizPage();
+ }
+ function renderActive(){ const a=document.querySelector('.page.active'); if(a) show(a.id); }
+ function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('show'); document.getElementById('menuOverlay').classList.toggle('show'); }
+@@ -5237,6 +5296,236 @@ async function init(){
+   showAliciaQuip('startup');
+ }
+ 
++// ══════════════════════════════════════════════════════════════════════
++// PRACTICE QUIZ — Groq-powered similar-question generator with timed grading
++// BYOK: uses the user's own free Groq API key, stored locally, never bundled.
++// ══════════════════════════════════════════════════════════════════════
++const QUIZ_MODEL = 'llama-3.3-70b-versatile';
++const QUIZ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
++
++let _quizQueue = [];
++let _quizAsked = [];
++let _quizCurrent = null;
++let _quizTimerHandle = null;
++let _quizDeadline = 0;
++let _quizSeed = '';
++
++function renderQuizPage(){
++  const keyEl = document.getElementById('quizApiKeyInput');
++  const hasKey = !!(S.quiz && S.quiz.groqApiKey);
++  keyEl.value = '';
++  keyEl.placeholder = hasKey ? '•••••••••••••••••••• (saved)' : 'gsk_...';
++  document.getElementById('quizKeyStatus').textContent = hasKey ? '· saved' : '· not set';
++  document.getElementById('quizTimerInput').value = S.quiz.timerSec;
++  document.getElementById('quizBatchInput').value = S.quiz.batchSize;
++  document.getElementById('quizKeyDetails').open = !hasKey;
++  renderQuizHistory();
++}
++
++function saveQuizApiKey(){
++  const v = document.getElementById('quizApiKeyInput').value.trim();
++  if(!v){ notify('Enter a key first', 'warn'); return; }
++  S.quiz.groqApiKey = v;
++  save();
++  document.getElementById('quizApiKeyInput').value = '';
++  document.getElementById('quizKeyDetails').open = false;
++  renderQuizPage();
++  notify('Groq key saved locally on this device', 'good');
++}
++
++function clearQuizApiKey(){
++  S.quiz.groqApiKey = '';
++  save();
++  renderQuizPage();
++  notify('Groq key cleared', 'info');
++}
++
++async function quizApiCall(systemPrompt, userPrompt, temperature){
++  const key = S.quiz.groqApiKey;
++  if(!key) throw new Error('No Groq API key set — add one above.');
++  const res = await fetch(QUIZ_API_URL, {
++    method: 'POST',
++    headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
++    body: JSON.stringify({
++      model: QUIZ_MODEL,
++      messages: [
++        { role: 'system', content: systemPrompt },
++        { role: 'user', content: userPrompt }
++      ],
++      temperature: temperature
++    })
++  });
++  if(!res.ok){
++    const t = await res.text().catch(()=>String(res.status));
++    throw new Error('Groq API error ' + res.status + ': ' + t.slice(0,200));
++  }
++  const data = await res.json();
++  let content = (data.choices[0].message.content || '').trim();
++  if(content.startsWith('```')){
++    content = content.replace(/^```[a-z]*\n?/,'').replace(/```$/,'').trim();
++  }
++  return content;
++}
++
++async function fetchQuizBatch(seed, exclude, n){
++  const excludeBlock = exclude.slice(-30).map(q=>'- '+q).join('\n') || '(none yet)';
++  const sys = 'You are a practice-question generator. Given a seed question, produce new questions '+
++    'that test the SAME concept/skill and SAME difficulty level, but are not near-duplicates of each '+
++    'other or of anything in the exclude list. For each question also give the correct answer/solution. '+
++    'Reply with ONLY a JSON array of objects shaped like {"question":"...","answer":"..."}, nothing else '+
++    '— no markdown fences, no commentary.';
++  const usr = 'Seed question:\n'+seed+'\n\nAlready asked (do not repeat these or close variants):\n'+excludeBlock+
++    '\n\nGenerate '+n+' new similar questions with answers, as a JSON array.';
++  const content = await quizApiCall(sys, usr, 0.8);
++  try{
++    const items = JSON.parse(content);
++    if(!Array.isArray(items)) throw 0;
++    return items.filter(it=>it && it.question).map(it=>({question:String(it.question).trim(), answer:String(it.answer||'').trim()}));
++  }catch(e){
++    return content.split('\n').filter(l=>l.trim()).map(l=>({question:l.replace(/^[-*]\s*/,'').trim(), answer:''}));
++  }
++}
++
++async function gradeQuizAnswer(question, modelAnswer, userAnswer){
++  if(!userAnswer) return 'No answer given.';
++  if(!modelAnswer) return '(no model answer available to grade against)';
++  const sys = 'You are a strict but fair grader. Given a question, the correct answer, and a student\'s '+
++    'answer, judge whether the student\'s answer is Correct, Partially correct, or Incorrect. Reply with '+
++    'ONLY the verdict word/phrase, a colon, then one short sentence of feedback. No extra commentary.';
++  const usr = 'Question: '+question+'\nCorrect answer: '+modelAnswer+'\nStudent\'s answer: '+userAnswer;
++  try{
++    return await quizApiCall(sys, usr, 0.2);
++  }catch(e){
++    return '(grading failed: '+e.message+')';
++  }
++}
++
++async function startQuizSession(){
++  const seed = document.getElementById('quizSeedInput').value.trim();
++  const errEl = document.getElementById('quizSetupError');
++  errEl.textContent = '';
++  if(!S.quiz.groqApiKey){ errEl.textContent = 'Add your Groq API key above first.'; return; }
++  if(!seed){ errEl.textContent = 'Paste a seed question first.'; return; }
++
++  S.quiz.timerSec = Math.max(10, Math.min(600, parseInt(document.getElementById('quizTimerInput').value)||90));
++  S.quiz.batchSize = Math.max(1, Math.min(10, parseInt(document.getElementById('quizBatchInput').value)||5));
++  save();
++
++  _quizSeed = seed;
++  _quizAsked = [];
++  _quizQueue = [];
++
++  document.getElementById('quizSetup').style.display = 'none';
++  document.getElementById('quizRunning').style.display = 'block';
++  document.getElementById('quizLoading').style.display = 'block';
++  document.getElementById('quizQuestionCard').textContent = '';
++
++  try{
++    _quizQueue = await fetchQuizBatch(_quizSeed, _quizAsked, S.quiz.batchSize);
++  }catch(e){
++    document.getElementById('quizLoading').style.display = 'none';
++    notify(e.message, 'bad');
++    endQuizSession();
++    return;
++  }
++  document.getElementById('quizLoading').style.display = 'none';
++  if(!_quizQueue.length){ notify('Model returned no questions — try a more specific seed.', 'bad'); endQuizSession(); return; }
++  quizNextQuestion();
++}
++
++async function quizNextQuestion(){
++  if(_quizTimerHandle) clearInterval(_quizTimerHandle);
++  document.getElementById('quizVerdict').style.display = 'none';
++  document.getElementById('quizNextBtn').style.display = 'none';
++  document.getElementById('quizAnswerInput').value = '';
++  document.getElementById('quizAnswerInput').disabled = false;
++
++  if(!_quizQueue.length){
++    document.getElementById('quizLoading').style.display = 'block';
++    try{
++      _quizQueue = await fetchQuizBatch(_quizSeed, _quizAsked, S.quiz.batchSize);
++    }catch(e){
++      document.getElementById('quizLoading').style.display = 'none';
++      notify(e.message, 'bad');
++      return;
++    }
++    document.getElementById('quizLoading').style.display = 'none';
++    if(!_quizQueue.length){ notify('No new questions came back.', 'bad'); return; }
++  }
++
++  _quizCurrent = _quizQueue.shift();
++  _quizAsked.push(_quizCurrent.question);
++  document.getElementById('quizQuestionCard').textContent = _quizCurrent.question;
++
++  _quizDeadline = Date.now() + S.quiz.timerSec*1000;
++  updateQuizTimerBar();
++  _quizTimerHandle = setInterval(updateQuizTimerBar, 1000);
++}
++
++function updateQuizTimerBar(){
++  const remaining = Math.max(0, Math.round((_quizDeadline - Date.now())/1000));
++  const m = String(Math.floor(remaining/60)).padStart(2,'0');
++  const s = String(remaining%60).padStart(2,'0');
++  document.getElementById('quizTimerBar').textContent = '⏳ ' + m + ':' + s;
++  if(remaining<=0){
++    clearInterval(_quizTimerHandle);
++    document.getElementById('quizAnswerInput').disabled = true;
++    submitQuizAnswer(true);
++  }
++}
++
++async function submitQuizAnswer(timedOut){
++  if(_quizTimerHandle) clearInterval(_quizTimerHandle);
++  const answer = timedOut ? '' : document.getElementById('quizAnswerInput').value.trim();
++  document.getElementById('quizAnswerInput').disabled = true;
++
++  const vEl = document.getElementById('quizVerdict');
++  vEl.style.display = 'block';
++  vEl.style.background = 'var(--log-bg)';
++  vEl.style.border = '1px solid var(--border)';
++  vEl.textContent = timedOut ? '⏰ Time\'s up — grading skipped.' : 'Grading...';
++
++  let verdict = timedOut ? 'Timed out — no answer given.' : await gradeQuizAnswer(_quizCurrent.question, _quizCurrent.answer, answer);
++  const lc = verdict.toLowerCase();
++  const good = lc.startsWith('correct');
++  const bad  = lc.startsWith('incorrect') || lc.startsWith('timed out') || lc.startsWith('no answer');
++  vEl.style.borderColor = good ? 'var(--good)' : bad ? 'var(--bad)' : 'var(--warn)';
++  vEl.textContent = verdict + (_quizCurrent.answer ? '\n\nModel answer: ' + _quizCurrent.answer : '');
++  vEl.style.whiteSpace = 'pre-wrap';
++
++  S.quiz._history = S.quiz._history || [];
++  S.quiz._history.unshift({
++    ts: Date.now(), question: _quizCurrent.question, answer: answer,
++    modelAnswer: _quizCurrent.answer, verdict: verdict
++  });
++  S.quiz._history = S.quiz._history.slice(0, 50);
++  save();
++
++  document.getElementById('quizNextBtn').style.display = 'block';
++  renderQuizHistory();
++}
++
++function endQuizSession(){
++  if(_quizTimerHandle) clearInterval(_quizTimerHandle);
++  document.getElementById('quizSetup').style.display = 'block';
++  document.getElementById('quizRunning').style.display = 'none';
++  _quizQueue = []; _quizAsked = []; _quizCurrent = null;
++}
++
++function renderQuizHistory(){
++  const el = document.getElementById('quizHistoryList');
++  const hist = (S.quiz && S.quiz._history) || [];
++  if(!hist.length){ el.textContent = 'No sessions yet.'; return; }
++  el.innerHTML = hist.slice(0,20).map(h=>{
++    const lc = (h.verdict||'').toLowerCase();
++    const color = lc.startsWith('correct') ? 'var(--good)' : (lc.startsWith('incorrect')||lc.startsWith('timed')||lc.startsWith('no answer')) ? 'var(--bad)' : 'var(--warn)';
++    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
++      <div style="color:var(--ink);margin-bottom:3px;">${h.question}</div>
++      <div style="color:${color};font-weight:700;">${h.verdict}</div>
++    </div>`;
++  }).join('');
++}
++
+ init().catch(e=>{ console.error('Fatal init error:', e); notify('Startup error — check console.','bad'); });
+ </script>
+ </body>
+diff --git a/app/src/main/java/com/studyrival/omega/MainActivity.java b/app/src/main/java/com/studyrival/omega/MainActivity.java
+index eb961ba..e8add68 100644
+--- a/app/src/main/java/com/studyrival/omega/MainActivity.java
++++ b/app/src/main/java/com/studyrival/omega/MainActivity.java
+@@ -7,12 +7,19 @@ import android.webkit.*;
+ import android.view.KeyEvent;
+ import android.view.View;
+ import android.view.WindowManager;
++import android.widget.FrameLayout;
+ import android.widget.Toast;
+ 
+ import androidx.activity.result.ActivityResultLauncher;
+ import androidx.activity.result.contract.ActivityResultContracts;
+ import androidx.appcompat.app.AppCompatActivity;
+ 
++import com.google.android.gms.ads.AdListener;
++import com.google.android.gms.ads.AdRequest;
++import com.google.android.gms.ads.AdSize;
++import com.google.android.gms.ads.AdView;
++import com.google.android.gms.ads.MobileAds;
++
+ import com.studyrival.omega.db.AppDatabase;
+ import com.studyrival.omega.db.StateEntry;
+ 
+@@ -21,6 +28,7 @@ import java.io.*;
+ public class MainActivity extends AppCompatActivity {
+ 
+     private WebView webView;
++    private AdView adView;
+     private String pendingPhotoTargetIds = null;
+     private boolean pendingFileImport = false;
+     private AppDatabase db;
+@@ -73,6 +81,29 @@ public class MainActivity extends AppCompatActivity {
+         db = AppDatabase.getInstance(this);
+         webView = findViewById(R.id.webview);
+         setupWebView();
++        MobileAds.initialize(this, initStatus -> loadBannerAd());
++    }
++
++    // TODO: replace with your own ad unit ID from admob.google.com before release.
++    // This is Google's shared TEST banner unit — always fills, never earns real revenue.
++    private static final String BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111";
++
++    private void loadBannerAd() {
++        FrameLayout container = findViewById(R.id.adContainer);
++        adView = new AdView(this);
++        adView.setAdUnitId(BANNER_AD_UNIT_ID);
++        adView.setAdSize(AdSize.BANNER);
++        adView.setAdListener(new AdListener() {
++            @Override public void onAdLoaded() {
++                container.setVisibility(View.VISIBLE);
++            }
++            @Override public void onAdFailedToLoad(com.google.android.gms.ads.LoadAdError error) {
++                // Offline, no fill, etc. — keep the container hidden, don't waste screen space.
++                container.setVisibility(View.GONE);
++            }
++        });
++        container.addView(adView);
++        adView.loadAd(new AdRequest.Builder().build());
+     }
+ 
+     private void setupWebView() {
+@@ -101,6 +132,24 @@ public class MainActivity extends AppCompatActivity {
+         return super.onKeyDown(keyCode, event);
+     }
+ 
++    @Override
++    protected void onPause() {
++        if (adView != null) adView.pause();
++        super.onPause();
++    }
++
++    @Override
++    protected void onResume() {
++        super.onResume();
++        if (adView != null) adView.resume();
++    }
++
++    @Override
++    protected void onDestroy() {
++        if (adView != null) adView.destroy();
++        super.onDestroy();
++    }
++
+     @Override
+     protected void onStop() {
+         super.onStop();
+diff --git a/app/src/main/res/layout/activity_main.xml b/app/src/main/res/layout/activity_main.xml
+index 54d3ed6..a903da2 100644
+--- a/app/src/main/res/layout/activity_main.xml
++++ b/app/src/main/res/layout/activity_main.xml
+@@ -1,10 +1,24 @@
+ <?xml version="1.0" encoding="utf-8"?>
+-<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
++<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
++    android:orientation="vertical"
+     android:layout_width="match_parent"
+     android:layout_height="match_parent"
+     android:background="#0b0d17">
++
+     <WebView
+         android:id="@+id/webview"
+         android:layout_width="match_parent"
+-        android:layout_height="match_parent" />
+-</RelativeLayout>
++        android:layout_height="0dp"
++        android:layout_weight="1" />
++
++    <!-- Banner ad container. Hidden until an ad successfully loads
++         (see MainActivity#loadBannerAd), so it never reserves blank
++         space if the ad request fails or the user is offline. -->
++    <FrameLayout
++        android:id="@+id/adContainer"
++        android:layout_width="match_parent"
++        android:layout_height="wrap_content"
++        android:visibility="gone"
++        android:background="#0b0d17" />
++
++</LinearLayout>
+-- 
+2.43.0
+
+
+From 2adad705dd4c4f98f47b5571ade12c666727dfd6 Mon Sep 17 00:00:00 2001
+From: Nic <nic@users.noreply.github.com>
+Date: Thu, 6 Aug 2026 08:23:02 +0000
+Subject: [PATCH 2/3] Remove MANAGE_EXTERNAL_STORAGE, use scoped storage
+ (MediaStore) for downloads
+
+Play Console heavily scrutinizes all-files-access permission and requires a
+justification form; a file-manager-style use case is basically required to
+get approved. This app only needed to write one backup file to Downloads,
+which MediaStore handles on API 29+ without any special permission.
+---
+ app/src/main/AndroidManifest.xml              |  1 -
+ .../com/studyrival/omega/MainActivity.java    | 26 +++++++++++++++----
+ 2 files changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/app/src/main/AndroidManifest.xml b/app/src/main/AndroidManifest.xml
+index 3f43875..281d701 100644
+--- a/app/src/main/AndroidManifest.xml
++++ b/app/src/main/AndroidManifest.xml
+@@ -3,7 +3,6 @@
+     <uses-permission android:name="android.permission.INTERNET" />
+     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="29" />
+     <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+-    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+     <application
+         android:allowBackup="true"
+         android:icon="@mipmap/ic_launcher"
+diff --git a/app/src/main/java/com/studyrival/omega/MainActivity.java b/app/src/main/java/com/studyrival/omega/MainActivity.java
+index e8add68..7feb26c 100644
+--- a/app/src/main/java/com/studyrival/omega/MainActivity.java
++++ b/app/src/main/java/com/studyrival/omega/MainActivity.java
+@@ -188,11 +188,27 @@ public class MainActivity extends AppCompatActivity {
+         @JavascriptInterface
+         public void writeFile(String filename, String content) {
+             try {
+-                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+-                File file = new File(dir, filename);
+-                FileWriter fw = new FileWriter(file, false);
+-                fw.write(content);
+-                fw.close();
++                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
++                    // Scoped storage — no special permission needed.
++                    android.content.ContentValues values = new android.content.ContentValues();
++                    values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename);
++                    values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream");
++                    values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
++                    android.net.Uri uri = getContentResolver().insert(
++                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
++                    if (uri == null) throw new IOException("MediaStore insert failed");
++                    OutputStream os = getContentResolver().openOutputStream(uri);
++                    if (os == null) throw new IOException("Could not open output stream");
++                    os.write(content.getBytes("UTF-8"));
++                    os.close();
++                } else {
++                    // Pre-Android 10 — legacy direct file write (WRITE_EXTERNAL_STORAGE, maxSdk 29).
++                    File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
++                    File file = new File(dir, filename);
++                    FileWriter fw = new FileWriter(file, false);
++                    fw.write(content);
++                    fw.close();
++                }
+                 runOnUiThread(() -> {
+                     Toast.makeText(MainActivity.this, "Saved to Downloads/" + filename, Toast.LENGTH_LONG).show();
+                     webView.evaluateJavascript("onFileWritten('" + filename.replace("'", "\\'") + "');", null);
+-- 
+2.43.0
+
+
+From 56031965ed668f3eb07ebcd544cc0ca860460bb6 Mon Sep 17 00:00:00 2001
+From: Nic <nic@users.noreply.github.com>
+Date: Thu, 6 Aug 2026 09:02:41 +0000
+Subject: [PATCH 3/3] Add privacy policy, Play Store listing copy, and
+ submission checklist
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+- docs/privacy-policy.html — covers local storage, optional Groq quiz feature (BYOK), AdMob ads, no PII collection
+- docs/play-store-listing.md — draft app name/description/category, screenshot requirements
+- docs/play-store-checklist.md — Data Safety form answers, content rating expectations, ads declaration, pre-publish checklist
+
+Enable GitHub Pages (Settings -> Pages -> main branch /docs folder) to get
+a live privacy policy URL for Play Console.
+---
+ docs/play-store-checklist.md | 76 ++++++++++++++++++++++++++++++++++++
+ docs/play-store-listing.md   | 57 +++++++++++++++++++++++++++
+ docs/privacy-policy.html     | 49 +++++++++++++++++++++++
+ 3 files changed, 182 insertions(+)
+ create mode 100644 docs/play-store-checklist.md
+ create mode 100644 docs/play-store-listing.md
+ create mode 100644 docs/privacy-policy.html
+
+diff --git a/docs/play-store-checklist.md b/docs/play-store-checklist.md
+new file mode 100644
+index 0000000..6d0a884
+--- /dev/null
++++ b/docs/play-store-checklist.md
+@@ -0,0 +1,76 @@
++# Play Store Submission Checklist
++
++Everything below either needs your Play Console account directly, or your
++judgment call — I can't submit these for you, but here's exactly what to
++enter.
++
++## 1. Data Safety form (Play Console → App content → Data safety)
++
++Answer based on what the app actually does:
++
++**Does your app collect or share any of the required user data types?**
++→ Yes
++
++**Data types to declare:**
++| Data type | Collected? | Shared? | Purpose |
++|---|---|---|---|
++| Device or other IDs (Advertising ID) | Yes | Yes (with Google/AdMob) | Advertising |
++| App activity (app interactions, in-app search history — from the quiz feature if used) | Optional/Yes | Yes (with Groq, only if user enables Practice Quiz) | App functionality |
++
++**Is all user data encrypted in transit?** → Yes (HTTPS to Groq and AdMob)
++
++**Do you provide a way for users to request data deletion?** → Since there's
++no account/server-side storage, you can state data is stored locally and
++deleted when the user uninstalls the app or clears app data. For the Groq
++key specifically, clearing it is available in-app (the "Clear" button on
++the quiz tab).
++
++**Data safety summary text you can reuse:**
++> This app stores study data locally on your device. It shows ads via
++> Google AdMob, which may collect an advertising ID. An optional AI
++> practice-question feature sends data to Groq's API only if you provide
++> your own API key.
++
++## 2. Content rating questionnaire (Play Console → App content → Content rating)
++
++Expected answers for this app:
++- Violence: None
++- Sexual content: None
++- Profanity: None
++- Controlled substances: None
++- Gambling: None
++- User-generated content: No (no chat/social features between real users)
++- Shares location: No
++- Ads: **Yes** (must declare this — triggers different rating logic in
++  some regions but doesn't push the rating up on its own)
++
++Likely result: **Everyone / PEGI 3** — but the questionnaire result is
++authoritative, not this guide.
++
++## 3. Ads declaration
++Play Console → App content → Ads → "Yes, my app contains ads."
++
++## 4. Target audience
++Since the app isn't directed at children: select the appropriate adult/teen
++age range in Play Console, and answer "No" to "is this app primarily
++directed at children." This affects which ad SDK behaviors are allowed
++(e.g. no child-directed treatment needed for AdMob).
++
++## 5. Privacy policy URL
++Once you enable GitHub Pages for this repo (Settings → Pages → Source:
++`main` branch, `/docs` folder), your privacy policy will be live at:
++
++```
++https://username051203.github.io/study-rival/privacy-policy.html
++```
++
++Paste that URL into Play Console → App content → Privacy policy, and into
++the store listing.
++
++## 6. Before you hit publish
++- [ ] Real AdMob App ID in `AndroidManifest.xml` (currently Google's test ID)
++- [ ] Real AdMob ad unit ID in `MainActivity.java` (currently Google's test ID)
++- [ ] Build and test the `.aab` from CI installs and runs correctly
++- [ ] App icon + feature graphic + screenshots uploaded
++- [ ] Signed with your real release keystore (not debug)
++- [ ] Version code/name bumped appropriately for the release you're submitting
+diff --git a/docs/play-store-listing.md b/docs/play-store-listing.md
+new file mode 100644
+index 0000000..985a0cf
+--- /dev/null
++++ b/docs/play-store-listing.md
+@@ -0,0 +1,57 @@
++# Play Store Listing — Draft Copy
++
++Edit freely before pasting into Play Console. Character limits noted so you don't get truncated at submission.
++
++## App name (30 chars max)
++Study Rival
++
++## Short description (80 chars max)
++Beat your rival. Track study time, mastery, and streaks for JEE/NEET prep.
++
++## Full description (4000 chars max)
++
++Study Rival turns exam prep into a head-to-head match against Alicia, an AI
++study rival who tracks her own progress alongside yours. Built for JEE and
++NEET/MBBS aspirants who want a structured, gamified way to stay consistent.
++
++FEATURES
++• Daily/weekly study logging across your full syllabus
++• Topic-by-topic mastery tracking so you always know what's weak
++• Study streaks and session history
++• A rival (Alicia) who progresses in parallel — see who's ahead
++• Practice Quiz: paste any question, get similar practice questions
++  generated instantly, answer against a timer, get auto-graded
++  (requires your own free API key — see in-app setup)
++• Cosmetics and progress rewards to keep motivation up
++• Local backup/export — your data stays on your device
++• Works fully offline (except the optional Practice Quiz feature)
++
++WHO IT'S FOR
++Students preparing for JEE (Main/Advanced) or NEET/MBBS entrance exams who
++want more structure than a plain to-do list, without needing a subscription
++or an account.
++
++PRIVACY
++No account required. No study data leaves your device unless you use the
++optional AI practice-question feature, which only activates if you add your
++own API key.
++
++---
++*(Trim/adjust based on which exam variant you're emphasizing, or make it
++generic if positioning as syllabus-agnostic.)*
++
++## Category
++Suggested: Education
++
++## Content rating
++See play-store-checklist.md — expect "Everyone" / "PEGI 3" given no
++objectionable content, presence of ads, and no user-generated social content.
++
++## Graphics you'll need to produce yourself
++- App icon: 512×512 PNG (32-bit, with alpha)
++- Feature graphic: 1024×500 PNG/JPEG
++- Phone screenshots: minimum 2, recommend 4-8 (1080×1920 or similar, PNG/JPEG)
++- (Optional) Short promo video URL (YouTube)
++
++I can't generate screenshots of your actual running app from here — those
++need to come from a real device/emulator running the build.
+diff --git a/docs/privacy-policy.html b/docs/privacy-policy.html
+new file mode 100644
+index 0000000..5c21c78
+--- /dev/null
++++ b/docs/privacy-policy.html
+@@ -0,0 +1,49 @@
++<!DOCTYPE html>
++<html lang="en">
++<head>
++<meta charset="UTF-8">
++<meta name="viewport" content="width=device-width, initial-scale=1.0">
++<title>Study Rival — Privacy Policy</title>
++<style>
++  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;line-height:1.6;color:#1a1a2e;background:#fafafa;}
++  h1{font-size:1.6rem;} h2{font-size:1.1rem;margin-top:2em;color:#3a2a6a;}
++  code{background:#eee;padding:2px 6px;border-radius:4px;font-size:0.9em;}
++  .updated{color:#666;font-size:0.85em;}
++</style>
++</head>
++<body>
++
++<h1>Privacy Policy — Study Rival</h1>
++<p class="updated">Last updated: August 2026</p>
++
++<p>Study Rival is a self-study companion app. This page explains what data the app handles and where it goes.</p>
++
++<h2>Data stored on your device</h2>
++<p>Your study logs, schedule, syllabus progress, streaks, and app settings are stored locally on your device (using Android's local database storage). This data is <strong>not</strong> uploaded to any server operated by the developer. It stays on your device unless you explicitly export or share it yourself (e.g. via the app's backup/share feature).</p>
++
++<h2>Practice Quiz feature (optional)</h2>
++<p>The Practice Quiz feature is optional and requires you to provide your own API key from Groq (a third-party AI provider, groq.com). If you use this feature:</p>
++<ul>
++  <li>The questions you type and the practice questions generated are sent to Groq's servers to generate similar questions and grade your answers.</li>
++  <li>Your Groq API key is stored locally on your device only. The developer of Study Rival never receives or has access to it.</li>
++  <li>Use of this feature is subject to <a href="https://groq.com/privacy-policy/">Groq's own privacy policy</a>, since Groq — not the developer of Study Rival — processes that data.</li>
++  <li>If you don't use this feature, no data is sent anywhere for it.</li>
++</ul>
++
++<h2>Advertising</h2>
++<p>Study Rival shows banner ads served by Google AdMob. AdMob may collect device identifiers (such as the advertising ID) and usage data to serve and measure ads, and may use this data for ad personalization in accordance with your device's ad settings. This is governed by <a href="https://policies.google.com/privacy">Google's Privacy Policy</a>. You can opt out of personalized ads in your device's ad settings (Settings → Google → Ads).</p>
++
++<h2>What the developer does not collect</h2>
++<p>Study Rival does not require an account, does not collect your name, email, or other personal identifiers, and does not sell any data. The developer has no server that stores your study data.</p>
++
++<h2>Children's privacy</h2>
++<p>Study Rival is not directed at children under 13. It is designed for students preparing for competitive exams (e.g. JEE, NEET) who are generally teenagers and above.</p>
++
++<h2>Changes to this policy</h2>
++<p>This policy may be updated as features change. Continued use of the app after changes constitutes acceptance of the updated policy.</p>
++
++<h2>Contact</h2>
++<p>Questions about this policy can be raised via the <a href="https://github.com/username051203/study-rival/issues">GitHub repository's issue tracker</a>.</p>
++
++</body>
++</html>
+-- 
+2.43.0
+

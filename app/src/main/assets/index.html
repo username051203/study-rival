@@ -501,6 +501,7 @@ body.theme-forest-dew{
     <div class="nav-item" onclick="nav('sync')" style="background:#222a4d;margin-top:5px">💾 Kernel Sync</div>
     <div class="nav-item" onclick="nav('sim')" style="background:#1a2a1a;margin-top:5px;border-color:#2a4a2a;">⚡ Simulation Engine</div>
     <div class="nav-item" onclick="nav('cosmetics')" style="background:#1a1a2e;margin-top:5px;border-color:#3a1a5a;">🎨 Cosmetics</div>
+    <div class="nav-item" onclick="nav('quiz')" style="background:#1a1a2e;margin-top:5px;border-color:#7a3a1a;">🎯 Practice Quiz</div>
     <div class="nav-item" onclick="confirmPurge()" style="background:#451a1a;margin-top:10px;color:#ffbaba">⚠️ Purge All Data</div>
   </div>
 </div>
@@ -1262,6 +1263,60 @@ Virology, DNA Virus Pt 1;"></textarea>
   </div>
 </div>
 
+<div id="quiz" class="page">
+  <div class="card">
+    <h2 style="margin:0 0 16px;font-size:1rem;text-transform:uppercase;">🎯 Practice Quiz</h2>
+    <p style="font-size:0.68rem;color:var(--muted);margin:0 0 14px;">Paste a question, get similar practice questions on a timer, graded automatically. Uses your own free Groq API key — nothing is sent anywhere without it.</p>
+
+    <details id="quizKeyDetails" style="margin-bottom:16px;">
+      <summary style="font-size:0.7rem;color:var(--accent);cursor:pointer;font-weight:900;text-transform:uppercase;letter-spacing:1px;">🔑 Groq API Key <span id="quizKeyStatus" style="color:var(--muted);font-weight:600;text-transform:none;letter-spacing:0;"></span></summary>
+      <div style="margin-top:10px;">
+        <p style="font-size:0.62rem;color:var(--muted);margin:0 0 8px;">Free key, no card needed: <span style="color:var(--accent3);">console.groq.com/keys</span></p>
+        <input id="quizApiKeyInput" type="password" placeholder="gsk_..." style="font-family:monospace;font-size:0.75rem;" autocomplete="off">
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button onclick="saveQuizApiKey()" class="sec" style="flex:1;margin:0;padding:10px;font-size:0.7rem;">Save Key</button>
+          <button onclick="clearQuizApiKey()" class="bad-btn" style="flex:1;margin:0;padding:10px;font-size:0.7rem;">Clear</button>
+        </div>
+      </div>
+    </details>
+
+    <div id="quizSetup">
+      <label style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">Seed Question</label>
+      <textarea id="quizSeedInput" style="height:80px;font-size:0.75rem;margin-top:6px;" placeholder="Paste the question you want more practice on..."></textarea>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <div style="flex:1;">
+          <label style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;">Timer (sec)</label>
+          <input id="quizTimerInput" type="number" min="10" max="600" style="font-size:0.75rem;">
+        </div>
+        <div style="flex:1;">
+          <label style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;">Batch Size</label>
+          <input id="quizBatchInput" type="number" min="1" max="10" style="font-size:0.75rem;">
+        </div>
+      </div>
+      <button onclick="startQuizSession()" style="width:100%;margin-top:14px;">▶ Start Session</button>
+      <div id="quizSetupError" style="font-size:0.7rem;color:var(--bad);margin-top:10px;"></div>
+    </div>
+
+    <div id="quizRunning" style="display:none;">
+      <div id="quizTimerBar" style="font-size:0.85rem;font-weight:900;text-align:center;padding:10px;border-radius:8px;background:var(--log-bg);border:1px solid var(--border);margin-bottom:12px;">⏳ 00:00</div>
+      <div id="quizQuestionCard" style="font-size:0.85rem;line-height:1.5;padding:14px;border-radius:10px;background:var(--log-bg);border:1px solid var(--border);margin-bottom:12px;"></div>
+      <textarea id="quizAnswerInput" style="height:70px;font-size:0.78rem;" placeholder="Type your answer..."></textarea>
+      <button onclick="submitQuizAnswer()" style="width:100%;margin-top:10px;">Submit Answer</button>
+      <div id="quizVerdict" style="font-size:0.75rem;margin-top:12px;padding:10px;border-radius:8px;display:none;"></div>
+      <div style="display:flex;gap:8px;margin-top:12px;">
+        <button id="quizNextBtn" onclick="quizNextQuestion()" class="sec" style="flex:1;margin:0;padding:10px;font-size:0.72rem;display:none;">Next Question →</button>
+        <button onclick="endQuizSession()" class="bad-btn" style="flex:1;margin:0;padding:10px;font-size:0.72rem;">End Session</button>
+      </div>
+      <div id="quizLoading" style="text-align:center;font-size:0.7rem;color:var(--muted);margin-top:10px;display:none;">Fetching questions...</div>
+    </div>
+
+    <details style="margin-top:18px;">
+      <summary style="font-size:0.7rem;color:var(--muted);cursor:pointer;font-weight:700;text-transform:uppercase;letter-spacing:1px;">Session History</summary>
+      <div id="quizHistoryList" style="margin-top:10px;font-size:0.68rem;color:var(--muted);"></div>
+    </details>
+  </div>
+</div>
+
 <div id="toast-wrap"></div>
 <div id="toast-wrap-bottom"></div>
 <script>
@@ -1315,7 +1370,8 @@ function mkDefault(){
     profiles: {
       user:  {name:'YOU',   tagline:'The Operator', photoDefault:'https://iili.io/qWoe8fn.md.jpg', photoWin:'https://iili.io/qWoe8fn.md.jpg', photoLoss:'https://iili.io/qWoe8fn.md.jpg'},
       alicia:{name:'ALICIA',tagline:'The Rival',    photoDefault:'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg', photoWin:'https://i.postimg.cc/yxm542Ww/20260203-000234.jpg', photoLoss:'https://i.postimg.cc/NF6VqZL3/20260203-000212.jpg'}
-    }
+    },
+    quiz: { groqApiKey: '', timerSec: 90, batchSize: 5 }
   };
 }
 let S = mkDefault();
@@ -1463,6 +1519,7 @@ async function loadState(){
         bf:  p.rt.bf ||[{s:17,e:18.5}]
       } : mkDefault().rt;
       S.customSyllabi = p.customSyllabi || {};
+      S.quiz = {...mkDefault().quiz, ...(p.quiz||{})};
     }
 
   }catch(e){
@@ -1486,6 +1543,7 @@ async function loadState(){
         S._snapshots        = p._snapshots        || {};
         S.rt = p.rt ? { slp:p.rt.slp||[{s:23,e:6.5}], ml:p.rt.ml||[8.5,13,20], bf:p.rt.bf||[{s:17,e:18.5}] } : mkDefault().rt;
         S.customSyllabi = p.customSyllabi || {};
+        S.quiz = {...mkDefault().quiz, ...(p.quiz||{})};
         console.warn('IDB failed — restored from localStorage mirror');
       } else { S = mkDefault(); }
     }catch(e2){ S = mkDefault(); }
@@ -4189,6 +4247,7 @@ function show(id){
   if(id==='archive')  renderArchive();
   if(id==='profile')  renderProfile();
   if(id==='sim')      { /* sim is self-contained */ }
+  if(id==='quiz')     renderQuizPage();
 }
 function renderActive(){ const a=document.querySelector('.page.active'); if(a) show(a.id); }
 function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('show'); document.getElementById('menuOverlay').classList.toggle('show'); }
@@ -5235,6 +5294,236 @@ async function init(){
   const examStr = daysLeft!=null ? ` · ${daysLeft}d to exam` : '';
   notify(`⚡ Protocol Online${examStr} — ${todayCount} passes scheduled today.`, 'info');
   showAliciaQuip('startup');
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// PRACTICE QUIZ — Groq-powered similar-question generator with timed grading
+// BYOK: uses the user's own free Groq API key, stored locally, never bundled.
+// ══════════════════════════════════════════════════════════════════════
+const QUIZ_MODEL = 'llama-3.3-70b-versatile';
+const QUIZ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
+
+let _quizQueue = [];
+let _quizAsked = [];
+let _quizCurrent = null;
+let _quizTimerHandle = null;
+let _quizDeadline = 0;
+let _quizSeed = '';
+
+function renderQuizPage(){
+  const keyEl = document.getElementById('quizApiKeyInput');
+  const hasKey = !!(S.quiz && S.quiz.groqApiKey);
+  keyEl.value = '';
+  keyEl.placeholder = hasKey ? '•••••••••••••••••••• (saved)' : 'gsk_...';
+  document.getElementById('quizKeyStatus').textContent = hasKey ? '· saved' : '· not set';
+  document.getElementById('quizTimerInput').value = S.quiz.timerSec;
+  document.getElementById('quizBatchInput').value = S.quiz.batchSize;
+  document.getElementById('quizKeyDetails').open = !hasKey;
+  renderQuizHistory();
+}
+
+function saveQuizApiKey(){
+  const v = document.getElementById('quizApiKeyInput').value.trim();
+  if(!v){ notify('Enter a key first', 'warn'); return; }
+  S.quiz.groqApiKey = v;
+  save();
+  document.getElementById('quizApiKeyInput').value = '';
+  document.getElementById('quizKeyDetails').open = false;
+  renderQuizPage();
+  notify('Groq key saved locally on this device', 'good');
+}
+
+function clearQuizApiKey(){
+  S.quiz.groqApiKey = '';
+  save();
+  renderQuizPage();
+  notify('Groq key cleared', 'info');
+}
+
+async function quizApiCall(systemPrompt, userPrompt, temperature){
+  const key = S.quiz.groqApiKey;
+  if(!key) throw new Error('No Groq API key set — add one above.');
+  const res = await fetch(QUIZ_API_URL, {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: QUIZ_MODEL,
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt }
+      ],
+      temperature: temperature
+    })
+  });
+  if(!res.ok){
+    const t = await res.text().catch(()=>String(res.status));
+    throw new Error('Groq API error ' + res.status + ': ' + t.slice(0,200));
+  }
+  const data = await res.json();
+  let content = (data.choices[0].message.content || '').trim();
+  if(content.startsWith('```')){
+    content = content.replace(/^```[a-z]*\n?/,'').replace(/```$/,'').trim();
+  }
+  return content;
+}
+
+async function fetchQuizBatch(seed, exclude, n){
+  const excludeBlock = exclude.slice(-30).map(q=>'- '+q).join('\n') || '(none yet)';
+  const sys = 'You are a practice-question generator. Given a seed question, produce new questions '+
+    'that test the SAME concept/skill and SAME difficulty level, but are not near-duplicates of each '+
+    'other or of anything in the exclude list. For each question also give the correct answer/solution. '+
+    'Reply with ONLY a JSON array of objects shaped like {"question":"...","answer":"..."}, nothing else '+
+    '— no markdown fences, no commentary.';
+  const usr = 'Seed question:\n'+seed+'\n\nAlready asked (do not repeat these or close variants):\n'+excludeBlock+
+    '\n\nGenerate '+n+' new similar questions with answers, as a JSON array.';
+  const content = await quizApiCall(sys, usr, 0.8);
+  try{
+    const items = JSON.parse(content);
+    if(!Array.isArray(items)) throw 0;
+    return items.filter(it=>it && it.question).map(it=>({question:String(it.question).trim(), answer:String(it.answer||'').trim()}));
+  }catch(e){
+    return content.split('\n').filter(l=>l.trim()).map(l=>({question:l.replace(/^[-*]\s*/,'').trim(), answer:''}));
+  }
+}
+
+async function gradeQuizAnswer(question, modelAnswer, userAnswer){
+  if(!userAnswer) return 'No answer given.';
+  if(!modelAnswer) return '(no model answer available to grade against)';
+  const sys = 'You are a strict but fair grader. Given a question, the correct answer, and a student\'s '+
+    'answer, judge whether the student\'s answer is Correct, Partially correct, or Incorrect. Reply with '+
+    'ONLY the verdict word/phrase, a colon, then one short sentence of feedback. No extra commentary.';
+  const usr = 'Question: '+question+'\nCorrect answer: '+modelAnswer+'\nStudent\'s answer: '+userAnswer;
+  try{
+    return await quizApiCall(sys, usr, 0.2);
+  }catch(e){
+    return '(grading failed: '+e.message+')';
+  }
+}
+
+async function startQuizSession(){
+  const seed = document.getElementById('quizSeedInput').value.trim();
+  const errEl = document.getElementById('quizSetupError');
+  errEl.textContent = '';
+  if(!S.quiz.groqApiKey){ errEl.textContent = 'Add your Groq API key above first.'; return; }
+  if(!seed){ errEl.textContent = 'Paste a seed question first.'; return; }
+
+  S.quiz.timerSec = Math.max(10, Math.min(600, parseInt(document.getElementById('quizTimerInput').value)||90));
+  S.quiz.batchSize = Math.max(1, Math.min(10, parseInt(document.getElementById('quizBatchInput').value)||5));
+  save();
+
+  _quizSeed = seed;
+  _quizAsked = [];
+  _quizQueue = [];
+
+  document.getElementById('quizSetup').style.display = 'none';
+  document.getElementById('quizRunning').style.display = 'block';
+  document.getElementById('quizLoading').style.display = 'block';
+  document.getElementById('quizQuestionCard').textContent = '';
+
+  try{
+    _quizQueue = await fetchQuizBatch(_quizSeed, _quizAsked, S.quiz.batchSize);
+  }catch(e){
+    document.getElementById('quizLoading').style.display = 'none';
+    notify(e.message, 'bad');
+    endQuizSession();
+    return;
+  }
+  document.getElementById('quizLoading').style.display = 'none';
+  if(!_quizQueue.length){ notify('Model returned no questions — try a more specific seed.', 'bad'); endQuizSession(); return; }
+  quizNextQuestion();
+}
+
+async function quizNextQuestion(){
+  if(_quizTimerHandle) clearInterval(_quizTimerHandle);
+  document.getElementById('quizVerdict').style.display = 'none';
+  document.getElementById('quizNextBtn').style.display = 'none';
+  document.getElementById('quizAnswerInput').value = '';
+  document.getElementById('quizAnswerInput').disabled = false;
+
+  if(!_quizQueue.length){
+    document.getElementById('quizLoading').style.display = 'block';
+    try{
+      _quizQueue = await fetchQuizBatch(_quizSeed, _quizAsked, S.quiz.batchSize);
+    }catch(e){
+      document.getElementById('quizLoading').style.display = 'none';
+      notify(e.message, 'bad');
+      return;
+    }
+    document.getElementById('quizLoading').style.display = 'none';
+    if(!_quizQueue.length){ notify('No new questions came back.', 'bad'); return; }
+  }
+
+  _quizCurrent = _quizQueue.shift();
+  _quizAsked.push(_quizCurrent.question);
+  document.getElementById('quizQuestionCard').textContent = _quizCurrent.question;
+
+  _quizDeadline = Date.now() + S.quiz.timerSec*1000;
+  updateQuizTimerBar();
+  _quizTimerHandle = setInterval(updateQuizTimerBar, 1000);
+}
+
+function updateQuizTimerBar(){
+  const remaining = Math.max(0, Math.round((_quizDeadline - Date.now())/1000));
+  const m = String(Math.floor(remaining/60)).padStart(2,'0');
+  const s = String(remaining%60).padStart(2,'0');
+  document.getElementById('quizTimerBar').textContent = '⏳ ' + m + ':' + s;
+  if(remaining<=0){
+    clearInterval(_quizTimerHandle);
+    document.getElementById('quizAnswerInput').disabled = true;
+    submitQuizAnswer(true);
+  }
+}
+
+async function submitQuizAnswer(timedOut){
+  if(_quizTimerHandle) clearInterval(_quizTimerHandle);
+  const answer = timedOut ? '' : document.getElementById('quizAnswerInput').value.trim();
+  document.getElementById('quizAnswerInput').disabled = true;
+
+  const vEl = document.getElementById('quizVerdict');
+  vEl.style.display = 'block';
+  vEl.style.background = 'var(--log-bg)';
+  vEl.style.border = '1px solid var(--border)';
+  vEl.textContent = timedOut ? '⏰ Time\'s up — grading skipped.' : 'Grading...';
+
+  let verdict = timedOut ? 'Timed out — no answer given.' : await gradeQuizAnswer(_quizCurrent.question, _quizCurrent.answer, answer);
+  const lc = verdict.toLowerCase();
+  const good = lc.startsWith('correct');
+  const bad  = lc.startsWith('incorrect') || lc.startsWith('timed out') || lc.startsWith('no answer');
+  vEl.style.borderColor = good ? 'var(--good)' : bad ? 'var(--bad)' : 'var(--warn)';
+  vEl.textContent = verdict + (_quizCurrent.answer ? '\n\nModel answer: ' + _quizCurrent.answer : '');
+  vEl.style.whiteSpace = 'pre-wrap';
+
+  S.quiz._history = S.quiz._history || [];
+  S.quiz._history.unshift({
+    ts: Date.now(), question: _quizCurrent.question, answer: answer,
+    modelAnswer: _quizCurrent.answer, verdict: verdict
+  });
+  S.quiz._history = S.quiz._history.slice(0, 50);
+  save();
+
+  document.getElementById('quizNextBtn').style.display = 'block';
+  renderQuizHistory();
+}
+
+function endQuizSession(){
+  if(_quizTimerHandle) clearInterval(_quizTimerHandle);
+  document.getElementById('quizSetup').style.display = 'block';
+  document.getElementById('quizRunning').style.display = 'none';
+  _quizQueue = []; _quizAsked = []; _quizCurrent = null;
+}
+
+function renderQuizHistory(){
+  const el = document.getElementById('quizHistoryList');
+  const hist = (S.quiz && S.quiz._history) || [];
+  if(!hist.length){ el.textContent = 'No sessions yet.'; return; }
+  el.innerHTML = hist.slice(0,20).map(h=>{
+    const lc = (h.verdict||'').toLowerCase();
+    const color = lc.startsWith('correct') ? 'var(--good)' : (lc.startsWith('incorrect')||lc.startsWith('timed')||lc.startsWith('no answer')) ? 'var(--bad)' : 'var(--warn)';
+    return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
+      <div style="color:var(--ink);margin-bottom:3px;">${h.question}</div>
+      <div style="color:${color};font-weight:700;">${h.verdict}</div>
+    </div>`;
+  }).join('');
 }
 
 init().catch(e=>{ console.error('Fatal init error:', e); notify('Startup error — check console.','bad'); });

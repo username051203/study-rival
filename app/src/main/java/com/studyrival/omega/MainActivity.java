@@ -7,11 +7,18 @@ import android.webkit.*;
 import android.view.KeyEvent;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.FrameLayout;
 import android.widget.Toast;
 
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.google.android.gms.ads.AdListener;
+import com.google.android.gms.ads.AdRequest;
+import com.google.android.gms.ads.AdSize;
+import com.google.android.gms.ads.AdView;
+import com.google.android.gms.ads.MobileAds;
 
 import com.studyrival.omega.db.AppDatabase;
 import com.studyrival.omega.db.StateEntry;
@@ -21,6 +28,7 @@ import java.io.*;
 public class MainActivity extends AppCompatActivity {
 
     private WebView webView;
+    private AdView adView;
     private String pendingPhotoTargetIds = null;
     private boolean pendingFileImport = false;
     private AppDatabase db;
@@ -73,6 +81,29 @@ public class MainActivity extends AppCompatActivity {
         db = AppDatabase.getInstance(this);
         webView = findViewById(R.id.webview);
         setupWebView();
+        MobileAds.initialize(this, initStatus -> loadBannerAd());
+    }
+
+    // TODO: replace with your own ad unit ID from admob.google.com before release.
+    // This is Google's shared TEST banner unit — always fills, never earns real revenue.
+    private static final String BANNER_AD_UNIT_ID = "ca-app-pub-3940256099942544/6300978111";
+
+    private void loadBannerAd() {
+        FrameLayout container = findViewById(R.id.adContainer);
+        adView = new AdView(this);
+        adView.setAdUnitId(BANNER_AD_UNIT_ID);
+        adView.setAdSize(AdSize.BANNER);
+        adView.setAdListener(new AdListener() {
+            @Override public void onAdLoaded() {
+                container.setVisibility(View.VISIBLE);
+            }
+            @Override public void onAdFailedToLoad(com.google.android.gms.ads.LoadAdError error) {
+                // Offline, no fill, etc. — keep the container hidden, don't waste screen space.
+                container.setVisibility(View.GONE);
+            }
+        });
+        container.addView(adView);
+        adView.loadAd(new AdRequest.Builder().build());
     }
 
     private void setupWebView() {
@@ -99,6 +130,24 @@ public class MainActivity extends AppCompatActivity {
             return true;
         }
         return super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    protected void onPause() {
+        if (adView != null) adView.pause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (adView != null) adView.resume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (adView != null) adView.destroy();
+        super.onDestroy();
     }
 
     @Override
@@ -139,11 +188,27 @@ public class MainActivity extends AppCompatActivity {
         @JavascriptInterface
         public void writeFile(String filename, String content) {
             try {
-                File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
-                File file = new File(dir, filename);
-                FileWriter fw = new FileWriter(file, false);
-                fw.write(content);
-                fw.close();
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    // Scoped storage — no special permission needed.
+                    android.content.ContentValues values = new android.content.ContentValues();
+                    values.put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, filename);
+                    values.put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/octet-stream");
+                    values.put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
+                    android.net.Uri uri = getContentResolver().insert(
+                        android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, values);
+                    if (uri == null) throw new IOException("MediaStore insert failed");
+                    OutputStream os = getContentResolver().openOutputStream(uri);
+                    if (os == null) throw new IOException("Could not open output stream");
+                    os.write(content.getBytes("UTF-8"));
+                    os.close();
+                } else {
+                    // Pre-Android 10 — legacy direct file write (WRITE_EXTERNAL_STORAGE, maxSdk 29).
+                    File dir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS);
+                    File file = new File(dir, filename);
+                    FileWriter fw = new FileWriter(file, false);
+                    fw.write(content);
+                    fw.close();
+                }
                 runOnUiThread(() -> {
                     Toast.makeText(MainActivity.this, "Saved to Downloads/" + filename, Toast.LENGTH_LONG).show();
                     webView.evaluateJavascript("onFileWritten('" + filename.replace("'", "\\'") + "');", null);
