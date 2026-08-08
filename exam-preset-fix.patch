@@ -1,0 +1,394 @@
+From b0bc0d6f9a8351a0978a619e938aa547f949cc7e Mon Sep 17 00:00:00 2001
+From: Nic <nic@users.noreply.github.com>
+Date: Fri, 7 Aug 2026 05:05:31 +0000
+Subject: [PATCH] Fix exam preset collision bugs, wire up preset picker UI, add
+ Custom mode
+
+Found EXAM_PRESETS/applyExamPreset() already added to the repo (JEE/NEET/CA/
+UPSC with real syllabus data) but not wired up and had its own version of the
+subject-collision bug:
+
+- Boot init and QR-import merge both iterated ALL of ALL_SYLLABI (every
+  subject from every exam) regardless of which preset was active, so
+  switching exams didn't actually stop subjects from bleeding together
+- saveSyllabus() rebuilt S.subjects from the ENTIRE S.customSyllabi history
+  (every subject ever edited across every preset you've used), so editing
+  a topic in your current exam could resurrect a previous exam's subjects
+- switchEditSubject/saveSyllabus both re-read the DOM picker as source of
+  truth independently, which could drift out of sync with each other
+
+Fixed by adding rebuildSubjects() as the single source of truth for
+S.subjects (always scoped to S.examPreset), used everywhere subjects get
+rebuilt, and tracking _activeEditSubject explicitly instead of re-deriving
+it from the DOM each time.
+
+Also: added CUSTOM preset (blank, build your own), wired up the picker UI
+(nav item + page, two-tap confirm since switching is destructive to the
+subject list), onboarding auto-nav to the picker on fresh installs, and
+included examPreset in the QR sync payload so both devices stay aligned.
+---
+ app/src/main/assets/index.html | 232 +++++++++++++++++++++++++++++----
+ 1 file changed, 205 insertions(+), 27 deletions(-)
+
+diff --git a/app/src/main/assets/index.html b/app/src/main/assets/index.html
+index 73e2d3e..36dacbc 100644
+--- a/app/src/main/assets/index.html
++++ b/app/src/main/assets/index.html
+@@ -502,6 +502,7 @@ body.theme-forest-dew{
+     <div class="nav-item" onclick="nav('sim')" style="background:#1a2a1a;margin-top:5px;border-color:#2a4a2a;">⚡ Simulation Engine</div>
+     <div class="nav-item" onclick="nav('cosmetics')" style="background:#1a1a2e;margin-top:5px;border-color:#3a1a5a;">🎨 Cosmetics</div>
+     <div class="nav-item" onclick="nav('quiz')" style="background:#1a1a2e;margin-top:5px;border-color:#7a3a1a;">🎯 Practice Quiz</div>
++    <div class="nav-item" onclick="nav('examSel')" style="background:#1a1a2e;margin-top:5px;border-color:#1a5a3a;">📚 Exam / Course</div>
+     <div class="nav-item" onclick="confirmPurge()" style="background:#451a1a;margin-top:10px;color:#ffbaba">⚠️ Purge All Data</div>
+   </div>
+ </div>
+@@ -1317,6 +1318,15 @@ Virology, DNA Virus Pt 1;"></textarea>
+   </div>
+ </div>
+ 
++<div id="examSel" class="page">
++  <div class="card">
++    <h2 style="margin:0 0 6px;font-size:1rem;text-transform:uppercase;">📚 Exam / Course</h2>
++    <p id="examSelIntro" style="font-size:0.68rem;color:var(--muted);margin:0 0 16px;"></p>
++    <div id="examSelList"></div>
++    <p style="font-size:0.6rem;color:var(--muted);margin-top:16px;">Switching exams replaces your subject list with that exam's default syllabus. Your study logs, streaks, and history stay intact — only the subject/chapter/topic tree changes. Pick "Custom" to build your own from scratch.</p>
++  </div>
++</div>
++
+ <div id="toast-wrap"></div>
+ <div id="toast-wrap-bottom"></div>
+ <script>
+@@ -1331,16 +1341,126 @@ const D_USER_PFP   = 'https://iili.io/qWoe8fn.md.jpg';
+ const D_ALICIA_PFP = 'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg';
+ 
+ // ══════════════════════════════════════════════════════════════════════
+-// MICROBIOLOGY SYLLABUS (always re-injected, never saved)
+-// ══════════════════════════════════════════════════════════════════════
+-// ALL SUBJECTS SYLLABI (19 subjects, 542 topics — never saved to localStorage)
++// EXAM SYLLABI — one subject key per entry, grouped into presets below.
++// Sourced from official/standard structures (NCERT for JEE/NEET, ICAI for
++// CA, UPSC's own notified syllabus). Never saved to localStorage directly —
++// only the user's cloned copy (S.customSyllabi) gets persisted.
+ // ══════════════════════════════════════════════════════════════════════
+ const ALL_SYLLABI = {
+   "PHYSICS": {"chapters":[{"id":"phy_c1","name":"Mechanics","topics":[{"id":"phy_c1_t1","name":"Kinematics"},{"id":"phy_c1_t2","name":"NLM"},{"id":"phy_c1_t3","name":"Work, Power, Energy"},{"id":"phy_c1_t4","name":"Rotation Motion"},{"id":"phy_c1_t5","name":"Gravitation"},{"id":"phy_c1_t6","name":"COM"}]},{"id":"phy_c2","name":"Waves & Oscillations","topics":[{"id":"phy_c2_t1","name":"Oscillation"},{"id":"phy_c2_t2","name":"Waves"}]},{"id":"phy_c3","name":"Thermodynamics & Properties","topics":[{"id":"phy_c3_t1","name":"Thermodynamics"},{"id":"phy_c3_t2","name":"KTG"},{"id":"phy_c3_t3","name":"Properties of Matter"}]},{"id":"phy_c4","name":"Electrostatics","topics":[{"id":"phy_c4_t1","name":"Electric Charges & Fields"},{"id":"phy_c4_t2","name":"Potential & Capacitance"},{"id":"phy_c4_t3","name":"Current Electricity"}]},{"id":"phy_c5","name":"Magnetism & EM","topics":[{"id":"phy_c5_t1","name":"Magnetism"},{"id":"phy_c5_t2","name":"EMI"}]},{"id":"phy_c6","name":"Optics","topics":[{"id":"phy_c6_t1","name":"Ray Optics"},{"id":"phy_c6_t2","name":"Wave Optics"}]},{"id":"phy_c7","name":"Modern & Misc","topics":[{"id":"phy_c7_t1","name":"Modern Physics"},{"id":"phy_c7_t2","name":"Communication Systems"},{"id":"phy_c7_t3","name":"Experiments & Instruments"},{"id":"phy_c7_t4","name":"Semiconductor"}]}]},
+     "CHEMISTRY": {"chapters":[{"id":"chem_c1","name":"Physical Chemistry","topics":[{"id":"chem_c1_t1","name":"Purification"},{"id":"chem_c1_t2","name":"Mole Concept"},{"id":"chem_c1_t3","name":"Atomic Structure"},{"id":"chem_c1_t4","name":"Chemical Bonding"},{"id":"chem_c1_t5","name":"States of Matter"},{"id":"chem_c1_t6","name":"Thermodynamics"},{"id":"chem_c1_t7","name":"Equilibrium"},{"id":"chem_c1_t8","name":"Electrochemistry"},{"id":"chem_c1_t9","name":"Chemical Kinetics"},{"id":"chem_c1_t10","name":"Surface Chemistry"},{"id":"chem_c1_t11","name":"Solutions"},{"id":"chem_c1_t12","name":"Redox"},{"id":"chem_c1_t13","name":"Nuclear Chemistry"}]},{"id":"chem_c2","name":"Organic Chemistry","topics":[{"id":"chem_c2_t1","name":"GOC"},{"id":"chem_c2_t2","name":"Hydrocarbons"},{"id":"chem_c2_t3","name":"Haloalkanes & Arenes"},{"id":"chem_c2_t4","name":"Alcohols, Phenols, Ethers"},{"id":"chem_c2_t5","name":"Aldehyde, Ketone, Carb Acids"},{"id":"chem_c2_t6","name":"Amines"},{"id":"chem_c2_t7","name":"Biomolecules"},{"id":"chem_c2_t8","name":"Practical Chemistry"},{"id":"chem_c2_t9","name":"Environmental Chemistry"}]},{"id":"chem_c3","name":"Inorganic Chemistry","topics":[{"id":"chem_c3_t1","name":"Periodic Table"},{"id":"chem_c3_t2","name":"S Block"},{"id":"chem_c3_t3","name":"P Block"},{"id":"chem_c3_t4","name":"D & F Block"},{"id":"chem_c3_t5","name":"Coordination Compounds"},{"id":"chem_c3_t6","name":"Metallurgy"},{"id":"chem_c3_t7","name":"Hydrogen"}]}]},
+-  "MATHS": {"chapters":[{"id":"math_c1","name":"Algebra","topics":[{"id":"math_c1_t1","name":"Sets & Relations"},{"id":"math_c1_t2","name":"Functions"},{"id":"math_c1_t3","name":"Complex Numbers"},{"id":"math_c1_t4","name":"Matrices"},{"id":"math_c1_t5","name":"Determinants"},{"id":"math_c1_t6","name":"Sequence & Series"},{"id":"math_c1_t7","name":"PnC"},{"id":"math_c1_t8","name":"Binomial Theorem"},{"id":"math_c1_t9","name":"Quadratic Equations"}]},{"id":"math_c2","name":"Calculus","topics":[{"id":"math_c2_t1","name":"Limits, Continuity & Derivatives"},{"id":"math_c2_t2","name":"Indefinite Integration"},{"id":"math_c2_t3","name":"Differential Equations"}]},{"id":"math_c3","name":"Vectors & 3D","topics":[{"id":"math_c3_t1","name":"Vectors & 3D Geometry"}]},{"id":"math_c4","name":"Trigonometry","topics":[{"id":"math_c4_t1","name":"Trigonometry & Inverse Trigo"}]},{"id":"math_c5","name":"Statistics & Probability","topics":[{"id":"math_c5_t1","name":"Statistics"}]},{"id":"math_c6","name":"Coordinate Geometry","topics":[{"id":"math_c6_t1","name":"Straight Lines"},{"id":"math_c6_t2","name":"Circle"},{"id":"math_c6_t3","name":"Conic Sections"}]}]}
++  "MATHS": {"chapters":[{"id":"math_c1","name":"Algebra","topics":[{"id":"math_c1_t1","name":"Sets & Relations"},{"id":"math_c1_t2","name":"Functions"},{"id":"math_c1_t3","name":"Complex Numbers"},{"id":"math_c1_t4","name":"Matrices"},{"id":"math_c1_t5","name":"Determinants"},{"id":"math_c1_t6","name":"Sequence & Series"},{"id":"math_c1_t7","name":"PnC"},{"id":"math_c1_t8","name":"Binomial Theorem"},{"id":"math_c1_t9","name":"Quadratic Equations"}]},{"id":"math_c2","name":"Calculus","topics":[{"id":"math_c2_t1","name":"Limits, Continuity & Derivatives"},{"id":"math_c2_t2","name":"Indefinite Integration"},{"id":"math_c2_t3","name":"Differential Equations"}]},{"id":"math_c3","name":"Vectors & 3D","topics":[{"id":"math_c3_t1","name":"Vectors & 3D Geometry"}]},{"id":"math_c4","name":"Trigonometry","topics":[{"id":"math_c4_t1","name":"Trigonometry & Inverse Trigo"}]},{"id":"math_c5","name":"Statistics & Probability","topics":[{"id":"math_c5_t1","name":"Statistics"}]},{"id":"math_c6","name":"Coordinate Geometry","topics":[{"id":"math_c6_t1","name":"Straight Lines"},{"id":"math_c6_t2","name":"Circle"},{"id":"math_c6_t3","name":"Conic Sections"}]}]},
++
++  "BIOLOGY": {"chapters":[
++    {"id":"bio_c1","name":"Diversity of Living World","topics":[{"id":"bio_c1_t1","name":"The Living World"},{"id":"bio_c1_t2","name":"Biological Classification"},{"id":"bio_c1_t3","name":"Plant Kingdom"},{"id":"bio_c1_t4","name":"Animal Kingdom"}]},
++    {"id":"bio_c2","name":"Structural Organisation","topics":[{"id":"bio_c2_t1","name":"Morphology of Flowering Plants"},{"id":"bio_c2_t2","name":"Anatomy of Flowering Plants"},{"id":"bio_c2_t3","name":"Structural Organisation in Animals"}]},
++    {"id":"bio_c3","name":"Cell Biology & Genetics","topics":[{"id":"bio_c3_t1","name":"Cell — The Unit of Life"},{"id":"bio_c3_t2","name":"Biomolecules"},{"id":"bio_c3_t3","name":"Cell Cycle & Cell Division"},{"id":"bio_c3_t4","name":"Principles of Inheritance & Variation"},{"id":"bio_c3_t5","name":"Molecular Basis of Inheritance"}]},
++    {"id":"bio_c4","name":"Plant Physiology","topics":[{"id":"bio_c4_t1","name":"Photosynthesis"},{"id":"bio_c4_t2","name":"Respiration in Plants"},{"id":"bio_c4_t3","name":"Plant Growth & Development"},{"id":"bio_c4_t4","name":"Transport in Plants"},{"id":"bio_c4_t5","name":"Mineral Nutrition"}]},
++    {"id":"bio_c5","name":"Human Physiology","topics":[{"id":"bio_c5_t1","name":"Digestion & Absorption"},{"id":"bio_c5_t2","name":"Breathing & Exchange of Gases"},{"id":"bio_c5_t3","name":"Body Fluids & Circulation"},{"id":"bio_c5_t4","name":"Excretory Products & Elimination"},{"id":"bio_c5_t5","name":"Locomotion & Movement"},{"id":"bio_c5_t6","name":"Neural Control & Coordination"},{"id":"bio_c5_t7","name":"Chemical Coordination & Integration"}]},
++    {"id":"bio_c6","name":"Reproduction","topics":[{"id":"bio_c6_t1","name":"Reproduction in Organisms"},{"id":"bio_c6_t2","name":"Sexual Reproduction in Flowering Plants"},{"id":"bio_c6_t3","name":"Human Reproduction"},{"id":"bio_c6_t4","name":"Reproductive Health"}]},
++    {"id":"bio_c7","name":"Genetics, Evolution & Biotech","topics":[{"id":"bio_c7_t1","name":"Evolution"},{"id":"bio_c7_t2","name":"Biotechnology — Principles & Processes"},{"id":"bio_c7_t3","name":"Biotechnology & Its Applications"}]},
++    {"id":"bio_c8","name":"Ecology & Environment","topics":[{"id":"bio_c8_t1","name":"Organisms & Populations"},{"id":"bio_c8_t2","name":"Ecosystem"},{"id":"bio_c8_t3","name":"Biodiversity & Conservation"}]},
++    {"id":"bio_c9","name":"Human Health & Welfare","topics":[{"id":"bio_c9_t1","name":"Human Health & Disease"},{"id":"bio_c9_t2","name":"Microbes in Human Welfare"},{"id":"bio_c9_t3","name":"Organisms & Populations — Applications"}]}
++  ]},
++
++  "MICROBIOLOGY": {"chapters":[
++    {"id":"mc1","name":"General Microbiology","topics":[{"id":"mt1","name":"Scientists & Stains"},{"id":"mt2","name":"Microscopes"},{"id":"mt3","name":"Bacterial Anatomy"},{"id":"mt4","name":"Bacterial Shapes & Physiology"},{"id":"mt5","name":"Bacterial Genetics"},{"id":"mt6","name":"Culture Media"},{"id":"mt7","name":"Sterilization & Disinfection"}]},
++    {"id":"mc2","name":"Gram Positive Bacteria","topics":[{"id":"mt8","name":"Staphylococcus"},{"id":"mt9","name":"Streptococcus & Enterococci"},{"id":"mt11","name":"Corynebacterium, Nocardia, Actinomyces, Listeria"},{"id":"mt12","name":"Bacillus & Clostridium"},{"id":"mt13","name":"Mycobacteria"}]},
++    {"id":"mc3","name":"Gram Negative Bacteria","topics":[{"id":"mt10","name":"Neisseria & Moraxella"},{"id":"mt14","name":"GNB – Part 1"},{"id":"mt15","name":"GNB – Part 2"},{"id":"mt16","name":"Vibrio, Pseudomonas, Burkholderia"},{"id":"mt17","name":"HBB"},{"id":"mt18","name":"Spirochetes"}]},
++    {"id":"mc4","name":"Atypical Bacteria","topics":[{"id":"mt19","name":"Chlamydia"},{"id":"mt20","name":"Rickettsiae"},{"id":"mt21","name":"Miscellaneous"}]},
++    {"id":"mc5","name":"Virology","topics":[{"id":"mt22","name":"Virus – General"},{"id":"mt23","name":"DNA Virus Pt 1"},{"id":"mt24","name":"DNA Virus Pt 2"},{"id":"mt25","name":"DNA Virus Pt 3"},{"id":"mt26","name":"RNA Virus Pt 1"},{"id":"mt27","name":"RNA Virus Pt 2"},{"id":"mt28","name":"RNA Virus Pt 3"},{"id":"mt29","name":"Prions & Unconventional"}]},
++    {"id":"mc6","name":"Mycology","topics":[{"id":"mt30","name":"Fungi – General"},{"id":"mt31","name":"Superficial Mycoses"},{"id":"mt32","name":"Systemic Mycoses"},{"id":"mt33","name":"Opportunistic Mycoses"}]},
++    {"id":"mc7","name":"Parasitology","topics":[{"id":"mt34","name":"Protozoa – General"},{"id":"mt35","name":"Blood & Tissue Protozoa"},{"id":"mt36","name":"Intestinal Protozoa"},{"id":"mt37","name":"Helminths Pt 1"},{"id":"mt38","name":"Helminths Pt 2"},{"id":"mt39","name":"Arthropods & Vectors"}]},
++    {"id":"mc8","name":"Clinical Microbiology","topics":[{"id":"mt40","name":"Lab Diagnostics"},{"id":"mt41","name":"Antimicrobials Pt 1"},{"id":"mt42","name":"Antimicrobials Pt 2"},{"id":"mt43","name":"Antimicrobials Pt 3"},{"id":"mt44","name":"Immunology – Basics"},{"id":"mt45","name":"Vaccines & Immunization"}]}
++  ]},
++
++  "CA FOUNDATION": {"chapters":[
++    {"id":"caf_c1","name":"Paper 1: Accounting","topics":[{"id":"caf_c1_t1","name":"Theoretical Framework"},{"id":"caf_c1_t2","name":"Accounting Process"},{"id":"caf_c1_t3","name":"Bank Reconciliation"},{"id":"caf_c1_t4","name":"Inventories"},{"id":"caf_c1_t5","name":"Depreciation"},{"id":"caf_c1_t6","name":"Final Accounts of Sole Proprietors"},{"id":"caf_c1_t7","name":"Partnership Accounts"},{"id":"caf_c1_t8","name":"Company Accounts Basics"}]},
++    {"id":"caf_c2","name":"Paper 2: Business Laws","topics":[{"id":"caf_c2_t1","name":"Indian Contract Act"},{"id":"caf_c2_t2","name":"Sale of Goods Act"},{"id":"caf_c2_t3","name":"Indian Partnership Act"},{"id":"caf_c2_t4","name":"LLP Act"},{"id":"caf_c2_t5","name":"Companies Act Basics"}]},
++    {"id":"caf_c3","name":"Paper 3: Quantitative Aptitude","topics":[{"id":"caf_c3_t1","name":"Ratio, Proportion, Indices, Logarithms"},{"id":"caf_c3_t2","name":"Equations & Inequalities"},{"id":"caf_c3_t3","name":"Time Value of Money"},{"id":"caf_c3_t4","name":"Permutations & Combinations"},{"id":"caf_c3_t5","name":"Sequence & Series"},{"id":"caf_c3_t6","name":"Statistics & Probability"},{"id":"caf_c3_t7","name":"Logical Reasoning"}]},
++    {"id":"caf_c4","name":"Paper 4: Business Economics","topics":[{"id":"caf_c4_t1","name":"Nature & Scope of Economics"},{"id":"caf_c4_t2","name":"Theory of Demand & Supply"},{"id":"caf_c4_t3","name":"Theory of Production & Cost"},{"id":"caf_c4_t4","name":"Market Structures"},{"id":"caf_c4_t5","name":"Indian Economy & Business Environment"}]}
++  ]},
++
++  "CA INTERMEDIATE": {"chapters":[
++    {"id":"cai_c1","name":"Advanced Accounting","topics":[{"id":"cai_c1_t1","name":"Accounting Standards"},{"id":"cai_c1_t2","name":"Company Accounts"},{"id":"cai_c1_t3","name":"Amalgamation & Reconstruction"},{"id":"cai_c1_t4","name":"Financial Statements of Companies"}]},
++    {"id":"cai_c2","name":"Corporate & Other Laws","topics":[{"id":"cai_c2_t1","name":"Companies Act — Part 1"},{"id":"cai_c2_t2","name":"General Clauses Act"},{"id":"cai_c2_t3","name":"Interpretation of Statutes"},{"id":"cai_c2_t4","name":"Foreign Exchange Management Act"}]},
++    {"id":"cai_c3","name":"Taxation","topics":[{"id":"cai_c3_t1","name":"Income Tax — Basic Concepts"},{"id":"cai_c3_t2","name":"Heads of Income"},{"id":"cai_c3_t3","name":"GST — Basic Concepts"},{"id":"cai_c3_t4","name":"GST — Supply & Levy"}]},
++    {"id":"cai_c4","name":"Cost & Management Accounting","topics":[{"id":"cai_c4_t1","name":"Cost Concepts & Classification"},{"id":"cai_c4_t2","name":"Material & Labour Costing"},{"id":"cai_c4_t3","name":"Overheads"},{"id":"cai_c4_t4","name":"Standard Costing & Variance Analysis"},{"id":"cai_c4_t5","name":"Marginal Costing"}]},
++    {"id":"cai_c5","name":"Auditing & Assurance","topics":[{"id":"cai_c5_t1","name":"Nature, Objective & Scope of Audit"},{"id":"cai_c5_t2","name":"Audit Strategy & Planning"},{"id":"cai_c5_t3","name":"Risk Assessment & Internal Control"},{"id":"cai_c5_t4","name":"Audit Evidence & Documentation"}]},
++    {"id":"cai_c6","name":"Financial & Strategic Management","topics":[{"id":"cai_c6_t1","name":"Financial Management Basics"},{"id":"cai_c6_t2","name":"Capital Budgeting"},{"id":"cai_c6_t3","name":"Working Capital Management"},{"id":"cai_c6_t4","name":"Strategic Management Concepts"}]}
++  ]},
++
++  "CA FINAL": {"chapters":[
++    {"id":"caF_c1","name":"Financial Reporting","topics":[{"id":"caF_c1_t1","name":"Ind AS Framework"},{"id":"caF_c1_t2","name":"Consolidated Financial Statements"},{"id":"caF_c1_t3","name":"Business Combinations"}]},
++    {"id":"caF_c2","name":"Advanced Financial Management","topics":[{"id":"caF_c2_t1","name":"Security Analysis & Portfolio Management"},{"id":"caF_c2_t2","name":"Derivatives Analysis"},{"id":"caF_c2_t3","name":"Mergers, Acquisitions & Restructuring"},{"id":"caF_c2_t4","name":"International Financial Management"}]},
++    {"id":"caF_c3","name":"Advanced Auditing, Assurance & Ethics","topics":[{"id":"caF_c3_t1","name":"Quality Control & Audit of Complex Entities"},{"id":"caF_c3_t2","name":"Audit of Banks & NBFCs"},{"id":"caF_c3_t3","name":"Professional Ethics"}]},
++    {"id":"caF_c4","name":"Direct Tax Laws","topics":[{"id":"caF_c4_t1","name":"Taxation of Companies & Firms"},{"id":"caF_c4_t2","name":"International Taxation"},{"id":"caF_c4_t3","name":"Tax Planning & Assessment Procedure"}]},
++    {"id":"caF_c5","name":"Indirect Tax Laws","topics":[{"id":"caF_c5_t1","name":"Advanced GST — Input Tax Credit"},{"id":"caF_c5_t2","name":"GST Returns & Assessment"},{"id":"caF_c5_t3","name":"Customs Law"},{"id":"caF_c5_t4","name":"Foreign Trade Policy"}]},
++    {"id":"caF_c6","name":"Integrated Business Solutions","topics":[{"id":"caF_c6_t1","name":"Case-Study Integration — Multidisciplinary"}]}
++  ]},
++
++  "UPSC PRELIMS": {"chapters":[
++    {"id":"upP_c1","name":"GS Paper I — Static & Current","topics":[{"id":"upP_c1_t1","name":"Current Events — National & International"},{"id":"upP_c1_t2","name":"History of India & National Movement"},{"id":"upP_c1_t3","name":"Indian & World Geography"},{"id":"upP_c1_t4","name":"Indian Polity & Governance"},{"id":"upP_c1_t5","name":"Economic & Social Development"},{"id":"upP_c1_t6","name":"Environment & Ecology"},{"id":"upP_c1_t7","name":"General Science"}]},
++    {"id":"upP_c2","name":"CSAT (Paper II — Qualifying)","topics":[{"id":"upP_c2_t1","name":"Comprehension"},{"id":"upP_c2_t2","name":"Logical Reasoning & Analytical Ability"},{"id":"upP_c2_t3","name":"Decision Making & Problem Solving"},{"id":"upP_c2_t4","name":"Basic Numeracy"},{"id":"upP_c2_t5","name":"Data Interpretation"}]}
++  ]},
++
++  "UPSC MAINS": {"chapters":[
++    {"id":"upM_c1","name":"Essay","topics":[{"id":"upM_c1_t1","name":"Essay Writing Practice"}]},
++    {"id":"upM_c2","name":"GS Paper I — Heritage, History, Geography","topics":[{"id":"upM_c2_t1","name":"Indian Culture & Heritage"},{"id":"upM_c2_t2","name":"Modern Indian History"},{"id":"upM_c2_t3","name":"Post-Independence Consolidation"},{"id":"upM_c2_t4","name":"World History"},{"id":"upM_c2_t5","name":"Indian Society"},{"id":"upM_c2_t6","name":"World Geography & Resources"}]},
++    {"id":"upM_c3","name":"GS Paper II — Governance & IR","topics":[{"id":"upM_c3_t1","name":"Indian Constitution & Polity"},{"id":"upM_c3_t2","name":"Governance & Social Justice"},{"id":"upM_c3_t3","name":"International Relations"}]},
++    {"id":"upM_c4","name":"GS Paper III — Economy, S&T, Security","topics":[{"id":"upM_c4_t1","name":"Indian Economy & Planning"},{"id":"upM_c4_t2","name":"Agriculture"},{"id":"upM_c4_t3","name":"Science & Technology"},{"id":"upM_c4_t4","name":"Environment & Disaster Management"},{"id":"upM_c4_t5","name":"Internal Security"}]},
++    {"id":"upM_c5","name":"GS Paper IV — Ethics","topics":[{"id":"upM_c5_t1","name":"Ethics & Human Interface"},{"id":"upM_c5_t2","name":"Attitude & Aptitude"},{"id":"upM_c5_t3","name":"Emotional Intelligence"},{"id":"upM_c5_t4","name":"Case Studies in Ethics"}]}
++  ]}
++};
++
++const EXAM_PRESETS = {
++  "JEE":   { label: "JEE (Main/Advanced)", desc: "Physics, Chemistry, Maths", subjects: ["PHYSICS","CHEMISTRY","MATHS"] },
++  "NEET":  { label: "NEET (UG)", desc: "Physics, Chemistry, Biology + Microbiology extra", subjects: ["PHYSICS","CHEMISTRY","BIOLOGY","MICROBIOLOGY"] },
++  "CA":    { label: "CA (Chartered Accountancy)", desc: "Foundation, Intermediate, Final", subjects: ["CA FOUNDATION","CA INTERMEDIATE","CA FINAL"] },
++  "UPSC":  { label: "UPSC (Civil Services)", desc: "Prelims + Mains", subjects: ["UPSC PRELIMS","UPSC MAINS"] },
++  "CUSTOM":{ label: "Custom", desc: "Start blank — build your own subjects in the Syllabus editor", subjects: [] }
+ };
+ 
++// Applies a preset by name: wipes current subjects and loads the preset's
++// subject set fresh from ALL_SYLLABI. Destructive on purpose — switching
++// exams is a deliberate reset, not a merge.
++function applyExamPreset(key){
++  const preset = EXAM_PRESETS[key];
++  if(!preset) return;
++  S.customSyllabi = {};
++  S.subjects = {};
++  for(const subjKey of preset.subjects){
++    const cloned = deepCloneSyllabus(ALL_SYLLABI[subjKey] || {chapters:[]});
++    S.customSyllabi[subjKey] = cloned;
++    S.subjects[subjKey] = cloned;
++  }
++  S.examPreset = key;
++  save();
++}
++
++// Rebuilds S.subjects for the CURRENT S.examPreset only — this is the fix for
++// subjects from different exams "colliding": previously this iterated ALL of
++// ALL_SYLLABI (every subject from every preset) regardless of which exam was
++// active. Now it only pulls in the active preset's subject list, falling back
++// to whatever's in S.customSyllabi for CUSTOM mode or pre-preset installs.
++function rebuildSubjects(){
++  const preset = EXAM_PRESETS[S.examPreset];
++  const keys = preset ? preset.subjects : Object.keys(S.customSyllabi || {});
++  S.subjects = {};
++  for(const key of keys){
++    S.subjects[key] = (S.customSyllabi && S.customSyllabi[key])
++      ? S.customSyllabi[key]
++      : deepCloneSyllabus(ALL_SYLLABI[key] || {chapters:[]});
++  }
++  // Any extra user-created subjects not in the preset's default list (added
++  // via "+ New Subject" in the syllabus editor) still show up.
++  if(S.customSyllabi){
++    for(const [key, syll] of Object.entries(S.customSyllabi)){
++      if(!S.subjects[key]) S.subjects[key] = syll;
++    }
++  }
++}
++
+ // ══════════════════════════════════════════════════════════════════════
+ // STATE SHAPE
+ // scheduleItems: array of { id, subjectId, chapterId, topicId, priority,
+@@ -1371,7 +1491,8 @@ function mkDefault(){
+       user:  {name:'YOU',   tagline:'The Operator', photoDefault:'https://iili.io/qWoe8fn.md.jpg', photoWin:'https://iili.io/qWoe8fn.md.jpg', photoLoss:'https://iili.io/qWoe8fn.md.jpg'},
+       alicia:{name:'ALICIA',tagline:'The Rival',    photoDefault:'https://i.postimg.cc/L5K7Wm6S/20260203-000252.jpg', photoWin:'https://i.postimg.cc/yxm542Ww/20260203-000234.jpg', photoLoss:'https://i.postimg.cc/NF6VqZL3/20260203-000212.jpg'}
+     },
+-    quiz: { groqApiKey: '', timerSec: 90, batchSize: 5 }
++    quiz: { groqApiKey: '', timerSec: 90, batchSize: 5 },
++    examPreset: null
+   };
+ }
+ let S = mkDefault();
+@@ -1566,18 +1687,19 @@ async function loadState(){
+     S.rival._hrsWorked = _snap.hrsUsed || 0;
+     S.rival._boost = _snap.boost || 1.0;
+   }
+-  // Inject built-in syllabi (ALL_SYLLABI) — never stored in localStorage
+-  // User customisations in S.customSyllabi take precedence over built-ins
+-  S.subjects = {};
+-  for(const [key, syll] of Object.entries(ALL_SYLLABI)){
+-    S.subjects[key] = (S.customSyllabi && S.customSyllabi[key]) ? S.customSyllabi[key] : syll;
+-  }
+-  // Also include any extra user-created subjects not in ALL_SYLLABI
+-  if(S.customSyllabi){
+-    for(const [key, syll] of Object.entries(S.customSyllabi)){
+-      if(!S.subjects[key]) S.subjects[key] = syll;
++  // Backward compat: installs from before EXAM_PRESETS existed already have
++  // PHYSICS/CHEMISTRY/MATHS in S.customSyllabi with no S.examPreset set.
++  // Detect that and silently default to JEE instead of prompting them.
++  if(!S.examPreset){
++    const existingKeys = Object.keys(S.customSyllabi || {});
++    if(existingKeys.includes('PHYSICS') || existingKeys.includes('CHEMISTRY') || existingKeys.includes('MATHS')){
++      S.examPreset = 'JEE';
+     }
+   }
++  // Inject built-in syllabi scoped to the ACTIVE exam preset only — this is
++  // what stops subjects from different exams colliding in one build.
++  // User customisations in S.customSyllabi take precedence over built-ins.
++  rebuildSubjects();
+ 
+   // Recovery: completed items that were evicted from today's slot get re-added
+   // so your done passes are always visible in today's count
+@@ -4248,6 +4370,7 @@ function show(id){
+   if(id==='profile')  renderProfile();
+   if(id==='sim')      { /* sim is self-contained */ }
+   if(id==='quiz')     renderQuizPage();
++  if(id==='examSel')  renderExamPicker();
+ }
+ function renderActive(){ const a=document.querySelector('.page.active'); if(a) show(a.id); }
+ function toggleMenu(){ document.getElementById('mobileMenu').classList.toggle('show'); document.getElementById('menuOverlay').classList.toggle('show'); }
+@@ -4293,16 +4416,18 @@ function syllNextId(prefix){
+   // generate a unique ID that won't clash
+   return prefix + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+ }
++let _activeEditSubject = null; // tracked explicitly instead of re-reading the DOM picker each time — that re-read was the root cause of subject data getting saved into the wrong key when the picker's selection drifted out of sync
++
+ function saveSyllabus(){
+   // Save current active subject back into customSyllabi map
+   if(!S.customSyllabi) S.customSyllabi = {};
+-  const activeSubj = cdGetValue('editSubjectPicker') || Object.keys(S.subjects)[0] || 'MICROBIOLOGY';
++  const activeSubj = _activeEditSubject || cdGetValue('editSubjectPicker') || Object.keys(S.subjects)[0];
++  if(!activeSubj) return;
+   S.customSyllabi[activeSubj] = S.customSyllabus || deepCloneSyllabus(ALL_SYLLABI[activeSubj] || {chapters:[]});
+-  // Rebuild subjects map
+-  S.subjects = {};
+-  for(const [key, syll] of Object.entries(S.customSyllabi)){
+-    S.subjects[key] = syll;
+-  }
++  // Rebuild subjects map scoped to the active exam preset — NOT from every
++  // key that's ever existed in customSyllabi (that was pulling subjects from
++  // a previously-selected exam back into view after switching presets).
++  rebuildSubjects();
+   save();
+ }
+ function addSyllTopic(){
+@@ -4373,6 +4498,7 @@ function refreshSubjectPickers(){
+ function switchEditSubject(){
+   const key = cdGetValue('editSubjectPicker') || document.getElementById('editSubjectPicker')?.value;
+   if(!key) return;
++  _activeEditSubject = key;
+   // Use customSyllabi override if exists, else clone from built-in ALL_SYLLABI
+   if(!S.customSyllabi[key]){
+     S.customSyllabi[key] = deepCloneSyllabus(ALL_SYLLABI[key] || {chapters:[]});
+@@ -4391,6 +4517,7 @@ function addNewSubject(){
+   S.customSyllabi[name] = {chapters:[]};
+   S.subjects[name] = S.customSyllabi[name];
+   S.customSyllabus = S.customSyllabi[name];
++  _activeEditSubject = name;
+   if(inp) inp.value = '';
+   save();
+   refreshSubjectPickers();
+@@ -4405,17 +4532,20 @@ function renderEditSyllabus(){
+   // Resolve which syllabus to show based on picker value
+   const pickedKey = cdGetValue('editSubjectPicker');
+   if(pickedKey && S.subjects[pickedKey]){
++    _activeEditSubject = pickedKey;
+     if(!S.customSyllabi[pickedKey])
+       S.customSyllabi[pickedKey] = deepCloneSyllabus(ALL_SYLLABI[pickedKey]||{chapters:[]});
+     S.customSyllabus = S.customSyllabi[pickedKey];
+   } else {
+     const firstKey = Object.keys(S.subjects)[0];
+     if(firstKey){
++      _activeEditSubject = firstKey;
+       if(!S.customSyllabi[firstKey])
+         S.customSyllabi[firstKey] = deepCloneSyllabus(ALL_SYLLABI[firstKey]||{chapters:[]});
+       S.customSyllabus = S.customSyllabi[firstKey];
+       cdSetValue('editSubjectPicker', firstKey);
+     } else {
++      _activeEditSubject = null;
+       S.customSyllabus = {chapters:[]};
+     }
+   }
+@@ -5048,6 +5178,7 @@ function qrBuildPayload(){
+     scheduleItems:S.scheduleItems, generatedSchedule:S.generatedSchedule,
+     history:S.history, logs:S.logs, rival:S.rival, engine:S.engine,
+     profiles:S.profiles, rt:S.rt, customSyllabi:S.customSyllabi||{},
++    examPreset:S.examPreset||null,
+     _snapshots:S._snapshots||{}
+   });
+ }
+@@ -5067,13 +5198,9 @@ function qrApplyPayload(jsonStr){
+   if(p.rt)            S.rt            = p.rt;
+   if(p.customSyllabi) S.customSyllabi = p.customSyllabi;
+   if(p._snapshots)    S._snapshots    = p._snapshots;
++  if(p.examPreset)    S.examPreset    = p.examPreset;
+   S.engine.dailyHrs = rtAvailableHrs();
+-  S.subjects = {};
+-  for(const [k,v] of Object.entries(ALL_SYLLABI))
+-    S.subjects[k] = (S.customSyllabi&&S.customSyllabi[k])||v;
+-  if(S.customSyllabi)
+-    for(const [k,v] of Object.entries(S.customSyllabi))
+-      if(!S.subjects[k]) S.subjects[k]=v;
++  rebuildSubjects();
+   save(); renderActive();
+ }
+ 
+@@ -5286,6 +5413,12 @@ async function init(){
+   }
+ 
+   checkMissedEod();
++  // Fresh install, never picked an exam, and no legacy subject data to infer
++  // from — send them straight to the exam picker instead of a blank dash.
++  if(!S.examPreset && storageWasEmpty){
++    nav('examSel');
++    notify('Pick an exam to load its syllabus.', 'info');
++  }
+   setInterval(()=>{ tickRival(); checkEndOfDay(); save(); if(document.getElementById('dash').classList.contains('active')) renderDash(); updateStreakDisplay(); }, 60000);
+   logSys('OMEGA v2 ONLINE · IDB active');
+   const today = todayStr();
+@@ -5526,7 +5659,52 @@ function renderQuizHistory(){
+   }).join('');
+ }
+ 
++// ══════════════════════════════════════════════════════════════════════
++// EXAM / COURSE PICKER — two-tap confirm since switching wipes subjects
++// ══════════════════════════════════════════════════════════════════════
++let _examSwitchArmed = null;
++
++function renderExamPicker(){
++  const intro = document.getElementById('examSelIntro');
++  intro.textContent = S.examPreset
++    ? `Currently studying for: ${EXAM_PRESETS[S.examPreset]?.label || S.examPreset}`
++    : 'Pick an exam to load its syllabus.';
++
++  const list = document.getElementById('examSelList');
++  list.innerHTML = Object.entries(EXAM_PRESETS).map(([key, preset])=>{
++    const active = S.examPreset === key;
++    const armed = _examSwitchArmed === key;
++    const bg = active ? 'var(--good)' : armed ? 'var(--warn)' : 'var(--log-bg)';
++    const border = active ? 'var(--good)' : armed ? 'var(--warn)' : 'var(--border)';
++    return `<div onclick="pickExamPreset('${key}')" style="padding:14px;margin-bottom:8px;border-radius:10px;background:${active?'rgba(0,200,120,0.08)':'var(--log-bg)'};border:1.5px solid ${border};cursor:pointer;">
++      <div style="display:flex;justify-content:space-between;align-items:center;">
++        <span style="font-weight:900;font-size:0.8rem;">${preset.label}${active?' ✓':''}</span>
++        ${armed?'<span style="font-size:0.6rem;color:var(--warn);font-weight:900;">TAP AGAIN TO CONFIRM</span>':''}
++      </div>
++      <div style="font-size:0.65rem;color:var(--muted);margin-top:3px;">${preset.desc}</div>
++    </div>`;
++  }).join('');
++}
++
++function pickExamPreset(key){
++  if(S.examPreset === key){ notify('Already on '+EXAM_PRESETS[key].label, 'info'); return; }
++
++  if(_examSwitchArmed !== key){
++    _examSwitchArmed = key;
++    renderExamPicker();
++    return;
++  }
++
++  _examSwitchArmed = null;
++  applyExamPreset(key);
++  rebuildSubjects();
++  save();
++  renderExamPicker();
++  notify('Switched to '+EXAM_PRESETS[key].label, 'good');
++}
++
+ init().catch(e=>{ console.error('Fatal init error:', e); notify('Startup error — check console.','bad'); });
++
+ </script>
+ </body>
+ </html>
+-- 
+2.43.0
+
