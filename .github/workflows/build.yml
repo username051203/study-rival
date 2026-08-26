@@ -6,6 +6,61 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Debug build — no signing secrets needed at all. Auto-signed with a
+  # throwaway debug key, installs and runs identically to a release build.
+  # This exists so a working APK is always available even while the release
+  # signing secrets (KEYSTORE_BASE64 etc.) aren't set up yet or are broken.
+  debug-build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          gradle-version: '8.0'
+
+      - name: Build Debug APK
+        run: gradle assembleDebug --stacktrace
+
+      - name: Rename APK
+        run: |
+          mkdir -p out
+          cp app/build/outputs/apk/debug/app-debug.apk out/StudyRival-debug.apk
+
+      - name: Delete old debug release
+        run: gh release delete latest-debug --yes 2>/dev/null || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete old debug tag
+        run: git push --delete origin latest-debug 2>/dev/null || true
+
+      - name: Create Debug Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: latest-debug
+          name: "Study Rival — Latest DEBUG Build (unsigned for release, testing only)"
+          body: |
+            ⚠️ Debug build — not for Play Store distribution, but installs and runs fine for personal use/testing.
+
+            👉 **[Download StudyRival-debug.apk](https://github.com/${{ github.repository }}/releases/download/latest-debug/StudyRival-debug.apk)**
+          files: out/StudyRival-debug.apk
+          draft: false
+          prerelease: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build:
     runs-on: ubuntu-latest
     permissions:
