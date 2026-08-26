@@ -5433,7 +5433,7 @@ async function init(){
 // PRACTICE QUIZ — Groq-powered similar-question generator with timed grading
 // BYOK: uses the user's own free Groq API key, stored locally, never bundled.
 // ══════════════════════════════════════════════════════════════════════
-const QUIZ_MODEL = 'llama-3.3-70b-versatile';
+const QUIZ_MODEL = 'openai/gpt-oss-120b'; // llama-3.3-70b-versatile was deprecated by Groq (June 2026) and now 404s
 const QUIZ_API_URL = 'https://api.groq.com/openai/v1/chat/completions';
 
 let _quizQueue = [];
