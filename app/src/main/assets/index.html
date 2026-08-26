@@ -5443,6 +5443,12 @@ let _quizTimerHandle = null;
 let _quizDeadline = 0;
 let _quizSeed = '';
 
+// LLM output (math expressions, inequalities) often contains < > & — escape
+// before inserting via innerHTML so it renders as text, not broken markup.
+function escapeQuizHtml(s){
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 function renderQuizPage(){
   const keyEl = document.getElementById('quizApiKeyInput');
   const hasKey = !!(S.quiz && S.quiz.groqApiKey);
@@ -5504,28 +5510,39 @@ async function fetchQuizBatch(seed, exclude, n){
   const excludeBlock = exclude.slice(-30).map(q=>'- '+q).join('\n') || '(none yet)';
   const sys = 'You are a practice-question generator. Given a seed question, produce new questions '+
     'that test the SAME concept/skill and SAME difficulty level, but are not near-duplicates of each '+
-    'other or of anything in the exclude list. For each question also give the correct answer/solution. '+
-    'Reply with ONLY a JSON array of objects shaped like {"question":"...","answer":"..."}, nothing else '+
+    'other or of anything in the exclude list. For each question give: the final correct answer, AND '+
+    'a step-by-step solution showing the working/reasoning to get there (break it into short, numbered '+
+    'steps — each step one clear action or piece of reasoning, not a wall of text). '+
+    'Reply with ONLY a JSON array of objects shaped like '+
+    '{"question":"...","answer":"...","steps":["step 1 text","step 2 text", "..."]}, nothing else '+
     '— no markdown fences, no commentary.';
   const usr = 'Seed question:\n'+seed+'\n\nAlready asked (do not repeat these or close variants):\n'+excludeBlock+
-    '\n\nGenerate '+n+' new similar questions with answers, as a JSON array.';
+    '\n\nGenerate '+n+' new similar questions with answers and stepwise solutions, as a JSON array.';
   const content = await quizApiCall(sys, usr, 0.8);
   try{
     const items = JSON.parse(content);
     if(!Array.isArray(items)) throw 0;
-    return items.filter(it=>it && it.question).map(it=>({question:String(it.question).trim(), answer:String(it.answer||'').trim()}));
+    return items.filter(it=>it && it.question).map(it=>({
+      question: String(it.question).trim(),
+      answer: String(it.answer||'').trim(),
+      steps: Array.isArray(it.steps) ? it.steps.map(s=>String(s).trim()).filter(Boolean) : []
+    }));
   }catch(e){
-    return content.split('\n').filter(l=>l.trim()).map(l=>({question:l.replace(/^[-*]\s*/,'').trim(), answer:''}));
+    return content.split('\n').filter(l=>l.trim()).map(l=>({question:l.replace(/^[-*]\s*/,'').trim(), answer:'', steps:[]}));
   }
 }
 
-async function gradeQuizAnswer(question, modelAnswer, userAnswer){
+async function gradeQuizAnswer(question, modelAnswer, steps, userAnswer){
   if(!userAnswer) return 'No answer given.';
   if(!modelAnswer) return '(no model answer available to grade against)';
-  const sys = 'You are a strict but fair grader. Given a question, the correct answer, and a student\'s '+
-    'answer, judge whether the student\'s answer is Correct, Partially correct, or Incorrect. Reply with '+
-    'ONLY the verdict word/phrase, a colon, then one short sentence of feedback. No extra commentary.';
-  const usr = 'Question: '+question+'\nCorrect answer: '+modelAnswer+'\nStudent\'s answer: '+userAnswer;
+  const stepsBlock = (steps && steps.length) ? steps.map((s,i)=>(i+1)+'. '+s).join('\n') : '(none provided)';
+  const sys = 'You are a strict but fair grader. Given a question, the correct answer, its step-by-step '+
+    'solution, and a student\'s answer, judge whether the student\'s answer is Correct, Partially correct, '+
+    'or Incorrect. If partially correct or incorrect, briefly note which step their reasoning likely went '+
+    'wrong at (referencing the step-by-step solution) if you can tell from their answer. Reply with ONLY '+
+    'the verdict word/phrase, a colon, then one to two short sentences of feedback. No extra commentary.';
+  const usr = 'Question: '+question+'\nCorrect answer: '+modelAnswer+'\nStep-by-step solution:\n'+stepsBlock+
+    '\nStudent\'s answer: '+userAnswer;
   try{
     return await quizApiCall(sys, usr, 0.2);
   }catch(e){
@@ -5618,18 +5635,25 @@ async function submitQuizAnswer(timedOut){
   vEl.style.border = '1px solid var(--border)';
   vEl.textContent = timedOut ? '⏰ Time\'s up — grading skipped.' : 'Grading...';
 
-  let verdict = timedOut ? 'Timed out — no answer given.' : await gradeQuizAnswer(_quizCurrent.question, _quizCurrent.answer, answer);
+  let verdict = timedOut ? 'Timed out — no answer given.' : await gradeQuizAnswer(_quizCurrent.question, _quizCurrent.answer, _quizCurrent.steps, answer);
   const lc = verdict.toLowerCase();
   const good = lc.startsWith('correct');
   const bad  = lc.startsWith('incorrect') || lc.startsWith('timed out') || lc.startsWith('no answer');
   vEl.style.borderColor = good ? 'var(--good)' : bad ? 'var(--bad)' : 'var(--warn)';
-  vEl.textContent = verdict + (_quizCurrent.answer ? '\n\nModel answer: ' + _quizCurrent.answer : '');
   vEl.style.whiteSpace = 'pre-wrap';
+
+  const stepsHtml = (_quizCurrent.steps && _quizCurrent.steps.length)
+    ? '<ol style="margin:6px 0 0 18px;padding:0;">' + _quizCurrent.steps.map(s=>`<li style="margin-bottom:4px;">${escapeQuizHtml(s)}</li>`).join('') + '</ol>'
+    : '';
+  vEl.innerHTML =
+    `<div>${escapeQuizHtml(verdict)}</div>` +
+    (_quizCurrent.answer ? `<div style="margin-top:10px;font-weight:900;">Model answer: ${escapeQuizHtml(_quizCurrent.answer)}</div>` : '') +
+    (stepsHtml ? `<div style="margin-top:8px;font-weight:900;">Step-by-step solution:</div>${stepsHtml}` : '');
 
   S.quiz._history = S.quiz._history || [];
   S.quiz._history.unshift({
     ts: Date.now(), question: _quizCurrent.question, answer: answer,
-    modelAnswer: _quizCurrent.answer, verdict: verdict
+    modelAnswer: _quizCurrent.answer, steps: _quizCurrent.steps||[], verdict: verdict
   });
   S.quiz._history = S.quiz._history.slice(0, 50);
   save();
@@ -5653,8 +5677,8 @@ function renderQuizHistory(){
     const lc = (h.verdict||'').toLowerCase();
     const color = lc.startsWith('correct') ? 'var(--good)' : (lc.startsWith('incorrect')||lc.startsWith('timed')||lc.startsWith('no answer')) ? 'var(--bad)' : 'var(--warn)';
     return `<div style="padding:8px 0;border-bottom:1px solid var(--border);">
-      <div style="color:var(--ink);margin-bottom:3px;">${h.question}</div>
-      <div style="color:${color};font-weight:700;">${h.verdict}</div>
+      <div style="color:var(--ink);margin-bottom:3px;">${escapeQuizHtml(h.question)}</div>
+      <div style="color:${color};font-weight:700;">${escapeQuizHtml(h.verdict)}</div>
     </div>`;
   }).join('');
 }
