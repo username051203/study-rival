@@ -2194,8 +2194,16 @@ function tickRival(){
     // Normalise to "hours since startHr" coords
     const dur = e < s ? (24 - s + e) : (e - s);
     const sR = (s - startHr + 24) % 24;
-    const eR = sR + dur;
-    return Math.max(0, Math.min(eR, elapsedRaw) - Math.max(sR, 0));
+    // A recurring daily block can straddle the anchor point (e.g. sleep
+    // 01:00-07:00 with a 03:30 anchor: it starts BEFORE the anchor and
+    // ends AFTER it). The old code only checked the "this cycle" position
+    // (sR, sR+dur), which for a straddling block lands entirely outside
+    // [0, elapsedRaw) and so contributed zero — meaning sleep/meal/buffer
+    // time wasn't being subtracted at all when it happened to span the
+    // anchor. Checking the previous cycle's position too (sR-24) catches
+    // that case; at most one of the two can overlap for elapsedRaw < 24h.
+    const overlapAt = (start) => Math.max(0, Math.min(start+dur, elapsedRaw) - Math.max(start, 0));
+    return overlapAt(sR) + overlapAt(sR - 24);
   }
 
   let blocked = 0;
